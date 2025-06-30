@@ -479,3 +479,4 @@ NODE_ENV=production
 - Asegúrate de mantener seguras tus credenciales de email y otras claves sensibles.
 - Configura correctamente CORS en el servidor para permitir solicitudes desde tu dominio.
 # landing-page
+# landing-page
