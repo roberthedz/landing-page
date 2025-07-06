@@ -27,10 +27,55 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'build')));
 
-// Simular una base de datos simple (en producción se usaría una base de datos real)
-let bookings = [];
-let bookedSlots = [];
-let contactMessages = [];
+const fs = require('fs');
+const path = require('path');
+
+// Archivo para persistir datos
+const DATA_FILE = path.join(__dirname, 'data.json');
+
+// Función para cargar datos desde archivo
+function loadData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      return {
+        bookings: data.bookings || [],
+        bookedSlots: data.bookedSlots || [],
+        contactMessages: data.contactMessages || []
+      };
+    }
+  } catch (error) {
+    console.error('Error cargando datos:', error);
+  }
+  return {
+    bookings: [],
+    bookedSlots: [],
+    contactMessages: []
+  };
+}
+
+// Función para guardar datos en archivo
+function saveData() {
+  try {
+    const data = {
+      bookings,
+      bookedSlots,
+      contactMessages
+    };
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    console.log('Datos guardados exitosamente');
+  } catch (error) {
+    console.error('Error guardando datos:', error);
+  }
+}
+
+// Cargar datos al iniciar el servidor
+const initialData = loadData();
+let bookings = initialData.bookings;
+let bookedSlots = initialData.bookedSlots;
+let contactMessages = initialData.contactMessages;
+
+console.log(`Servidor iniciado con ${bookings.length} reservas, ${bookedSlots.length} slots ocupados`);
 
 // API para obtener horarios ocupados
 app.get('/api/booked-slots', (req, res) => {
@@ -55,6 +100,7 @@ app.post('/api/send-contact-email', async (req, res) => {
     };
     
     contactMessages.push(newMessage);
+    saveData();
     
     // Email a la empresa con los detalles del mensaje
     await emailTransporter.sendMail({
@@ -218,6 +264,9 @@ app.post('/api/bookings/:id/status', async (req, res) => {
         bookingId: id
       });
       
+      // Guardar cambios
+      saveData();
+      
       // Enviar email de confirmación al cliente
       await emailTransporter.sendMail({
         from: '"DeDecor" <dedecorinfo@gmail.com>',
@@ -249,6 +298,9 @@ app.post('/api/bookings/:id/status', async (req, res) => {
     } else if (action === 'reject') {
       // Actualizar estado de la reserva
       bookings[bookingIndex].status = 'rejected';
+      
+      // Guardar cambios
+      saveData();
       
       // Enviar email de rechazo al cliente
       await emailTransporter.sendMail({
@@ -316,6 +368,9 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
       bookedSlots.splice(slotIndex, 1);
     }
     
+    // Guardar cambios
+    saveData();
+    
     // Enviar email de cancelación al cliente
     await emailTransporter.sendMail({
       from: '"DeDecor" <dedecorinfo@gmail.com>',
@@ -375,13 +430,23 @@ app.get('/api/bookings', (req, res) => {
 // API para crear una nueva reserva
 app.post('/api/bookings', (req, res) => {
   const booking = {
-    id: `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    id: req.body.id || `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     status: 'pending',
     ...req.body,
     createdAt: new Date().toISOString()
   };
   
   bookings.push(booking);
+  saveData();
+  
+  console.log('Nueva reserva creada:', {
+    id: booking.id,
+    clientName: booking.clientName,
+    service: booking.service,
+    date: booking.date,
+    time: booking.time
+  });
+  console.log('Total de reservas en memoria:', bookings.length);
   
   res.status(201).json({ success: true, bookingId: booking.id });
 });
@@ -390,8 +455,18 @@ app.post('/api/bookings', (req, res) => {
 app.get('/confirm-booking', async (req, res) => {
   const { id, action } = req.query;
   
-  console.log('Confirmación de reserva recibida:', { id, action, url: req.url });
-  console.log('Reservas disponibles:', bookings.map(b => ({ id: b.id, status: b.status })));
+  console.log('=== CONFIRMACIÓN DE RESERVA ===');
+  console.log('ID recibido:', id);
+  console.log('Acción recibida:', action);
+  console.log('URL completa:', req.url);
+  console.log('Query params:', req.query);
+  console.log('Total de reservas en memoria:', bookings.length);
+  console.log('Reservas disponibles:', bookings.map(b => ({ 
+    id: b.id, 
+    status: b.status, 
+    clientName: b.clientName,
+    createdAt: b.createdAt 
+  })));
   
   if (!id || !action) {
     return res.status(400).send(`
@@ -442,6 +517,9 @@ app.get('/confirm-booking', async (req, res) => {
         time: bookings[bookingIndex].time,
         bookingId: id
       });
+      
+      // Guardar cambios
+      saveData();
       
       // Enviar email de confirmación al cliente
       await emailTransporter.sendMail({
@@ -500,6 +578,9 @@ app.get('/confirm-booking', async (req, res) => {
     } else if (action === 'reject') {
       // Actualizar estado de la reserva
       bookings[bookingIndex].status = 'rejected';
+      
+      // Guardar cambios
+      saveData();
       
       // Enviar email de rechazo al cliente
       await emailTransporter.sendMail({
