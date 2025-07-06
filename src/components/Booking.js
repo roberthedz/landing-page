@@ -517,17 +517,17 @@ const Booking = () => {
     
     const formattedDate = formatDate(date);
     
-    // Para consulta de 120 min, verificar que haya slot siguiente disponible
+    // Para consulta de 120 min, verificar que haya slot siguiente disponible (solo si no es el último)
     if (service.duration === '120 min') {
       const allTimes = [...morningTimes, ...afternoonTimes];
       const currentIndex = allTimes.indexOf(time);
       
-      // No permitir el último horario de cada turno para consulta de 120 min
+      // Si es el último horario del turno, SÍ se puede atender (se extiende más allá del horario normal)
       if (time === '11:00 AM' || time === '5:00 PM') {
-        return false;
+        return true;
       }
       
-      // Verificar que el siguiente slot esté disponible
+      // Verificar que el siguiente slot esté disponible (solo si no es el último)
       if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
         const nextTime = allTimes[currentIndex + 1];
         // Solo verificar el siguiente si está en el mismo turno
@@ -896,7 +896,7 @@ const Booking = () => {
             }
           }}
           title={!isValidForService && selectedService?.duration === '120 min' ? 
-            'No disponible para consulta de 120 min (requiere horario siguiente)' : ''}
+            'No disponible para consulta de 120 min (horario siguiente ocupado)' : ''}
         >
           {time} 
           {isBooked && <i className="bi bi-lock-fill ms-1"></i>}
@@ -1265,6 +1265,54 @@ const Booking = () => {
                                 <i className="bi bi-info-circle me-1"></i>
                                 Selecciona una fecha para ver horarios
                               </p>
+                            )}
+                            
+                            {/* Leyenda de colores */}
+                            {values.date && (
+                              <div className="mt-4 pt-3 border-top">
+                                <small className="fw-semibold text-muted d-block mb-2 text-center">LEYENDA</small>
+                                <div className="d-flex flex-wrap justify-content-center gap-2 small">
+                                  <div className="d-flex align-items-center">
+                                    <div 
+                                      className="me-1"
+                                      style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        backgroundColor: 'white',
+                                        border: '1px solid var(--primary-color)',
+                                        borderRadius: '2px'
+                                      }}
+                                    ></div>
+                                    <span className="text-muted">Disponible</span>
+                                  </div>
+                                  <div className="d-flex align-items-center">
+                                    <div 
+                                      className="me-1"
+                                      style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        backgroundColor: '#dc3545',
+                                        borderRadius: '2px'
+                                      }}
+                                    ></div>
+                                    <span className="text-muted">Ocupado</span>
+                                  </div>
+                                  {selectedService?.duration === '120 min' && (
+                                    <div className="d-flex align-items-center">
+                                      <div 
+                                        className="me-1"
+                                        style={{
+                                          width: '12px',
+                                          height: '12px',
+                                          backgroundColor: '#ffc107',
+                                          borderRadius: '2px'
+                                        }}
+                                      ></div>
+                                      <span className="text-muted">No disponible (120 min)</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             )}
                             
                             {touched.time && errors.time && values.date && (
