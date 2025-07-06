@@ -709,21 +709,13 @@ const Booking = () => {
         throw new Error('Error al crear la reserva');
       }
       
-      // Construir las URLs para confirmar/rechazar - siempre usar el dominio de producción
-      const baseUrl = 'https://landing-page-534b.onrender.com';
-      
-      const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
-      const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
-      
-      console.log('URL de confirmación:', confirmUrl);
-      console.log('URL de rechazo:', rejectUrl);
-      
-      // Enviar emails de notificación
+      // Enviar emails de notificación (el servidor genera las URLs automáticamente)
       console.log('Enviando solicitud a:', apiConfig.endpoints.sendBookingEmail);
       const emailResponse = await axios.post(apiConfig.endpoints.sendBookingEmail, {
         clientEmail: values.email,
         clientName: values.name,
         bookingDetails: {
+          id: bookingId,
           service: serviceObj.title,
           duration: serviceObj.duration,
           date: formatDate(values.date),
@@ -731,9 +723,7 @@ const Booking = () => {
           type: values.appointmentType,
           phone: values.phone,
           notes: values.notes || ''
-        },
-        confirmUrl,
-        rejectUrl
+        }
       });
       
       console.log('Respuesta de envío de email:', emailResponse.data);

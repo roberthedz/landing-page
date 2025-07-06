@@ -164,7 +164,17 @@ app.post('/api/send-contact-email', async (req, res) => {
 
 // API para enviar email de confirmación de reserva
 app.post('/api/send-booking-email', async (req, res) => {
-  const { clientEmail, clientName, bookingDetails, confirmUrl, rejectUrl } = req.body;
+  const { clientEmail, clientName, bookingDetails } = req.body;
+  
+  // Detectar automáticamente el dominio desde el cual se hace la petición
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const bookingId = bookingDetails.id || 'id';
+  const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
+  const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
+  
+  console.log('Base URL detectada automáticamente:', baseUrl);
+  console.log('URL de confirmación:', confirmUrl);
+  console.log('URL de rechazo:', rejectUrl);
   
   try {
     // Email a la empresa con opciones para confirmar/rechazar

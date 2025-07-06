@@ -2,7 +2,17 @@
  * Configuración de la API
  */
 
-const API_BASE_URL = 'https://landing-page-534b.onrender.com/api';
+// Detectar automáticamente el dominio base
+const getBaseUrl = () => {
+  // En desarrollo, usar localhost
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:3001/api';
+  }
+  // En producción, usar el dominio actual
+  return `${window.location.origin}/api`;
+};
+
+const API_BASE_URL = getBaseUrl();
 
 export default {
   API_BASE_URL,
