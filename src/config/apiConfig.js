@@ -8,8 +8,9 @@ const getBaseUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:3001/api';
   }
-  // En producción, usar el dominio actual
-  return `${window.location.origin}/api`;
+  // En producción, SIEMPRE usar el servidor de Render para las APIs
+  // porque es el único que tiene el servidor Node.js funcionando
+  return 'https://landing-page-534b.onrender.com/api';
 };
 
 const API_BASE_URL = getBaseUrl();

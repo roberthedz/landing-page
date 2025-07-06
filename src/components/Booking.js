@@ -458,7 +458,14 @@ const Booking = () => {
         console.log('Cargando horarios ocupados desde:', apiConfig.endpoints.bookedSlots);
         const response = await axios.get(apiConfig.endpoints.bookedSlots);
         console.log('Horarios ocupados cargados:', response.data);
-        setBookedSlots(response.data);
+        
+        // Validar que la respuesta sea un array válido
+        if (Array.isArray(response.data)) {
+          setBookedSlots(response.data);
+        } else {
+          console.warn('La respuesta no es un array válido, usando array vacío');
+          setBookedSlots([]);
+        }
       } catch (error) {
         console.error('Error al cargar horarios ocupados:', error);
         // Fallback a localStorage si la API falla
@@ -489,6 +496,12 @@ const Booking = () => {
     const formattedDate = formatDate(date);
     console.log('Verificando si el horario está ocupado:', formattedDate, time);
     console.log('Horarios ocupados:', bookedSlots);
+    
+    // Validar que bookedSlots sea un array antes de usar .some()
+    if (!Array.isArray(bookedSlots)) {
+      console.warn('bookedSlots no es un array válido, tratando como array vacío');
+      return false;
+    }
     
     const isBooked = bookedSlots.some(slot => 
       slot.date === formattedDate && slot.time === time
@@ -784,9 +797,17 @@ const Booking = () => {
       console.log('Recargando horarios ocupados...');
       const response = await axios.get(apiConfig.endpoints.bookedSlots);
       console.log('Horarios ocupados actualizados:', response.data);
-      setBookedSlots(response.data);
+      
+      // Validar que la respuesta sea un array válido
+      if (Array.isArray(response.data)) {
+        setBookedSlots(response.data);
+      } else {
+        console.warn('La respuesta no es un array válido, usando array vacío');
+        setBookedSlots([]);
+      }
     } catch (error) {
       console.error('Error al recargar horarios ocupados:', error);
+      setBookedSlots([]);
     }
     
     // Forzar un refresco de la página para asegurar que todo se reinicie correctamente

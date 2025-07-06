@@ -7,9 +7,11 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Función para detectar automáticamente la URL base desde el request
+// Función para obtener la URL base - siempre usar Render para las confirmaciones
 const getBaseUrl = (req) => {
-  return `${req.protocol}://${req.get('host')}`;
+  // Siempre usar el servidor de Render para los enlaces de confirmación
+  // porque es el único que tiene el servidor Node.js funcionando
+  return 'https://landing-page-534b.onrender.com';
 };
 
 // Configuración del transportador de email - Usar siempre credenciales reales

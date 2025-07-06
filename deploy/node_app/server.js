@@ -166,13 +166,14 @@ app.post('/api/send-contact-email', async (req, res) => {
 app.post('/api/send-booking-email', async (req, res) => {
   const { clientEmail, clientName, bookingDetails } = req.body;
   
-  // Detectar automáticamente el dominio desde el cual se hace la petición
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  // Siempre usar el servidor de Render para los enlaces de confirmación
+  // porque es el único que tiene el servidor Node.js funcionando
+  const baseUrl = 'https://landing-page-534b.onrender.com';
   const bookingId = bookingDetails.id || 'id';
   const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
   const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
   
-  console.log('Base URL detectada automáticamente:', baseUrl);
+  console.log('Base URL para confirmaciones:', baseUrl);
   console.log('URL de confirmación:', confirmUrl);
   console.log('URL de rechazo:', rejectUrl);
   
