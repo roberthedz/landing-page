@@ -227,12 +227,73 @@ app.post('/api/bookings/:id/status', async (req, res) => {
       // Actualizar estado de la reserva
       bookings[bookingIndex].status = 'confirmed';
       
-      // Añadir el horario a los ocupados
-      bookedSlots.push({
-        date: bookings[bookingIndex].date,
-        time: bookings[bookingIndex].time,
-        bookingId: id
-      });
+      // Función para generar slots ocupados según el tipo de servicio
+      const generateBookedSlots = (booking) => {
+        const slots = [];
+        const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
+        const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+        
+        // Si es asesoría completa, bloquear todo el turno
+        if (booking.type === 'asesoria-completa') {
+          const isMorning = morningTimes.includes(booking.time);
+          const timesToBlock = isMorning ? morningTimes : afternoonTimes;
+          
+          timesToBlock.forEach(time => {
+            slots.push({
+              date: booking.date,
+              time: time,
+              bookingId: booking.id,
+              reason: `Asesoría completa - turno ${isMorning ? 'mañana' : 'tarde'}`
+            });
+          });
+        }
+        // Si es consulta de 120 min, bloquear 2 slots consecutivos
+        else if (booking.serviceDuration === '120 min') {
+          const allTimes = [...morningTimes, ...afternoonTimes];
+          const currentIndex = allTimes.indexOf(booking.time);
+          
+          // Bloquear el horario actual
+          slots.push({
+            date: booking.date,
+            time: booking.time,
+            bookingId: booking.id,
+            reason: 'Consulta 120 min - hora 1'
+          });
+          
+          // Bloquear el siguiente horario si existe y está en el mismo turno
+          if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
+            const nextTime = allTimes[currentIndex + 1];
+            const isMorningTime = morningTimes.includes(booking.time);
+            const isNextMorningTime = morningTimes.includes(nextTime);
+            
+            if (isMorningTime === isNextMorningTime) {
+              slots.push({
+                date: booking.date,
+                time: nextTime,
+                bookingId: booking.id,
+                reason: 'Consulta 120 min - hora 2'
+              });
+            }
+          }
+        }
+        // Para consulta de 60 min, solo bloquear el horario seleccionado
+        else {
+          slots.push({
+            date: booking.date,
+            time: booking.time,
+            bookingId: booking.id,
+            reason: 'Consulta 60 min'
+          });
+        }
+        
+        return slots;
+      };
+      
+      // Generar y añadir los slots ocupados
+      const newSlots = generateBookedSlots(bookings[bookingIndex]);
+      bookedSlots.push(...newSlots);
+      
+      console.log('Slots ocupados generados:', newSlots);
       
       // Enviar email de confirmación al cliente
       await emailTransporter.sendMail({
@@ -321,16 +382,23 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
     // Actualizar estado de la reserva
     bookings[bookingIndex].status = 'cancelled';
     
-    // Eliminar el horario de los ocupados
-    const slotIndex = bookedSlots.findIndex(slot => 
-      slot.bookingId === id && 
-      slot.date === bookings[bookingIndex].date && 
-      slot.time === bookings[bookingIndex].time
-    );
+    // Eliminar todos los horarios ocupados relacionados con esta reserva
+    const slotsToRemove = bookedSlots.filter(slot => slot.bookingId === id);
     
-    if (slotIndex !== -1) {
-      bookedSlots.splice(slotIndex, 1);
-    }
+    // Eliminar cada slot relacionado
+    slotsToRemove.forEach(slotToRemove => {
+      const slotIndex = bookedSlots.findIndex(slot => 
+        slot.bookingId === slotToRemove.bookingId && 
+        slot.date === slotToRemove.date && 
+        slot.time === slotToRemove.time
+      );
+      
+      if (slotIndex !== -1) {
+        bookedSlots.splice(slotIndex, 1);
+      }
+    });
+    
+    console.log('Slots eliminados:', slotsToRemove.length);
     
     // Enviar email de cancelación al cliente
     await emailTransporter.sendMail({
@@ -449,12 +517,73 @@ app.get('/confirm-booking', async (req, res) => {
       // Actualizar estado de la reserva
       bookings[bookingIndex].status = 'confirmed';
       
-      // Añadir el horario a los ocupados
-      bookedSlots.push({
-        date: bookings[bookingIndex].date,
-        time: bookings[bookingIndex].time,
-        bookingId: id
-      });
+      // Función para generar slots ocupados según el tipo de servicio
+      const generateBookedSlots = (booking) => {
+        const slots = [];
+        const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
+        const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+        
+        // Si es asesoría completa, bloquear todo el turno
+        if (booking.type === 'asesoria-completa') {
+          const isMorning = morningTimes.includes(booking.time);
+          const timesToBlock = isMorning ? morningTimes : afternoonTimes;
+          
+          timesToBlock.forEach(time => {
+            slots.push({
+              date: booking.date,
+              time: time,
+              bookingId: booking.id,
+              reason: `Asesoría completa - turno ${isMorning ? 'mañana' : 'tarde'}`
+            });
+          });
+        }
+        // Si es consulta de 120 min, bloquear 2 slots consecutivos
+        else if (booking.serviceDuration === '120 min') {
+          const allTimes = [...morningTimes, ...afternoonTimes];
+          const currentIndex = allTimes.indexOf(booking.time);
+          
+          // Bloquear el horario actual
+          slots.push({
+            date: booking.date,
+            time: booking.time,
+            bookingId: booking.id,
+            reason: 'Consulta 120 min - hora 1'
+          });
+          
+          // Bloquear el siguiente horario si existe y está en el mismo turno
+          if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
+            const nextTime = allTimes[currentIndex + 1];
+            const isMorningTime = morningTimes.includes(booking.time);
+            const isNextMorningTime = morningTimes.includes(nextTime);
+            
+            if (isMorningTime === isNextMorningTime) {
+              slots.push({
+                date: booking.date,
+                time: nextTime,
+                bookingId: booking.id,
+                reason: 'Consulta 120 min - hora 2'
+              });
+            }
+          }
+        }
+        // Para consulta de 60 min, solo bloquear el horario seleccionado
+        else {
+          slots.push({
+            date: booking.date,
+            time: booking.time,
+            bookingId: booking.id,
+            reason: 'Consulta 60 min'
+          });
+        }
+        
+        return slots;
+      };
+      
+      // Generar y añadir los slots ocupados
+      const newSlots = generateBookedSlots(bookings[bookingIndex]);
+      bookedSlots.push(...newSlots);
+      
+      console.log('Slots ocupados generados:', newSlots);
       
       // Enviar email de confirmación al cliente
       await emailTransporter.sendMail({

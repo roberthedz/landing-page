@@ -510,6 +510,38 @@ const Booking = () => {
     console.log('¿Está ocupado?', isBooked);
     return isBooked;
   };
+
+  // Verificar si un horario es válido para el servicio seleccionado
+  const isTimeSlotValidForService = (date, time, service) => {
+    if (!service || !date) return true;
+    
+    const formattedDate = formatDate(date);
+    
+    // Para consulta de 120 min, verificar que haya slot siguiente disponible
+    if (service.duration === '120 min') {
+      const allTimes = [...morningTimes, ...afternoonTimes];
+      const currentIndex = allTimes.indexOf(time);
+      
+      // No permitir el último horario de cada turno para consulta de 120 min
+      if (time === '11:00 AM' || time === '5:00 PM') {
+        return false;
+      }
+      
+      // Verificar que el siguiente slot esté disponible
+      if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
+        const nextTime = allTimes[currentIndex + 1];
+        // Solo verificar el siguiente si está en el mismo turno
+        const isMorningTime = morningTimes.includes(time);
+        const isNextMorningTime = morningTimes.includes(nextTime);
+        
+        if (isMorningTime === isNextMorningTime) {
+          return !isTimeSlotBooked(date, nextTime);
+        }
+      }
+    }
+    
+    return true;
+  };
   
   const handleServiceSelect = (service, setFieldValue) => {
     setSelectedService(service);
@@ -818,31 +850,57 @@ const Booking = () => {
   const renderTimeSlots = (times, values, setFieldValue) => {
     return times.map(time => {
       const isBooked = isTimeSlotBooked(values.date, time);
+      const isValidForService = isTimeSlotValidForService(values.date, time, selectedService);
+      const isDisabled = isBooked || !isValidForService || !values.date;
+      
+      let buttonClass = 'btn btn-sm ';
+      let backgroundColor, borderColor, textColor;
+      
+      if (selectedTime === time) {
+        backgroundColor = 'var(--primary-color)';
+        borderColor = 'var(--primary-color)';
+        textColor = 'white';
+      } else if (isBooked) {
+        buttonClass += 'btn-danger';
+        backgroundColor = '#dc3545';
+        borderColor = '#dc3545';
+        textColor = 'white';
+      } else if (!isValidForService) {
+        backgroundColor = '#ffc107';
+        borderColor = '#ffc107';
+        textColor = 'white';
+      } else {
+        backgroundColor = 'white';
+        borderColor = 'var(--primary-color)';
+        textColor = 'var(--primary-color)';
+      }
+      
       return (
         <button
           key={time}
           type="button"
-          className={`btn btn-sm ${selectedTime === time ? '' : isBooked ? 'btn-danger' : ''}`}
+          className={buttonClass}
           style={{ 
             minWidth: '65px',
-            opacity: !values.date ? 0.5 : isBooked ? 0.7 : 1,
-            cursor: isBooked || !values.date ? 'not-allowed' : 'pointer',
+            opacity: !values.date ? 0.5 : isDisabled ? 0.7 : 1,
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
             fontSize: '0.85rem',
-            backgroundColor: selectedTime === time ? 'var(--primary-color)' : 
-                             isBooked ? '#dc3545' : 'white',
-            borderColor: selectedTime === time ? 'var(--primary-color)' : 
-                         isBooked ? '#dc3545' : 'var(--primary-color)',
-            color: selectedTime === time ? 'white' : 
-                   isBooked ? 'white' : 'var(--primary-color)'
+            backgroundColor,
+            borderColor,
+            color: textColor
           }}
-          disabled={isBooked || !values.date}
+          disabled={isDisabled}
           onClick={() => {
-            if (values.date && !isBooked) {
+            if (values.date && !isDisabled) {
               handleTimeSelect(time, setFieldValue);
             }
           }}
+          title={!isValidForService && selectedService?.duration === '120 min' ? 
+            'No disponible para consulta de 120 min (requiere horario siguiente)' : ''}
         >
-          {time} {isBooked && <i className="bi bi-lock-fill ms-1"></i>}
+          {time} 
+          {isBooked && <i className="bi bi-lock-fill ms-1"></i>}
+          {!isValidForService && !isBooked && <i className="bi bi-exclamation-triangle-fill ms-1"></i>}
         </button>
       );
     });
