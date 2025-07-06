@@ -97,7 +97,7 @@ const ServiceTitle = styled(Card.Title)`
 const ServicePrice = styled.div`
   font-weight: 700;
   color: var(--secondary-color);
-  font-size: 1.2rem;
+  font-size: ${props => props.isLongPrice ? '1.1rem' : '1.2rem'};
   margin-bottom: 1rem;
 `;
 
@@ -132,7 +132,7 @@ const ServiceButton = styled(Button)`
 `;
 
 const Services = () => {
-  const onlineServices = [
+  const asesoriaBasicaServices = [
     {
       id: 'consulta-online-60',
       title: 'Consulta Online',
@@ -153,33 +153,33 @@ const Services = () => {
     }
   ];
   
-  const presencialServices = [
+  const asesoriaCompletaServices = [
     {
       id: 'paquete-esencial',
       title: 'Paquete Esencial',
-      price: '$450',
-      description: 'Transformación de una habitación con guía profesional que incluye reunión inicial, moodboard, paleta de colores y propuesta de distribución.',
+      price: 'Contáctanos para estimado GRATIS',
+      description: 'Ideal para quienes quieren una guía clara y profesional para transformar un espacio con estilo, sin complicaciones.',
       image: '/images/service3.jpg',
       tag: 'Popular',
-      duration: 'Por Habitación'
+      duration: ''
     },
     {
       id: 'paquete-intermedio',
       title: 'Paquete Intermedio',
-      price: '$750',
-      description: 'Servicio personalizado con dos propuestas decorativas, paleta detallada, plano 2D, reuniones de revisión y lista de compras recomendadas.',
+      price: 'Contáctanos para estimado GRATIS',
+      description: 'Ideal para quienes desean transformar un espacio con estilo y funcionalidad, contando con asesoría personalizada y dos propuestas de decoración para elegir la que mejor se adapte a su visión.',
       image: '/images/service4.jpg',
       tag: 'Recomendado',
-      duration: 'Por Habitación'
+      duration: ''
     },
     {
       id: 'paquete-premium',
       title: 'Paquete Premium',
-      price: '$1,150',
-      description: 'Diseño exclusivo y detallado con acompañamiento integral, render 3D profesional, guía de montaje y seguimiento personalizado del proyecto.',
+      price: 'Contáctanos para estimado GRATIS',
+      description: 'Orientado para quienes quieren un paquete exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada paso del proceso.',
       image: '/images/service5.jpg',
       tag: 'Premium',
-      duration: 'Por Habitación'
+      duration: ''
     }
   ];
 
@@ -189,14 +189,27 @@ const Services = () => {
         <div className="position-relative">
           <ServiceImage variant="top" src={service.image} />
         </div>
-        <Card.Body className="p-4">
+        <Card.Body className="d-flex flex-column p-4">
           <ServiceTitle>{service.title}</ServiceTitle>
-          <ServicePrice>{service.price} <small>({service.duration})</small></ServicePrice>
-          <Card.Text>{service.description}</Card.Text>
-          <ServiceButton as={Link} to={`/servicios/${service.id}`}>
-            <i className="bi bi-arrow-right-circle me-2"></i>
-            Ver Detalles
-          </ServiceButton>
+          <ServicePrice isLongPrice={service.price.includes('Contáctanos')}>{service.price} <small>{service.duration}</small></ServicePrice>
+          <Card.Text className="mb-3">{service.description}</Card.Text>
+          
+          <div className="mt-auto">
+            <Button 
+              as={Link} 
+              to={`/servicios/${service.id}`}
+              className="w-100 py-2 fw-semibold"
+              style={{ 
+                backgroundColor: 'transparent', 
+                borderColor: 'var(--primary-color)',
+                color: 'var(--primary-color)',
+                borderRadius: '8px'
+              }}
+            >
+              <i className="bi bi-eye me-2"></i>
+              Ver Detalles
+            </Button>
+          </div>
         </Card.Body>
       </ServiceCard>
     </Col>
@@ -212,19 +225,19 @@ const Services = () => {
         
         <CategoryContainer>
           <div className="d-flex justify-content-center mb-3">
-            <CategoryTitle>Servicios Online</CategoryTitle>
+            <CategoryTitle>Servicios de Asesoría Básica</CategoryTitle>
           </div>
           <Row className="g-4 justify-content-center">
-            {onlineServices.map(renderServiceCard)}
+            {asesoriaBasicaServices.map(renderServiceCard)}
           </Row>
         </CategoryContainer>
         
         <CategoryContainer>
           <div className="d-flex justify-content-center mb-3">
-            <CategoryTitle>Servicios Presenciales</CategoryTitle>
+            <CategoryTitle>Servicios de Asesoría Completa</CategoryTitle>
           </div>
           <Row className="g-4">
-            {presencialServices.map(renderServiceCard)}
+            {asesoriaCompletaServices.map(renderServiceCard)}
           </Row>
         </CategoryContainer>
       </Container>

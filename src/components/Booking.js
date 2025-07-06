@@ -373,6 +373,8 @@ const ErrorText = styled.div`
 `;
 
 const Booking = () => {
+  console.log("=== COMPONENTE BOOKING SE ESTÁ EJECUTANDO ===");
+  
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedService, setSelectedService] = useState(null);
@@ -384,6 +386,12 @@ const Booking = () => {
   const [bookedSlots, setBookedSlots] = useState([]);
   const formRef = useRef();
   
+  // Referencias para las secciones
+  const serviceSectionRef = useRef();
+  const dateTimeSectionRef = useRef();
+  const personalInfoSectionRef = useRef();
+  const projectDescriptionSectionRef = useRef();
+  
   const services = [
     {
       id: 'consulta-online-60',
@@ -392,7 +400,8 @@ const Booking = () => {
       description: 'Sesión de 60 minutos donde te asesoramos para crear un espacio armonioso y funcional que refleje tu personalidad y estilo.',
       image: '/images/service1.jpg',
       tag: 'Básico',
-      duration: '60 min'
+      duration: '60 min',
+      type: 'asesoria-basica'
     },
     {
       id: 'consulta-online-120',
@@ -401,40 +410,44 @@ const Booking = () => {
       description: 'Sesión extendida de 120 minutos para un asesoramiento más detallado sobre tendencias, estilos y decisiones para lograr un resultado impactante.',
       image: '/images/service2.jpg',
       tag: 'Completo',
-      duration: '120 min'
+      duration: '120 min',
+      type: 'asesoria-basica'
     },
     {
       id: 'paquete-esencial',
       title: 'Paquete Esencial',
-      price: '$450',
+      price: 'Estimado GRATIS',
       description: 'Transformación de una habitación con guía profesional que incluye reunión inicial, moodboard, paleta de colores y propuesta de distribución.',
       image: '/images/service3.jpg',
       tag: 'Popular',
-      duration: 'Por Habitación'
+      duration: 'Por Habitación',
+      type: 'asesoria-completa'
     },
     {
       id: 'paquete-intermedio',
       title: 'Paquete Intermedio',
-      price: '$750',
+      price: 'Estimado GRATIS',
       description: 'Servicio personalizado con dos propuestas decorativas, paleta detallada, plano 2D, reuniones de revisión y lista de compras recomendadas.',
       image: '/images/service4.jpg',
       tag: 'Recomendado',
-      duration: 'Por Habitación'
+      duration: 'Por Habitación',
+      type: 'asesoria-completa'
     },
     {
       id: 'paquete-premium',
       title: 'Paquete Premium',
-      price: '$1,150',
+      price: 'Estimado GRATIS',
       description: 'Diseño exclusivo y detallado con acompañamiento integral, render 3D profesional, guía de montaje y seguimiento personalizado del proyecto.',
       image: '/images/service5.jpg',
       tag: 'Premium',
-      duration: 'Por Habitación'
+      duration: 'Por Habitación',
+      type: 'asesoria-completa'
     }
   ];
   
   // Horarios disponibles predefinidos
-  const morningTimes = ['9:00', '10:00', '11:00'];
-  const afternoonTimes = ['14:00', '15:00', '16:00', '17:00'];
+  const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
+  const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
   
   // Cargar horarios ocupados al montar el componente
   useEffect(() => {
@@ -458,6 +471,16 @@ const Booking = () => {
     
     loadBookedSlots();
   }, []);
+
+  // Limpiar error cuando el usuario empiece a completar campos
+  useEffect(() => {
+    if (error && (error.includes('Falta completar') || error.includes('Faltan completar'))) {
+      // Si hay progreso en los campos, limpiar el error de validación
+      if (appointmentType || selectedService || selectedDate || selectedTime) {
+        setError(null);
+      }
+    }
+  }, [appointmentType, selectedService, selectedDate, selectedTime, error]);
   
   // Verificar si un horario está ocupado
   const isTimeSlotBooked = (date, time) => {
@@ -478,11 +501,34 @@ const Booking = () => {
   const handleServiceSelect = (service, setFieldValue) => {
     setSelectedService(service);
     setFieldValue('service', service.id);
+    
+    // Auto-scroll a la siguiente sección después de un pequeño delay
+    setTimeout(() => {
+      if (dateTimeSectionRef.current) {
+        dateTimeSectionRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }, 300);
   };
   
   const handleAppointmentTypeSelect = (type, setFieldValue) => {
     setAppointmentType(type);
     setFieldValue('appointmentType', type);
+    // Resetear el servicio seleccionado cuando se cambia el tipo de cita
+    setSelectedService(null);
+    setFieldValue('service', '');
+    
+    // Auto-scroll a la sección de servicios después de un pequeño delay
+    setTimeout(() => {
+      if (serviceSectionRef.current) {
+        serviceSectionRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }, 300);
   };
   
   const handleTimeSelect = (time, setFieldValue) => {
@@ -493,6 +539,16 @@ const Booking = () => {
     
     setSelectedTime(time);
     setFieldValue('time', time);
+    
+    // Auto-scroll a la siguiente sección después de un pequeño delay
+    setTimeout(() => {
+      if (personalInfoSectionRef.current) {
+        personalInfoSectionRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }, 300);
   };
   
   const formatDate = (date) => {
@@ -500,15 +556,15 @@ const Booking = () => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${month}/${day}/${year}`;
   };
   
   const validationSchema = Yup.object().shape({
+    appointmentType: Yup.string().required('Debes seleccionar un tipo de cita'),
+    service: Yup.string().required('Debes seleccionar un servicio'),
     name: Yup.string().required('El nombre es obligatorio'),
     email: Yup.string().email('Ingresa un correo electrónico válido').required('El correo electrónico es obligatorio'),
     phone: Yup.string().required('El teléfono es obligatorio'),
-    service: Yup.string().required('Debes seleccionar un servicio'),
-    appointmentType: Yup.string().required('Debes seleccionar un tipo de cita'),
     date: Yup.date().nullable().required('Debes seleccionar una fecha'),
     time: Yup.string().required('Debes seleccionar un horario').test(
       'not-booked',
@@ -522,17 +578,99 @@ const Booking = () => {
   });
   
   const initialValues = {
+    appointmentType: '',
+    service: '',
     name: '',
     email: '',
     phone: '',
     notes: '',
-    service: '',
-    appointmentType: '',
     date: null,
     time: ''
   };
   
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting, setTouched, setFieldError }) => {
+    // Marcar todos los campos como tocados para mostrar errores de validación
+    setTouched({
+      appointmentType: true,
+      service: true,
+      name: true,
+      email: true,
+      phone: true,
+      date: true,
+      time: true
+    });
+
+    // Validar campos requeridos manualmente y mostrar errores específicos
+    const validationErrors = {};
+    
+    if (!values.appointmentType) {
+      validationErrors.appointmentType = 'Debes seleccionar un tipo de cita';
+    }
+    if (!values.service) {
+      validationErrors.service = 'Debes seleccionar un servicio';
+    }
+    if (!values.name) {
+      validationErrors.name = 'El nombre es obligatorio';
+    }
+    if (!values.email) {
+      validationErrors.email = 'El correo electrónico es obligatorio';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      validationErrors.email = 'Ingresa un correo electrónico válido';
+    }
+    if (!values.phone) {
+      validationErrors.phone = 'El teléfono es obligatorio';
+    }
+    if (!values.date) {
+      validationErrors.date = 'Debes seleccionar una fecha';
+    }
+    if (!values.time) {
+      validationErrors.time = 'Debes seleccionar un horario';
+    }
+
+         // Si hay errores de validación, mostrarlos y detener el envío
+     if (Object.keys(validationErrors).length > 0) {
+       Object.keys(validationErrors).forEach(field => {
+         setFieldError(field, validationErrors[field]);
+       });
+       
+       // Crear mensaje específico sobre qué campos faltan
+       const missingFields = [];
+       if (!values.appointmentType) missingFields.push('tipo de cita');
+       if (!values.service) missingFields.push('servicio');
+       if (!values.date) missingFields.push('fecha');
+       if (!values.time) missingFields.push('horario');
+       if (!values.name) missingFields.push('nombre');
+       if (!values.email) missingFields.push('email');
+       if (!values.phone) missingFields.push('teléfono');
+       
+       let errorMessage = 'Faltan campos por completar: ';
+       if (missingFields.length === 1) {
+         errorMessage = `Falta completar: ${missingFields[0]}`;
+       } else if (missingFields.length === 2) {
+         errorMessage = `Faltan completar: ${missingFields[0]} y ${missingFields[1]}`;
+       } else {
+         errorMessage = `Faltan completar: ${missingFields.slice(0, -1).join(', ')} y ${missingFields[missingFields.length - 1]}`;
+       }
+       
+       setError(errorMessage + '. Por favor, completa la información requerida.');
+       
+       // Scroll al primer campo con error
+       setTimeout(() => {
+         if (!values.appointmentType) {
+           window.scrollTo({ top: 0, behavior: 'smooth' });
+         } else if (!values.service && serviceSectionRef.current) {
+           serviceSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+         } else if ((!values.date || !values.time) && dateTimeSectionRef.current) {
+           dateTimeSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+         } else if ((!values.name || !values.email || !values.phone) && personalInfoSectionRef.current) {
+           personalInfoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+         }
+       }, 100);
+      
+      setSubmitting(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
@@ -557,6 +695,7 @@ const Booking = () => {
         clientEmail: values.email,
         clientPhone: values.phone,
         service: serviceObj.title,
+        serviceDuration: serviceObj.duration,
         servicePrice: serviceObj.price,
         date: formatDate(values.date),
         time: values.time,
@@ -584,6 +723,7 @@ const Booking = () => {
         clientName: values.name,
         bookingDetails: {
           service: serviceObj.title,
+          duration: serviceObj.duration,
           date: formatDate(values.date),
           time: values.time,
           type: values.appointmentType,
@@ -666,31 +806,54 @@ const Booking = () => {
     return times.map(time => {
       const isBooked = isTimeSlotBooked(values.date, time);
       return (
-        <Badge
+        <button
           key={time}
-          bg={selectedTime === time ? "secondary" : isBooked ? "danger" : "light"}
-          text={selectedTime === time ? "white" : isBooked ? "white" : "dark"}
-          className={`mx-2 mb-2 py-2 px-3 ${!values.date ? 'opacity-50' : isBooked ? 'opacity-70' : 'cursor-pointer'}`}
+          type="button"
+          className={`btn btn-sm ${selectedTime === time ? '' : isBooked ? 'btn-danger' : ''}`}
           style={{ 
-            backgroundColor: selectedTime === time ? 'var(--secondary-color)' : 
-                             isBooked ? '#dc3545' : '',
-            borderColor: isBooked ? '#dc3545' : 'var(--secondary-color)',
-            border: selectedTime !== time && !isBooked ? '1px solid' : '',
-            cursor: isBooked ? 'not-allowed' : 'pointer'
+            minWidth: '65px',
+            opacity: !values.date ? 0.5 : isBooked ? 0.7 : 1,
+            cursor: isBooked || !values.date ? 'not-allowed' : 'pointer',
+            fontSize: '0.85rem',
+            backgroundColor: selectedTime === time ? 'var(--primary-color)' : 
+                             isBooked ? '#dc3545' : 'white',
+            borderColor: selectedTime === time ? 'var(--primary-color)' : 
+                         isBooked ? '#dc3545' : 'var(--primary-color)',
+            color: selectedTime === time ? 'white' : 
+                   isBooked ? 'white' : 'var(--primary-color)'
           }}
+          disabled={isBooked || !values.date}
           onClick={() => {
             if (values.date && !isBooked) {
               handleTimeSelect(time, setFieldValue);
-            } else if (isBooked) {
-              // Mostrar mensaje de que el horario está ocupado
-              alert('Este horario ya está ocupado. Por favor, selecciona otro horario.');
             }
           }}
         >
           {time} {isBooked && <i className="bi bi-lock-fill ms-1"></i>}
-        </Badge>
+        </button>
       );
     });
+  };
+
+  // Filtrar servicios según el tipo de cita seleccionado
+  const getFilteredServices = () => {
+    if (!appointmentType) return [];
+    return services.filter(service => service.type === appointmentType);
+  };
+
+  // Determinar qué secciones están habilitadas
+  const isServiceSectionEnabled = appointmentType !== '';
+  const isDateTimeSectionEnabled = selectedService !== null;
+  const isPersonalInfoSectionEnabled = selectedService !== null;
+  const isProjectDescriptionSectionEnabled = selectedService !== null;
+  const isSubmitEnabled = appointmentType && selectedService && selectedDate && selectedTime;
+
+  // Función para manejar el cambio de fecha
+  const handleDateChange = (date, setFieldValue) => {
+    setSelectedDate(date);
+    setFieldValue('date', date);
+    setSelectedTime('');
+    setFieldValue('time', '');
   };
 
   return (
@@ -702,9 +865,45 @@ const Booking = () => {
             <div className="position-absolute start-50 translate-middle-x" style={{ width: '80px', height: '3px', backgroundColor: 'var(--primary-color)', borderRadius: '2px', bottom: '-10px' }}></div>
           </h2>
           <p className="lead text-muted mt-4 col-md-8 mx-auto">
-            Selecciona el servicio, fecha y hora que prefieras para tu consulta de decoración de interiores.
+            Completa los siguientes pasos para agendar tu consulta de decoración de interiores.
           </p>
         </div>
+        
+        {/* Estilos CSS para personalizar el DatePicker */}
+        <style>
+          {`
+            .react-datepicker {
+              border: 1px solid var(--primary-color) !important;
+              border-radius: 8px !important;
+            }
+            .react-datepicker__header {
+              background-color: var(--primary-color) !important;
+              border-bottom: 1px solid var(--primary-color) !important;
+            }
+            .react-datepicker__current-month,
+            .react-datepicker__day-name {
+              color: white !important;
+            }
+            .react-datepicker__day--selected,
+            .react-datepicker__day--keyboard-selected {
+              background-color: var(--primary-color) !important;
+              color: white !important;
+            }
+            .react-datepicker__day:hover {
+              background-color: var(--primary-color) !important;
+              color: white !important;
+            }
+            .react-datepicker__navigation {
+              border: none !important;
+            }
+            .react-datepicker__navigation--previous {
+              border-right-color: white !important;
+            }
+            .react-datepicker__navigation--next {
+              border-left-color: white !important;
+            }
+          `}
+        </style>
         
         {isSubmitted ? (
           <Alert variant="success" className="p-4 text-center shadow-sm">
@@ -717,10 +916,14 @@ const Booking = () => {
             <p className="mb-4">Si tienes alguna pregunta, no dudes en contactarnos.</p>
             <div className="d-grid gap-2 col-md-6 mx-auto">
               <Button 
-                variant="primary" 
                 size="lg"
                 onClick={resetForm}
                 className="rounded-pill px-4 py-3"
+                style={{
+                  backgroundColor: 'var(--primary-color)',
+                  borderColor: 'var(--primary-color)',
+                  color: 'white'
+                }}
               >
                 <i className="bi bi-calendar-plus me-2"></i>
                 Hacer otra reserva
@@ -747,310 +950,422 @@ const Booking = () => {
             }) => (
               <Form onSubmit={handleSubmit} className="bg-white p-4 rounded-3 shadow-sm">
                 {error && (
-                  <Alert variant="danger" className="mb-4">
-                    <i className="bi bi-exclamation-triangle me-2"></i>
+                  <Alert variant="danger" className="mb-4 border-0 shadow-sm">
+                    <div className="d-flex align-items-center">
+                      <i className="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                      <div>
+                        <strong>Error de validación:</strong><br/>
                     {error}
+                      </div>
+                    </div>
                   </Alert>
                 )}
                 
+                {/* PASO 1: Tipo de Cita - SIEMPRE CON COLOR */}
                 <Card className="border-0 shadow-sm mb-4">
-                  <Card.Header className="bg-light border-0 py-3">
+                  <Card.Header className="py-3" style={{ 
+                    backgroundColor: 'var(--primary-color)', 
+                    color: 'white' 
+                  }}>
                     <div className="d-flex align-items-center">
-                      <i className="bi bi-grid-3x3-gap fs-4 me-3" style={{ color: 'var(--primary-color)' }}></i>
-                      <h4 className="m-0 fw-semibold" style={{ color: 'var(--primary-color)' }}>Selecciona un Servicio</h4>
-                    </div>
-                  </Card.Header>
-                  <Card.Body className="p-4">
-                    <Row xs={1} md={4} className="g-4">
-                      {services.map(service => (
-                        <Col key={service.id} className="d-flex">
-                          <Card 
-                            className={`card-hover w-100 ${selectedService && selectedService.id === service.id ? 'border-secondary bg-light' : 'border'}`}
-                            onClick={() => handleServiceSelect(service, setFieldValue)}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <Card.Header 
-                              className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'bg-secondary text-white' : 'bg-light'}`}
-                              style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                              <h5 className="m-0">{service.title}</h5>
-                            </Card.Header>
-                            <Card.Body className="text-center d-flex flex-column">
-                              <h3 className="text-secondary fw-bold mb-3">{service.price}</h3>
-                              <Card.Text className="flex-grow-1" style={{ height: '100px', overflow: 'auto' }}>{service.description}</Card.Text>
-                            </Card.Body>
-                          </Card>
-                        </Col>
-                      ))}
-                    </Row>
-                    {touched.service && errors.service && (
-                      <ErrorText className="text-center mt-3">
-                        <i className="bi bi-exclamation-circle me-1"></i>
-                        {errors.service}
-                      </ErrorText>
-                    )}
-                  </Card.Body>
-                </Card>
-                
-                <Card className="border-0 shadow-sm mb-4">
-                  <Card.Header className="bg-light border-0 py-3">
-                    <div className="d-flex align-items-center">
-                      <i className="bi bi-calendar2-check fs-4 me-3" style={{ color: 'var(--primary-color)' }}></i>
-                      <h4 className="m-0 fw-semibold" style={{ color: 'var(--primary-color)' }}>Tipo de Cita</h4>
+                      <i className="bi bi-calendar2-check fs-5 me-3"></i>
+                      <h5 className="m-0 fw-semibold">¿Cómo prefieres tu cita?</h5>
+                      {appointmentType && <i className="bi bi-check-circle-fill ms-auto"></i>}
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
                     <Row xs={1} md={2} className="g-4">
                       <Col className="d-flex">
                         <Card 
-                          className={`card-hover w-100 text-center ${appointmentType === 'presencial' ? 'border-secondary bg-light' : 'border'}`}
-                          onClick={() => handleAppointmentTypeSelect('presencial', setFieldValue)}
-                          style={{ cursor: 'pointer' }}
+                          className={`w-100 text-center border ${appointmentType === 'asesoria-completa' ? 'bg-light' : ''}`}
+                          onClick={() => handleAppointmentTypeSelect('asesoria-completa', setFieldValue)}
+                          style={{ 
+                            cursor: 'pointer', 
+                            transition: 'all 0.3s ease',
+                            borderColor: appointmentType === 'asesoria-completa' ? 'var(--primary-color)' : '#dee2e6',
+                            borderWidth: appointmentType === 'asesoria-completa' ? '2px' : '1px'
+                          }}
                         >
-                          <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '200px' }}>
-                            <div className="mb-3 text-secondary">
-                              <i className="bi bi-building fs-1"></i>
+                          <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
+                            <div className="mb-2" style={{ color: 'var(--primary-color)' }}>
+                              <i className="bi bi-star-fill fs-1"></i>
                             </div>
-                            <Card.Title className="fw-bold">Presencial</Card.Title>
-                            <Card.Text>Visita a nuestro estudio (medio día)</Card.Text>
+                            <Card.Title className="h6 fw-bold mb-1">Asesoría Completa</Card.Title>
+                            <Card.Text className="text-muted small">Servicio integral y personalizado</Card.Text>
                           </Card.Body>
                         </Card>
                       </Col>
                       <Col className="d-flex">
                         <Card 
-                          className={`card-hover w-100 text-center ${appointmentType === 'online' ? 'border-secondary bg-light' : 'border'}`}
-                          onClick={() => handleAppointmentTypeSelect('online', setFieldValue)}
-                          style={{ cursor: 'pointer' }}
+                          className={`w-100 text-center border ${appointmentType === 'asesoria-basica' ? 'bg-light' : ''}`}
+                          onClick={() => handleAppointmentTypeSelect('asesoria-basica', setFieldValue)}
+                          style={{ 
+                            cursor: 'pointer', 
+                            transition: 'all 0.3s ease',
+                            borderColor: appointmentType === 'asesoria-basica' ? 'var(--primary-color)' : '#dee2e6',
+                            borderWidth: appointmentType === 'asesoria-basica' ? '2px' : '1px'
+                          }}
                         >
-                          <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '200px' }}>
-                            <div className="mb-3 text-secondary">
-                              <i className="bi bi-laptop fs-1"></i>
+                          <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
+                            <div className="mb-2" style={{ color: 'var(--primary-color)' }}>
+                              <i className="bi bi-chat-dots fs-1"></i>
                             </div>
-                            <Card.Title className="fw-bold">Online</Card.Title>
-                            <Card.Text>Videollamada (1 hora)</Card.Text>
+                            <Card.Title className="h6 fw-bold mb-1">Asesoría Básica</Card.Title>
+                            <Card.Text className="text-muted small">Consulta especializada online</Card.Text>
                           </Card.Body>
                         </Card>
                       </Col>
                     </Row>
                     {touched.appointmentType && errors.appointmentType && (
-                      <ErrorText className="text-center mt-3">
+                      <div className="text-danger text-center mt-3 small">
                         <i className="bi bi-exclamation-circle me-1"></i>
                         {errors.appointmentType}
-                      </ErrorText>
+                      </div>
+                    )}
+                  </Card.Body>
+                </Card>
+
+                {/* PASO 2: Servicios - COLOR SOLO SI PASO 1 ESTÁ COMPLETO */}
+                <Card 
+                  ref={serviceSectionRef}
+                  className={`border-0 shadow-sm mb-4 ${!isServiceSectionEnabled ? 'opacity-50' : ''}`}
+                >
+                  <Card.Header className="py-3" style={{ 
+                    backgroundColor: appointmentType ? 'var(--primary-color)' : '#e9ecef', 
+                    color: appointmentType ? 'white' : '#6c757d' 
+                  }}>
+                    <div className="d-flex align-items-center">
+                      <i className="bi bi-grid-3x3-gap fs-5 me-3"></i>
+                      <h5 className="m-0 fw-semibold">
+                        {appointmentType === 'asesoria-basica' ? 'Servicios de Asesoría Básica' : appointmentType === 'asesoria-completa' ? 'Servicios de Asesoría Completa' : 'Servicios'}
+                      </h5>
+                      {selectedService && <i className="bi bi-check-circle-fill ms-auto"></i>}
+                    </div>
+                  </Card.Header>
+                  <Card.Body className="p-4">
+                    {!isServiceSectionEnabled ? (
+                      <div className="text-center py-4 text-muted">
+                        <i className="bi bi-lock fs-1 mb-2 d-block opacity-50"></i>
+                        <p className="small mb-0">Selecciona el tipo de cita para continuar</p>
+                      </div>
+                    ) : (
+                      <>
+                        <Row xs={1} md={appointmentType === 'asesoria-basica' ? 2 : 3} className="g-3">
+                          {getFilteredServices().map(service => (
+                            <Col key={service.id} className="d-flex">
+                              <Card 
+                                className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
+                                onClick={() => handleServiceSelect(service, setFieldValue)}
+                                style={{ 
+                                  cursor: 'pointer', 
+                                  transition: 'all 0.3s ease',
+                                  borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
+                                  borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                                }}
+                              >
+                                <Card.Header 
+                                  className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
+                                  style={{ 
+                                    backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#f8f9fa',
+                                    minHeight: '70px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    flexDirection: 'column' 
+                                  }}
+                                >
+                                  <h6 className="m-0">{service.title}</h6>
+                                  {service.duration && (
+                                    <small className="mt-1 opacity-75">({service.duration})</small>
+                                  )}
+                                </Card.Header>
+                                <Card.Body className="text-center p-3">
+                                  <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
+                                  <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
+                                  {service.tag && (
+                                    <span 
+                                      className="badge mt-2"
+                                      style={{ 
+                                        fontSize: '0.7rem', 
+                                        backgroundColor: 'var(--primary-color)', 
+                                        color: 'white',
+                                        padding: '0.25rem 0.5rem'
+                                      }}
+                                    >
+                                      {service.tag}
+                                    </span>
+                                  )}
+                                </Card.Body>
+                              </Card>
+                            </Col>
+                          ))}
+                        </Row>
+                        {touched.service && errors.service && (
+                          <div className="text-danger text-center mt-3 small">
+                            <i className="bi bi-exclamation-circle me-1"></i>
+                            {errors.service}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </Card.Body>
+                </Card>
+
+                {/* PASO 3: Fecha y Hora - COLOR SOLO SI PASO 2 ESTÁ COMPLETO */}
+                <Card 
+                  ref={dateTimeSectionRef}
+                  className={`border-0 shadow-sm mb-4 ${!isDateTimeSectionEnabled ? 'opacity-50' : ''}`}
+                >
+                  <Card.Header className="py-3" style={{ 
+                    backgroundColor: selectedService ? 'var(--primary-color)' : '#e9ecef', 
+                    color: selectedService ? 'white' : '#6c757d' 
+                  }}>
+                    <div className="d-flex align-items-center">
+                      <i className="bi bi-calendar-date fs-5 me-3"></i>
+                      <h5 className="m-0 fw-semibold">Fecha y Hora</h5>
+                      {(selectedDate && selectedTime) && <i className="bi bi-check-circle-fill ms-auto"></i>}
+                    </div>
+                  </Card.Header>
+                  <Card.Body className="p-4">
+                    {!isDateTimeSectionEnabled ? (
+                      <div className="text-center py-4 text-muted">
+                        <i className="bi bi-lock fs-1 mb-2 d-block opacity-50"></i>
+                        <p className="small mb-0">Selecciona un servicio para continuar</p>
+                      </div>
+                    ) : (
+                      <Row className="justify-content-center">
+                        <Col lg={5} md={6} className="mb-4 mb-lg-0">
+                          <div className="text-center">
+                            <h6 className="mb-3 d-flex align-items-center justify-content-center">
+                              <i className="bi bi-calendar3 me-2" style={{ color: 'var(--primary-color)' }}></i>
+                              Selecciona una fecha
+                            </h6>
+                            <div className="d-flex justify-content-center">
+                              <DatePicker
+                                selected={values.date}
+                                onChange={(date) => handleDateChange(date, setFieldValue)}
+                                minDate={new Date()}
+                                dateFormat="MM/dd/yyyy"
+                                placeholderText="Selecciona una fecha"
+                                inline
+                              />
+                            </div>
+                            {touched.date && errors.date && (
+                              <div className="text-danger text-center mt-2 small">
+                                <i className="bi bi-exclamation-circle me-1"></i>
+                                {errors.date}
+                              </div>
+                            )}
+                          </div>
+                        </Col>
+                        
+                        <Col lg={5} md={6}>
+                          <div className="text-center">
+                            <h6 className="mb-3 d-flex align-items-center justify-content-center">
+                              <i className="bi bi-clock me-2" style={{ color: 'var(--primary-color)' }}></i>
+                              Horarios disponibles
+                            </h6>
+                            
+                            {loadingSlots ? (
+                              <div className="text-center py-4">
+                                <Spinner animation="border" style={{ color: 'var(--primary-color)' }} size="sm" />
+                                <p className="mt-2 text-muted small">Cargando horarios...</p>
+                              </div>
+                            ) : (
+                              <div className="text-center">
+                                <div className="mb-4">
+                                  <small className="fw-semibold text-muted d-block mb-3">MAÑANA</small>
+                                  <div className="d-flex flex-wrap justify-content-center gap-2">
+                                    {renderTimeSlots(morningTimes, values, setFieldValue)}
+                                  </div>
+                                </div>
+                                
+                                <div className="mb-3">
+                                  <small className="fw-semibold text-muted d-block mb-3">TARDE</small>
+                                  <div className="d-flex flex-wrap justify-content-center gap-2">
+                                    {renderTimeSlots(afternoonTimes, values, setFieldValue)}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {!values.date && (
+                              <p className="text-muted text-center mt-3 small">
+                                <i className="bi bi-info-circle me-1"></i>
+                                Selecciona una fecha para ver horarios
+                              </p>
+                            )}
+                            
+                            {touched.time && errors.time && values.date && (
+                              <div className="text-danger text-center mt-2 small">
+                                <i className="bi bi-exclamation-circle me-1"></i>
+                                {errors.time}
+                              </div>
+                            )}
+                          </div>
+                        </Col>
+                      </Row>
                     )}
                   </Card.Body>
                 </Card>
                 
-                <Card className="border-0 shadow-sm mb-4">
-                  <Card.Header className="bg-light border-0 py-3">
+                {/* PASO 4: Información Personal - COLOR SOLO SI PASO 3 ESTÁ COMPLETO */}
+                <Card 
+                  ref={personalInfoSectionRef}
+                  className={`border-0 shadow-sm mb-4 ${!isPersonalInfoSectionEnabled ? 'opacity-50' : ''}`}
+                >
+                  <Card.Header className="py-3" style={{ 
+                    backgroundColor: (selectedDate && selectedTime) ? 'var(--primary-color)' : '#e9ecef', 
+                    color: (selectedDate && selectedTime) ? 'white' : '#6c757d' 
+                  }}>
                     <div className="d-flex align-items-center">
-                      <i className="bi bi-calendar-date fs-4 me-3" style={{ color: 'var(--primary-color)' }}></i>
-                      <h4 className="m-0 fw-semibold" style={{ color: 'var(--primary-color)' }}>Fecha y Hora</h4>
+                      <i className="bi bi-person fs-5 me-3"></i>
+                      <h5 className="m-0 fw-semibold">Información Personal</h5>
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
-                    <Row>
-                      <Col md={6} className="mb-4 mb-md-0">
-                        <h5 className="mb-3 d-flex align-items-center justify-content-center">
-                          <i className="bi bi-calendar-date me-2" style={{ color: 'var(--primary-color)' }}></i>
-                          Fecha
-                        </h5>
-                        <div className="d-flex justify-content-center align-items-center">
-                          <DatePicker
-                            selected={values.date}
-                            onChange={(date) => {
-                              setSelectedDate(date);
-                              setFieldValue('date', date);
-                              // Resetear la hora seleccionada cuando se cambia la fecha
-                              setSelectedTime('');
-                              setFieldValue('time', '');
-                            }}
-                            minDate={new Date()}
-                            dateFormat="dd/MM/yyyy"
-                            placeholderText="Selecciona una fecha"
-                            inline
-                          />
-                        </div>
-                        {touched.date && errors.date && (
-                          <ErrorText className="text-center mt-2">
-                            <i className="bi bi-exclamation-circle me-1"></i>
-                            {errors.date}
-                          </ErrorText>
-                        )}
-                      </Col>
-                      
-                      <Col md={6}>
-                        <h5 className="mb-3 d-flex align-items-center justify-content-center">
-                          <i className="bi bi-clock me-2" style={{ color: 'var(--primary-color)' }}></i>
-                          Horarios Disponibles
-                        </h5>
+                    {!isPersonalInfoSectionEnabled ? (
+                      <div className="text-center py-4 text-muted">
+                        <i className="bi bi-lock fs-1 mb-2 d-block opacity-50"></i>
+                        <p className="small mb-0">Completa los pasos anteriores para continuar</p>
+                      </div>
+                    ) : (
+                      <Row className="g-3">
+                        <Col md={6}>
+                          <Form.Group>
+                            <Form.Label className="fw-semibold small">
+                              <i className="bi bi-person me-2" style={{ color: 'var(--primary-color)' }}></i>
+                              Nombre Completo
+                            </Form.Label>
+                            <Form.Control 
+                              type="text" 
+                              name="name" 
+                              value={values.name}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              placeholder="Tu nombre completo"
+                              className={`${touched.name && errors.name ? 'is-invalid' : ''}`}
+                              style={{
+                                borderColor: touched.name && !errors.name && values.name ? 'var(--primary-color)' : ''
+                              }}
+                            />
+                            {touched.name && errors.name && (
+                              <div className="text-danger mt-1 small">
+                                <i className="bi bi-exclamation-circle me-1"></i>
+                                {errors.name}
+                              </div>
+                            )}
+                          </Form.Group>
+                        </Col>
                         
-                        {loadingSlots ? (
-                          <div className="text-center py-4">
-                            <Spinner animation="border" variant="secondary" />
-                            <p className="mt-2">Cargando horarios disponibles...</p>
-                          </div>
-                        ) : (
-                          <div className="text-center">
-                            <p className="fw-semibold mb-2">Mañana</p>
-                            <div className="d-flex flex-wrap justify-content-center mb-4">
-                              {renderTimeSlots(morningTimes, values, setFieldValue)}
-                            </div>
-                            
-                            <p className="fw-semibold mb-2">Tarde</p>
-                            <div className="d-flex flex-wrap justify-content-center">
-                              {renderTimeSlots(afternoonTimes, values, setFieldValue)}
-                            </div>
-                          </div>
-                        )}
+                        <Col md={6}>
+                          <Form.Group>
+                            <Form.Label className="fw-semibold small">
+                              <i className="bi bi-envelope me-2" style={{ color: 'var(--primary-color)' }}></i>
+                              Email
+                            </Form.Label>
+                            <Form.Control 
+                              type="email" 
+                              name="email" 
+                              value={values.email}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              placeholder="correo@ejemplo.com"
+                              className={`${touched.email && errors.email ? 'is-invalid' : ''}`}
+                              style={{
+                                borderColor: touched.email && !errors.email && values.email ? 'var(--primary-color)' : ''
+                              }}
+                            />
+                            {touched.email && errors.email && (
+                              <div className="text-danger mt-1 small">
+                                <i className="bi bi-exclamation-circle me-1"></i>
+                                {errors.email}
+                              </div>
+                            )}
+                          </Form.Group>
+                        </Col>
                         
-                        {!values.date && (
-                          <p className="text-muted text-center mt-3 small">
-                            <i className="bi bi-info-circle me-1"></i>
-                            Selecciona una fecha para habilitar los horarios
-                          </p>
-                        )}
-                        
-                        {values.date && (
-                          <div className="text-center mt-3">
-                            <Badge bg="light" text="dark" className="me-2 py-1 px-2">
-                              <i className="bi bi-circle-fill text-secondary me-1"></i> Disponible
-                            </Badge>
-                            <Badge bg="danger" text="white" className="py-1 px-2">
-                              <i className="bi bi-lock-fill me-1"></i> Ocupado
-                            </Badge>
-                          </div>
-                        )}
-                        
-                        {touched.time && errors.time && values.date && (
-                          <ErrorText className="text-center mt-2">
-                            <i className="bi bi-exclamation-circle me-1"></i>
-                            {errors.time}
-                          </ErrorText>
-                        )}
-                      </Col>
-                    </Row>
+                        <Col xs={12}>
+                          <Form.Group>
+                            <Form.Label className="fw-semibold small">
+                              <i className="bi bi-telephone me-2" style={{ color: 'var(--primary-color)' }}></i>
+                              Teléfono
+                            </Form.Label>
+                            <Form.Control 
+                              type="tel" 
+                              name="phone" 
+                              value={values.phone}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              placeholder="Tu número de contacto"
+                              className={`${touched.phone && errors.phone ? 'is-invalid' : ''}`}
+                              style={{
+                                borderColor: touched.phone && !errors.phone && values.phone ? 'var(--primary-color)' : ''
+                              }}
+                            />
+                            {touched.phone && errors.phone && (
+                              <div className="text-danger mt-1 small">
+                                <i className="bi bi-exclamation-circle me-1"></i>
+                                {errors.phone}
+                              </div>
+                            )}
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    )}
                   </Card.Body>
                 </Card>
                 
-                <Card className="border-0 shadow-sm mb-4">
-                  <Card.Header className="bg-light border-0 py-3">
+                {/* PASO 5: Descripción del Proyecto - COLOR SOLO SI PASO 4 ESTÁ COMPLETO */}
+                <Card 
+                  ref={projectDescriptionSectionRef}
+                  className={`border-0 shadow-sm mb-4 ${!isProjectDescriptionSectionEnabled ? 'opacity-50' : ''}`}
+                >
+                  <Card.Header className="py-3" style={{ 
+                    backgroundColor: (values.name && values.email && values.phone) ? 'var(--primary-color)' : '#e9ecef', 
+                    color: (values.name && values.email && values.phone) ? 'white' : '#6c757d' 
+                  }}>
                     <div className="d-flex align-items-center">
-                      <i className="bi bi-person-vcard fs-4 me-3" style={{ color: 'var(--primary-color)' }}></i>
-                      <h4 className="m-0 fw-semibold" style={{ color: 'var(--primary-color)' }}>Información Personal</h4>
+                      <i className="bi bi-chat-text fs-5 me-3"></i>
+                      <h5 className="m-0 fw-semibold">Descripción del Proyecto</h5>
+                      <small className="ms-2 opacity-75">(Opcional)</small>
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
-                    <Row className="mb-3">
-                      <Col md={6} className="mb-3 mb-md-0">
-                        <Form.Group>
-                          <Form.Label className="fw-semibold d-flex align-items-center">
-                            <i className="bi bi-person me-2" style={{ color: 'var(--primary-color)' }}></i>
-                            Nombre Completo
-                          </Form.Label>
-                          <Form.Control 
-                            type="text" 
-                            name="name" 
-                            value={values.name}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="Ingresa tu nombre completo"
-                            className={`py-2 ${touched.name && errors.name ? 'is-invalid' : ''}`}
-                          />
-                          {touched.name && errors.name && (
-                            <ErrorText>
-                              <i className="bi bi-exclamation-circle me-1"></i>
-                              {errors.name}
-                            </ErrorText>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      
-                      <Col md={6}>
-                        <Form.Group>
-                          <Form.Label className="fw-semibold d-flex align-items-center">
-                            <i className="bi bi-envelope me-2" style={{ color: 'var(--primary-color)' }}></i>
-                            Email
-                          </Form.Label>
-                          <Form.Control 
-                            type="email" 
-                            name="email" 
-                            value={values.email}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="correo@ejemplo.com"
-                            className={`py-2 ${touched.email && errors.email ? 'is-invalid' : ''}`}
-                          />
-                          {touched.email && errors.email && (
-                            <ErrorText>
-                              <i className="bi bi-exclamation-circle me-1"></i>
-                              {errors.email}
-                            </ErrorText>
-                          )}
-                        </Form.Group>
-                      </Col>
-                    </Row>
-                    
-                    <Row>
-                      <Col>
-                        <Form.Group>
-                          <Form.Label className="fw-semibold d-flex align-items-center">
-                            <i className="bi bi-telephone me-2" style={{ color: 'var(--primary-color)' }}></i>
-                            Teléfono
-                          </Form.Label>
-                          <Form.Control 
-                            type="tel" 
-                            name="phone" 
-                            value={values.phone}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="Tu número de contacto"
-                            className={`py-2 ${touched.phone && errors.phone ? 'is-invalid' : ''}`}
-                          />
-                          {touched.phone && errors.phone && (
-                            <ErrorText>
-                              <i className="bi bi-exclamation-circle me-1"></i>
-                              {errors.phone}
-                            </ErrorText>
-                          )}
-                        </Form.Group>
-                      </Col>
-                    </Row>
+                    {!isProjectDescriptionSectionEnabled ? (
+                      <div className="text-center py-4 text-muted">
+                        <i className="bi bi-lock fs-1 mb-2 d-block opacity-50"></i>
+                        <p className="small mb-0">Completa los pasos anteriores para continuar</p>
+                      </div>
+                    ) : (
+                      <Form.Group>
+                        <Form.Label className="fw-semibold small">
+                          <i className="bi bi-pencil-square me-2" style={{ color: 'var(--primary-color)' }}></i>
+                          Cuéntanos sobre tu proyecto
+                        </Form.Label>
+                        <Form.Control 
+                          as="textarea" 
+                          rows={3}
+                          name="notes" 
+                          value={values.notes}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          placeholder="Describe tu proyecto, necesidades específicas o ideas..."
+                          style={{ 
+                            resize: 'vertical',
+                            borderColor: touched.notes && values.notes ? 'var(--primary-color)' : ''
+                          }}
+                        />
+                      </Form.Group>
+                    )}
                   </Card.Body>
                 </Card>
                 
-                <Card className="border-0 shadow-sm mb-4">
-                  <Card.Header className="bg-light border-0 py-3">
-                    <div className="d-flex align-items-center">
-                      <i className="bi bi-chat-square-text fs-4 me-3" style={{ color: 'var(--primary-color)' }}></i>
-                      <h4 className="m-0 fw-semibold" style={{ color: 'var(--primary-color)' }}>Descripción del Proyecto</h4>
-                    </div>
-                  </Card.Header>
-                  <Card.Body className="p-4">
-                    <Form.Group>
-                      <Form.Label className="fw-semibold d-flex align-items-center">
-                        <i className="bi bi-pencil-square me-2" style={{ color: 'var(--primary-color)' }}></i>
-                        Cuéntanos más sobre tu proyecto o cualquier detalle que debamos saber
-                      </Form.Label>
-                      <Form.Control 
-                        as="textarea" 
-                        rows={6}
-                        name="notes" 
-                        value={values.notes}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="Describe tu proyecto, necesidades específicas, ideas o cualquier detalle importante que debamos conocer para ayudarte mejor."
-                        className="py-2"
-                        style={{ resize: 'vertical' }}
-                      />
-                    </Form.Group>
-                  </Card.Body>
-                </Card>
-                
+                {/* Botón de envío */}
                 <div className="text-center mt-4">
                   <Button 
                     type="submit"
-                    className="rounded-pill px-5 py-3 fw-semibold btn-shine"
+                    className="rounded-pill px-4 py-2 fw-semibold"
                     style={{ 
                       backgroundColor: 'var(--primary-color)', 
                       borderColor: 'var(--primary-color)',
@@ -1071,14 +1386,15 @@ const Booking = () => {
                     )}
                   </Button>
                   
-                  {!isValid && Object.keys(touched).length > 0 && (
-                    <div className="mt-3">
-                      <Alert variant="warning" className="py-2 px-3 d-inline-block">
-                        <i className="bi bi-exclamation-triangle me-2"></i>
-                        Por favor, completa todos los campos requeridos
-                      </Alert>
+                    <div className="mt-2">
+                      <small className="text-muted">
+                        <i className="bi bi-info-circle me-1"></i>
+                      {isSubmitEnabled 
+                        ? 'Haz clic en "Confirmar Reserva" para proceder'
+                        : 'Completa los campos requeridos y luego confirma tu reserva'
+                      }
+                      </small>
                     </div>
-                  )}
                 </div>
               </Form>
             )}

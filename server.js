@@ -7,6 +7,9 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Definir la URL base pública para los enlaces de confirmación
+const BASE_URL = 'https://landing-page-534b.onrender.com';
+
 // Configuración del transportador de email - Usar siempre credenciales reales
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
@@ -118,7 +121,11 @@ app.post('/api/send-contact-email', async (req, res) => {
 
 // API para enviar email de confirmación de reserva
 app.post('/api/send-booking-email', async (req, res) => {
-  const { clientEmail, clientName, bookingDetails, confirmUrl, rejectUrl } = req.body;
+  const { clientEmail, clientName, bookingDetails } = req.body;
+  // Usar BASE_URL para los enlaces
+  const bookingId = bookingDetails.id || 'id';
+  const confirmUrl = `${BASE_URL}/confirm-booking?id=${bookingId}&action=confirm`;
+  const rejectUrl = `${BASE_URL}/confirm-booking?id=${bookingId}&action=reject`;
   
   try {
     // Email a la empresa con opciones para confirmar/rechazar

@@ -12,6 +12,7 @@ const ServicesPage = () => {
       image: '/images/service1.jpg',
       tag: 'Básico',
       duration: '60 min',
+      type: 'asesoria-basica',
       features: ['Asesoría personalizada en tiempo real', 'Recomendaciones de color y estilo', 'Sugerencias de distribución']
     },
     {
@@ -22,37 +23,41 @@ const ServicesPage = () => {
       image: '/images/service2.jpg',
       tag: 'Completo',
       duration: '120 min',
+      type: 'asesoria-basica',
       features: ['Análisis profundo del espacio', 'Planificación completa', 'Recomendaciones detalladas']
     },
     {
       id: 'paquete-esencial',
       title: 'Paquete Esencial',
-      price: '$450',
-      description: 'Transformación de una habitación con guía profesional que incluye reunión inicial, moodboard, paleta de colores y propuesta de distribución.',
+      price: 'Contáctanos para estimado GRATIS',
+      description: 'Ideal para quienes quieren una guía clara y profesional para transformar un espacio con estilo, sin complicaciones.',
       image: '/images/service3.jpg',
       tag: 'Popular',
-      duration: 'Por Habitación',
-      features: ['Moodboard digital', 'Paleta de colores', 'Propuesta de distribución']
+      duration: '',
+      type: 'asesoria-completa',
+      features: ['Reunión inicial (60 min)', 'Moodboard digital', 'Paleta de colores', 'Lista de recomendaciones', 'PDF de presentación final']
     },
     {
       id: 'paquete-intermedio',
       title: 'Paquete Intermedio',
-      price: '$750',
-      description: 'Servicio personalizado con dos propuestas decorativas, paleta detallada, plano 2D, reuniones de revisión y lista de compras recomendadas.',
+      price: 'Contáctanos para estimado GRATIS',
+      description: 'Ideal para quienes desean transformar un espacio con estilo y funcionalidad, contando con asesoría personalizada y dos propuestas de decoración para elegir la que mejor se adapte a su visión.',
       image: '/images/service4.jpg',
       tag: 'Recomendado',
-      duration: 'Por Habitación',
-      features: ['Dos moodboards por área', 'Plano 2D a escala', 'Lista de compras detallada']
+      duration: '',
+      type: 'asesoria-completa',
+      features: ['Dos moodboards por área', 'Plano 2D a escala', 'Reunión de revisión', 'Lista de compras detallada']
     },
     {
       id: 'paquete-premium',
       title: 'Paquete Premium',
-      price: '$1,150',
-      description: 'Diseño exclusivo y detallado con acompañamiento integral, render 3D profesional, guía de montaje y seguimiento personalizado del proyecto.',
+      price: 'Contáctanos para estimado GRATIS',
+      description: 'Orientado para quienes quieren un paquete exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada paso del proceso.',
       image: '/images/service5.jpg',
       tag: 'Premium',
-      duration: 'Por Habitación',
-      features: ['Render 3D profesional', 'Guía de montaje', 'Seguimiento personalizado']
+      duration: '',
+      type: 'asesoria-completa',
+      features: ['Render 3D profesional', 'Acompañamiento integral', 'Atención preferente', 'Seguimiento personalizado']
     }
   ];
 
@@ -69,9 +74,9 @@ const ServicesPage = () => {
         </div>
         
         <div className="mb-5">
-          <h2 className="text-center mb-4">Servicios Online</h2>
+          <h2 className="text-center mb-4">Servicios de Asesoría Básica</h2>
           <Row className="g-4 justify-content-center">
-            {services.filter(service => service.id.includes('online')).map((service) => (
+            {services.filter(service => service.type === 'asesoria-basica').map((service) => (
               <Col key={service.id} md={6} lg={5}>
                 <Card className="h-100 border-0 shadow-sm transition-all">
                   <div className="position-relative">
@@ -91,10 +96,13 @@ const ServicesPage = () => {
                       {service.title}
                     </Card.Title>
                     <div 
-                      className="fw-bold mb-3 fs-5"
-                      style={{ color: 'var(--secondary-color)' }}
+                      className="fw-bold mb-3"
+                      style={{ 
+                        color: 'var(--secondary-color)',
+                        fontSize: service.price.includes('Contáctanos') ? '1.1rem' : '1.25rem'
+                      }}
                     >
-                      {service.price} <small className="text-muted fs-6">({service.duration})</small>
+                      {service.price} <small className="text-muted fs-6">{service.duration}</small>
                     </div>
                     <Card.Text className="mb-3">{service.description}</Card.Text>
                     
@@ -135,9 +143,9 @@ const ServicesPage = () => {
         </div>
         
         <div className="mb-5">
-          <h2 className="text-center mb-4">Servicios Presenciales</h2>
+          <h2 className="text-center mb-4">Servicios de Asesoría Completa</h2>
           <Row className="g-4">
-            {services.filter(service => !service.id.includes('online')).map((service) => (
+            {services.filter(service => service.type === 'asesoria-completa').map((service) => (
               <Col key={service.id} md={6} lg={4}>
                 <Card className="h-100 border-0 shadow-sm transition-all">
                   <div className="position-relative">
@@ -157,10 +165,13 @@ const ServicesPage = () => {
                       {service.title}
                     </Card.Title>
                     <div 
-                      className="fw-bold mb-3 fs-5"
-                      style={{ color: 'var(--secondary-color)' }}
+                      className="fw-bold mb-3"
+                      style={{ 
+                        color: 'var(--secondary-color)',
+                        fontSize: service.price.includes('Contáctanos') ? '1.1rem' : '1.25rem'
+                      }}
                     >
-                      {service.price} <small className="text-muted fs-6">({service.duration})</small>
+                      {service.price} <small className="text-muted fs-6">{service.duration}</small>
                     </div>
                     <Card.Text className="mb-3">{service.description}</Card.Text>
                     

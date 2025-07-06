@@ -301,7 +301,7 @@ const About = () => {
         
         <AboutContainer>
           <SectionTitle>
-            <h2>Sobre Nosotros</h2>
+            <h2>Sobre Nosotras</h2>
             <p>Conoce más sobre nuestro equipo y nuestra pasión por transformar espacios en hogares con personalidad</p>
           </SectionTitle>
           
@@ -318,12 +318,15 @@ const About = () => {
                   <strong>Convertimos tu hogar en tu lugar favorito.</strong>
                 </p>
                 <ReadMoreButton to="/nosotros">
-                  Conoce más sobre nosotros <i className="bi bi-arrow-right"></i>
+                  Conoce más sobre nosotras <i className="bi bi-arrow-right"></i>
                 </ReadMoreButton>
               </AboutText>
             </Col>
             <Col lg={6}>
-              <AboutImage style={{ backgroundImage: 'url(/images/about-image.jpg)' }} />
+              <AboutImage style={{ 
+                backgroundImage: "url('/images/about-team.jpg')",
+                backgroundColor: '#f8f9fa' // Fallback mientras carga la imagen
+              }} />
             </Col>
           </Row>
           

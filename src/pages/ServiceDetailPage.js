@@ -4,7 +4,7 @@ import { Container, Row, Col, Breadcrumb, Button, Badge, Card, ListGroup } from 
 import styled from 'styled-components';
 
 const HeroSection = styled.section`
-  padding: 8rem 0 5rem;
+  padding: 8rem 0 3rem;
   background-color: var(--light-bg);
   position: relative;
   
@@ -29,7 +29,7 @@ const PageTitle = styled.h1`
 `;
 
 const Price = styled.div`
-  font-size: 2.2rem;
+  font-size: ${props => props.isLongPrice ? '1.5rem' : '2.2rem'};
   font-weight: 700;
   color: var(--secondary-color);
   margin-bottom: 1rem;
@@ -63,7 +63,7 @@ const ServiceDescription = styled.p`
 `;
 
 const ContentSection = styled.section`
-  padding: 5rem 0;
+  padding: 3rem 0;
   background-color: var(--white);
 `;
 
@@ -79,7 +79,8 @@ const SectionTitle = styled.h2`
     content: '';
     position: absolute;
     bottom: -10px;
-    left: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 60px;
     height: 3px;
     background-color: var(--secondary-color);
@@ -153,7 +154,7 @@ const ServiceDetailPage = () => {
     // Simulando carga de datos
     setTimeout(() => {
       // Aquí buscaríamos el servicio por ID en una API real
-      const onlineServices = [
+      const allServices = [
         {
           id: 'consulta-online-60',
           title: 'Consulta Online',
@@ -163,7 +164,7 @@ const ServiceDetailPage = () => {
           longDescription: 'Si deseas transformar por completo tu hogar o simplemente quieras renovar una habitación específica, en DEdecor te acompañamos en cada paso para crear un espacio armonioso, funcional y lleno de estilo, uno que realmente disfrutes habitar. Podemos asesorarte en tendencias actuales, ayudarte a descubrir el estilo que mejor refleja tu personalidad y guiarte en cada decisión para lograr un resultado coherente y estéticamente impactante.',
           image: '/images/service1.jpg',
           tag: 'Básico',
-          category: 'online',
+          category: 'asesoria-basica',
           features: [
             'Cuestionario de estilo con preguntas para conocer tus gustos y forma de vivir tu espacio.',
             'Sesión por videollamada de 60 minutos.',
@@ -186,7 +187,7 @@ const ServiceDetailPage = () => {
           longDescription: 'Si buscas una asesoría completa y eficiente para transformar tu espacio, esta consulta extendida de 120 minutos está diseñada para ti. Durante la sesión trabajaremos de forma estructurada: revisaremos tus necesidades, evaluaremos el potencial de tus ambientes y te entregaremos recomendaciones claras para lograr un diseño funcional, estético y alineado a tus objetivos.',
           image: '/images/service2.jpg',
           tag: 'Completo',
-          category: 'online',
+          category: 'asesoria-basica',
           features: [
             'Cuestionario previo para entender tus gustos, estilo de vida y objetivos.',
             'Sesión por videollamada de 120 minutos.',
@@ -204,22 +205,26 @@ const ServiceDetailPage = () => {
         {
           id: 'paquete-esencial',
           title: 'Paquete Esencial',
-          price: '$450',
-          duration: 'Por Habitación',
-          description: 'Transformación de una habitación con guía profesional que incluye reunión inicial, moodboard, paleta de colores y propuesta de distribución.',
-          longDescription: 'Nuestro Paquete Esencial está diseñado para quienes buscan una transformación profesional de su espacio con un presupuesto controlado. Te ofrecemos una solución completa que incluye desde la evaluación inicial hasta una propuesta detallada con todos los elementos necesarios para implementar el cambio. Ideal para espacios de hasta 12\'x12\' que necesitan una renovación con estilo y funcionalidad.',
+          price: 'Contáctanos para estimado GRATIS',
+          duration: '',
+          description: 'Ideal para quienes buscan una guía clara y profesional para transformar un espacio con estilo, sin complicaciones.',
+          longDescription: 'Nuestro Paquete Esencial está diseñado para quienes quieren una guía clara y profesional para transformar un espacio con estilo, sin complicaciones. Este paquete incluye una propuesta única, cuidadosamente diseñada según tus gustos y necesidades. Una habitación estándar es 12\'x12\'. Entrega de 10 a 12 días hábiles después del pago inicial.',
           image: '/images/service3.jpg',
           tag: 'Popular',
-          category: 'presencial',
+          category: 'asesoria-completa',
           features: [
-            'Evaluación personalizada del espacio y sus necesidades.',
-            'Propuesta estética coherente con tu estilo y presupuesto.',
-            'Selección cuidadosa de colores, materiales y elementos decorativos.',
-            'Optimización del espacio para mejorar su funcionalidad.',
-            'Guía paso a paso para implementar los cambios sugeridos.'
+            '1 Reunión inicial sin costo adicional para conocer el espacio, necesidades y estilo del cliente (hasta 45 min)',
+            '1 Moodboard digital con la propuesta estética por habitación',
+            'Paleta de colores sugerida, mobiliario y decoración',
+            'Propuesta de distribución, layout general en plano simple 2D',
+            '1 Ronda de ajustes online (30 min)',
+            'Lista de recomendaciones de mobiliario y decoración con links de compra (2 opciones por ítem)',
+            'PDF de presentación final ',
+            'Seguimiento por WhatsApp o correo electrónico durante el proceso'
+            
           ],
           includes: [
-            'Buscas una solución profesional con presupuesto controlado.',
+            'Buscas un enfoque personalizado con presupuesto controlado.',
             'Necesitas una guía clara para transformar un espacio específico.',
             'Prefieres una propuesta concreta sin muchas variaciones.',
             'Quieres implementar cambios que mejoren tanto la estética como la funcionalidad.'
@@ -228,20 +233,25 @@ const ServiceDetailPage = () => {
         {
           id: 'paquete-intermedio',
           title: 'Paquete Intermedio',
-          price: '$750',
-          duration: 'Por Habitación',
-          description: 'Servicio personalizado con dos propuestas decorativas, paleta detallada, plano 2D, reuniones de revisión y lista de compras recomendadas.',
-          longDescription: 'El Paquete Intermedio ofrece un nivel superior de personalización y detalle para quienes desean explorar diferentes posibilidades para su espacio. Trabajamos con un enfoque colaborativo, presentando dos conceptos distintos que puedes combinar según tus preferencias. Incluye planos profesionales, asesoría detallada en materiales y un seguimiento continuo durante todo el proceso de transformación para espacios de hasta 12\'x12\'.',
+          price: 'Contáctanos para estimado GRATIS',
+          duration: '',
+          description: 'Perfecto para quienes desean transformar un espacio con estilo y funcionalidad, con asesoría personalizada y dos propuestas de decoración para seleccionar la que mejor se adapte a su visión.Incluye plano 2D profesional.',
+          longDescription: 'El Paquete Intermedio es ideal para quienes desean transformar un espacio con estilo y funcionalidad, contando con asesoría personalizada y dos propuestas de decoración para elegir la que mejor se adapte a su visión. Una habitación estándar es 12\'x12\'. Entrega de 15 a 18 días hábiles después del pago inicial.',
           image: '/images/service4.jpg',
           tag: 'Recomendado',
-          category: 'presencial',
+          category: 'asesoria-completa',
           features: [
-            'Análisis detallado del espacio, iluminación y circulación.',
-            'Dos propuestas conceptuales distintas para elegir o combinar.',
-            'Plano técnico a escala con distribución optimizada.',
-            'Selección detallada de materiales, texturas y acabados.',
-            'Múltiples opciones de mobiliario y decoración con distintos rangos de precio.',
-            'Asesoría personalizada durante la implementación del proyecto.'
+            '1 Reunión inicial sin costo adicional para conocer el espacio, necesidades y estilo del cliente (hasta 60 min)',
+            '2 Moodboards digitales con propuesta estética por habitación (el cliente puede elijir o combinar)',
+            'Estudio del espacio con análisis de luz, proporciones y flujo',
+            'Paleta de colores detallada, mobiliario y objetos decorativos sugeridos ',
+            'Asesoramiento en mezcla de materiales.',
+            'Plano de distribución (layout) a escala 2D',
+            '1 Reunión de revisión 90 min (presencial u online)',
+            '1 Ronda de ronda de ajustes online (45 min)',
+            'Lista de recomendaciones de mobiliario y decoración con links de compra (2 opciones por ítem)',
+            'PDF de presentación final ',
+            'Seguimiento por WhatsApp o correo electrónico durante el proceso'
           ],
           includes: [
             'Deseas explorar diferentes conceptos de diseño para tu espacio.',
@@ -253,33 +263,38 @@ const ServiceDetailPage = () => {
         {
           id: 'paquete-premium',
           title: 'Paquete Premium',
-          price: '$1,150',
-          duration: 'Por Habitación',
-          description: 'Diseño exclusivo y detallado con acompañamiento integral, render 3D profesional, guía de montaje y seguimiento personalizado del proyecto.',
-          longDescription: 'Nuestro Paquete Premium representa la experiencia más completa y exclusiva para transformar tu espacio. Incluye visualización 3D fotorrealista, acompañamiento integral en todas las fases del proyecto y atención preferencial con múltiples reuniones de seguimiento. Diseñado para quienes buscan un resultado excepcional con la tranquilidad de contar con asistencia profesional en cada detalle, desde la conceptualización hasta la implementación final en espacios de hasta 12\'x12\'.',
+          price: 'Contáctanos para estimado GRATIS',
+          duration: '',
+          description: 'Diseñado para quienes desean un paquete exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada paso del proceso.',
+          longDescription: 'Nuestro Paquete Premium está creado para quienes desean un paquete exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada paso del proceso. Entrega de 21 a 28 días hábiles después del pago inicial. izada vía WhatsApp.',
           image: '/images/service5.jpg',
           tag: 'Premium',
-          category: 'presencial',
+          category: 'asesoria-completa',
           features: [
-            'Estudio completo del espacio con análisis arquitectónico detallado.',
-            'Múltiples conceptos creativos con desarrollo profundo del seleccionado.',
-            'Visualización 3D fotorrealista para apreciar el resultado final antes de implementarlo.',
-            'Selección minuciosa de cada elemento con opciones exclusivas y personalizadas.',
-            'Documentación técnica completa para una implementación perfecta.',
-            'Acompañamiento VIP durante todo el proceso con atención prioritaria.',
-            'Seguimiento post-implementación para garantizar satisfacción total.'
+            '1 Reunión inicial sin costo adicional para conocer el espacio, necesidades y estilo del cliente (hasta 60 min)',
+            '2 Moodboards digitales con propuesta estética por habitación (el cliente puede elijir o combinar) + 1 Moodboard final consolidado',
+            'Estudio del espacio con análisis de luz, proporciones y flujo',
+            'Propuesta estética detallada, paleta de colores, mobiliario y elementos decorativos.',
+            'Asesoramiento en mezcla de materiales y estilos de decoración.',
+            '2 Reuniones de revisión 60 min cada una(presencial u online)',
+            '1 Ronda de ajustes online (45 min)',
+            'Render 3D profesional del diseño final (visión realista del proyecto)',
+            'Lista de recomendaciones de mobiliario y decoración con links de compra (2 opciones por ítem)',
+            'Mini guía de mantenimiento y styling posterior',
+            'Atención preferente',
+            'PDF de presentación final ',
+            'Seguimiento por WhatsApp o correo electrónico durante el proceso y hasta 30 días posteriores a la entrega final, para resolver dudas, celebrar resultados y asegurar la satisfacción total',
           ],
           includes: [
             'Buscas un resultado excepcional sin preocuparte por los detalles.',
-            'Necesitas visualizar con precisión el resultado final antes de implementarlo.',
+            'Necesitas visualizar con precisión el resultado final en una vista realista 3D.',
             'Deseas un servicio exclusivo con atención personalizada y preferencial.',
-            'Quieres un proyecto completamente a medida que refleje perfectamente tu estilo y necesidades.',
-            'Valoras el acompañamiento profesional en cada etapa del proceso.'
+            'Valoras el acompañamiento personalizado en cada etapa del proceso.'
           ]
         }
       ];
       
-      const foundService = [...onlineServices].find(s => s.id === serviceId);
+      const foundService = [...allServices].find(s => s.id === serviceId);
       
       if (foundService) {
         setService(foundService);
@@ -315,8 +330,8 @@ const ServiceDetailPage = () => {
           <Row className="align-items-center">
             <Col lg={6}>
               <PageTitle>{service.title}</PageTitle>
-              <Price>
-                {service.price} <small>({service.duration})</small>
+              <Price isLongPrice={service.price.includes('Contáctanos')}>
+                {service.price} <small>{service.duration}</small>
               </Price>
               <ServiceDescription>{service.longDescription}</ServiceDescription>
               <BookButton as={Link} to="/agendar" state={{ selectedService: service }}>
@@ -338,8 +353,8 @@ const ServiceDetailPage = () => {
       
       <ContentSection>
         <Container>
-          <Row className="mb-5">
-            <Col lg={6} className="mb-5 mb-lg-0">
+          <Row className="mb-2">
+            <Col lg={6} className="mb-4 mb-lg-0">
               <SectionTitle>¿Qué incluye?</SectionTitle>
               <StyledListGroup variant="flush">
                 {service.features.map((feature, index) => (

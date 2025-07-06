@@ -57,6 +57,11 @@ const BookButton = styled(Button)`
 const Header = () => {
   const [expanded, setExpanded] = useState(false);
 
+  const handleLinkClick = () => {
+    setExpanded(false);
+    window.scrollTo(0, 0);
+  };
+
   return (
     <StyledNavbar expand="lg" fixed="top" expanded={expanded}>
       <NavContainer>
@@ -67,22 +72,22 @@ const Header = () => {
         />
         <Navbar.Collapse id="basic-navbar-nav">
           <NavLinksContainer>
-            <StyledNavLink as={Link} to="/" onClick={() => setExpanded(false)}>
+            <StyledNavLink as={Link} to="/" onClick={handleLinkClick}>
               Inicio
             </StyledNavLink>
-            <StyledNavLink as={Link} to="/servicios" onClick={() => setExpanded(false)}>
+            <StyledNavLink as={Link} to="/servicios" onClick={handleLinkClick}>
               Servicios
             </StyledNavLink>
-            <StyledNavLink as={Link} to="/sobre-nosotros" onClick={() => setExpanded(false)}>
+            <StyledNavLink as={Link} to="/sobre-nosotros" onClick={handleLinkClick}>
               Sobre Nosotros
             </StyledNavLink>
-            <StyledNavLink as={Link} to="/redes-sociales" onClick={() => setExpanded(false)}>
+            <StyledNavLink as={Link} to="/redes-sociales" onClick={handleLinkClick}>
               Redes Sociales
             </StyledNavLink>
-            <StyledNavLink as={Link} to="/contacto" onClick={() => setExpanded(false)}>
+            <StyledNavLink as={Link} to="/contacto" onClick={handleLinkClick}>
               Contacto
             </StyledNavLink>
-            <BookButton as={Link} to="/agendar" onClick={() => setExpanded(false)}>
+            <BookButton as={Link} to="/agendar" onClick={handleLinkClick}>
               Agendar Cita
             </BookButton>
           </NavLinksContainer>

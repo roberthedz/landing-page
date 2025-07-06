@@ -10,22 +10,34 @@ const FooterContainer = styled.footer`
 
 const FooterContent = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 2rem;
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+  align-items: start;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const FooterSection = styled.div`
   h3 {
     color: var(--white);
+    margin-top: 0;
     margin-bottom: 1.5rem;
     font-size: 1.2rem;
   }
 
   ul {
     list-style: none;
+    margin: 0;
+    padding: 0;
   }
 
   li {
@@ -38,6 +50,10 @@ const FooterSection = styled.div`
     &:hover {
       color: var(--accent-color);
     }
+  }
+
+  p {
+    margin-top: 0;
   }
 `;
 
@@ -101,17 +117,18 @@ const Footer = () => {
         <FooterSection>
           <h3>Servicios</h3>
           <ul>
-            <li><Link to="/servicios/chaircraft-revive">ChairCraft Revive</Link></li>
-            <li><Link to="/servicios/vase-visionaries">Vase Visionaries</Link></li>
-            <li><Link to="/servicios/timeless-tablecraft">Timeless Tablecraft</Link></li>
+            <li><Link to="/servicios/consulta-online-60">Consulta Online (60 min)</Link></li>
+            <li><Link to="/servicios/consulta-online-120">Consulta Online (120 min)</Link></li>
+            <li><Link to="/servicios/paquete-esencial">Paquete Esencial</Link></li>
+            <li><Link to="/servicios/paquete-intermedio">Paquete Intermedio</Link></li>
+            <li><Link to="/servicios/paquete-premium">Paquete Premium</Link></li>
           </ul>
         </FooterSection>
         
         <FooterSection>
           <h3>Contacto</h3>
-          <p>Email: info@dedecor.com</p>
-          <p>Teléfono: +1 (123) 456-7890</p>
-          <p>Dirección: 123 Calle Diseño, Ciudad, País</p>
+          <p>Email: dedecorinfo@gmail.com</p>
+          <p>Teléfono: +1 (786) 490-6092</p>
         </FooterSection>
       </FooterContent>
       

@@ -135,7 +135,7 @@ app.post('/api/send-booking-email', async (req, res) => {
             <p><strong>Cliente:</strong> ${clientName}</p>
             <p><strong>Email:</strong> ${clientEmail}</p>
             <p><strong>Teléfono:</strong> ${bookingDetails.phone}</p>
-            <p><strong>Servicio:</strong> ${bookingDetails.service}</p>
+            <p><strong>Servicio:</strong> ${bookingDetails.service}${bookingDetails.duration ? ` (${bookingDetails.duration})` : ''}</p>
             <p><strong>Fecha:</strong> ${bookingDetails.date}</p>
             <p><strong>Hora:</strong> ${bookingDetails.time}</p>
             <p><strong>Tipo de cita:</strong> ${bookingDetails.type}</p>
@@ -172,7 +172,7 @@ app.post('/api/send-booking-email', async (req, res) => {
           <p>Hemos recibido tu solicitud de reserva. Un miembro de nuestro equipo la revisará y te confirmará en breve.</p>
           
           <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Servicio:</strong> ${bookingDetails.service}</p>
+            <p><strong>Servicio:</strong> ${bookingDetails.service}${bookingDetails.duration ? ` (${bookingDetails.duration})` : ''}</p>
             <p><strong>Fecha:</strong> ${bookingDetails.date}</p>
             <p><strong>Hora:</strong> ${bookingDetails.time}</p>
             <p><strong>Tipo de cita:</strong> ${bookingDetails.type}</p>
@@ -227,7 +227,7 @@ app.post('/api/bookings/:id/status', async (req, res) => {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
             <p>Hola ${bookings[bookingIndex].clientName},</p>
-            <p>Nos complace confirmar tu reserva para el servicio de ${bookings[bookingIndex].service}.</p>
+            <p>Nos complace confirmar tu reserva para el servicio de ${bookings[bookingIndex].service}${bookings[bookingIndex].serviceDuration ? ` (${bookings[bookingIndex].serviceDuration})` : ''}.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
@@ -259,7 +259,7 @@ app.post('/api/bookings/:id/status', async (req, res) => {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
             <p>Hola ${bookings[bookingIndex].clientName},</p>
-            <p>Lamentamos informarte que no podemos confirmar tu reserva para el servicio de ${bookings[bookingIndex].service} en el horario solicitado.</p>
+            <p>Lamentamos informarte que no podemos confirmar tu reserva para el servicio de ${bookings[bookingIndex].service}${bookings[bookingIndex].serviceDuration ? ` (${bookings[bookingIndex].serviceDuration})` : ''} en el horario solicitado.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
@@ -325,7 +325,7 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #4a6163;">Reserva Cancelada</h2>
           <p>Hola ${bookings[bookingIndex].clientName},</p>
-          <p>Te informamos que tu reserva para el servicio de ${bookings[bookingIndex].service} ha sido cancelada.</p>
+          <p>Te informamos que tu reserva para el servicio de ${bookings[bookingIndex].service}${bookings[bookingIndex].serviceDuration ? ` (${bookings[bookingIndex].serviceDuration})` : ''} ha sido cancelada.</p>
           
           <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
@@ -449,7 +449,7 @@ app.get('/confirm-booking', async (req, res) => {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
             <p>Hola ${bookings[bookingIndex].clientName},</p>
-            <p>Nos complace confirmar tu reserva para el servicio de ${bookings[bookingIndex].service}.</p>
+            <p>Nos complace confirmar tu reserva para el servicio de ${bookings[bookingIndex].service}${bookings[bookingIndex].serviceDuration ? ` (${bookings[bookingIndex].serviceDuration})` : ''}.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
@@ -485,7 +485,7 @@ app.get('/confirm-booking', async (req, res) => {
               <h3>Detalles de la reserva:</h3>
               <p><strong>Cliente:</strong> ${bookings[bookingIndex].clientName}</p>
               <p><strong>Email:</strong> ${bookings[bookingIndex].clientEmail}</p>
-              <p><strong>Servicio:</strong> ${bookings[bookingIndex].service}</p>
+              <p><strong>Servicio:</strong> ${bookings[bookingIndex].service}${bookings[bookingIndex].serviceDuration ? ` (${bookings[bookingIndex].serviceDuration})` : ''}</p>
               <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
               <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
             </div>
@@ -507,7 +507,7 @@ app.get('/confirm-booking', async (req, res) => {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
             <p>Hola ${bookings[bookingIndex].clientName},</p>
-            <p>Lamentamos informarte que no podemos confirmar tu reserva para el servicio de ${bookings[bookingIndex].service} en el horario solicitado.</p>
+            <p>Lamentamos informarte que no podemos confirmar tu reserva para el servicio de ${bookings[bookingIndex].service}${bookings[bookingIndex].serviceDuration ? ` (${bookings[bookingIndex].serviceDuration})` : ''} en el horario solicitado.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
@@ -542,7 +542,7 @@ app.get('/confirm-booking', async (req, res) => {
               <h3>Detalles de la reserva:</h3>
               <p><strong>Cliente:</strong> ${bookings[bookingIndex].clientName}</p>
               <p><strong>Email:</strong> ${bookings[bookingIndex].clientEmail}</p>
-              <p><strong>Servicio:</strong> ${bookings[bookingIndex].service}</p>
+              <p><strong>Servicio:</strong> ${bookings[bookingIndex].service}${bookings[bookingIndex].serviceDuration ? ` (${bookings[bookingIndex].serviceDuration})` : ''}</p>
               <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
               <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
             </div>

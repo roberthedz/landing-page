@@ -14,6 +14,22 @@ const HeroSection = styled.section`
   color: var(--white);
   margin-top: 70px;
   position: relative;
+  
+  @media (max-width: 768px) {
+    min-height: 650px;
+    align-items: flex-start;
+    padding-top: 3rem;
+  }
+  
+  @media (max-width: 576px) {
+    min-height: 700px;
+    padding-top: 2rem;
+  }
+  
+  @media (max-height: 600px) and (max-width: 768px) {
+    min-height: 500px;
+    align-items: center;
+  }
 `;
 
 const HeroTitle = styled.h1`
@@ -34,6 +50,19 @@ const HeroSubtitle = styled.p`
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+  
+  @media (max-width: 576px) {
+    font-size: 1rem;
+    margin-bottom: 1.2rem;
+    line-height: 1.4;
+    padding: 0 0.5rem;
+  }
 `;
 
 const ButtonsContainer = styled.div`
@@ -43,10 +72,16 @@ const ButtonsContainer = styled.div`
   gap: 1rem;
   margin-bottom: 2rem;
   
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+    gap: 0.8rem;
+  }
+  
   @media (max-width: 576px) {
     flex-direction: column;
     width: 80%;
-    margin: 0 auto 2rem;
+    margin: 0 auto 1rem;
+    gap: 0.8rem;
   }
 `;
 
@@ -102,6 +137,18 @@ const SocialIconsContainer = styled.div`
   justify-content: center;
   gap: 1.5rem;
   margin-top: 2rem;
+  
+  @media (max-width: 768px) {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    gap: 1rem;
+  }
+  
+  @media (max-width: 576px) {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    gap: 0.8rem;
+  }
 `;
 
 const SocialIcon = styled.a`
@@ -121,6 +168,18 @@ const SocialIcon = styled.a`
     color: var(--white);
     transform: translateY(-5px);
   }
+  
+  @media (max-width: 768px) {
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
+  }
+  
+  @media (max-width: 576px) {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
 `;
 
 const ScrollDownIndicator = styled.div`
@@ -133,6 +192,7 @@ const ScrollDownIndicator = styled.div`
   align-items: center;
   color: var(--white);
   cursor: pointer;
+  z-index: 10;
   
   span {
     font-size: 0.9rem;
@@ -157,6 +217,40 @@ const ScrollDownIndicator = styled.div`
       transform: translateY(-5px);
     }
   }
+  
+  @media (max-width: 768px) {
+    bottom: 60px;
+    
+    span {
+      font-size: 0.8rem;
+      margin-bottom: 0.3rem;
+    }
+    
+    i {
+      font-size: 1.3rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    bottom: 80px;
+    
+    span {
+      font-size: 0.75rem;
+      margin-bottom: 0.2rem;
+    }
+    
+    i {
+      font-size: 1.2rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    bottom: 100px;
+  }
+  
+  @media (max-height: 600px) and (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const Hero = () => {
@@ -175,7 +269,7 @@ const Hero = () => {
             <HeroTitle>Transforma tu espacio, transforma tu vida</HeroTitle>
             <HeroSubtitle>
               Somos Dayana Gafas y Eli Fernández, asesoras en decoración de interiores. 
-              Te ayudamos a transformar tu casa en un espacio que se sienta verdaderamente tuyo.
+              Te ayudamos a transformar tu espacio en un lugar que refleje tu esencia con estilo, armonía y personalidad.
             </HeroSubtitle>
             <ButtonsContainer>
               <PrimaryButton as={Link} to="/agendar">Agendar Cita</PrimaryButton>

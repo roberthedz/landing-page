@@ -129,25 +129,27 @@ const AboutPage = () => {
             <p>Conoce más sobre nuestra visión, misión y nuestro proyecto</p>
           </SectionTitle>
           
-          <Row className="mb-5 align-items-center">
+          <Row className="mb-5 align-items-center g-5">
             <Col lg={6} className="mb-4 mb-lg-0">
               <AboutText>
-                <h3>Visión</h3>
-                <p>
-                  Ser referencia en decoración de interiores y contenido creativo en habla hispana, inspirando espacios con identidad y propósito. Un buen diseño no solo embellece, transforma vidas.
+                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#000', textAlign: 'left' }}>Nuestro Proyecto</h3>
+                <p style={{ textAlign: 'justify', marginBottom: '2rem' }}>
+                  <strong>DeDecor</strong>, fundada por <strong>Dayana Gafas</strong> y <strong>Eli Fernández</strong>, nace de la pasión por la decoración y la narrativa visual. Combinamos creatividad, técnica y sensibilidad estética para transformar espacios con estilo, autenticidad y propósito. Desde asesorías puntuales hasta proyectos integrales, convertimos ideas en experiencias que inspiran y reflejan la esencia de quienes los habitan.
                 </p>
-                <h3>Misión</h3>
-                <p>
-                  En <strong>DEdecor</strong> fusionamos diseño y narrativa visual para crear espacios auténticos. Acompañamos con creatividad y atención al detalle, ofreciendo soluciones que reflejan la esencia de cada cliente.
+                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#000', textAlign: 'left' }}>Misión</h3>
+                <p style={{ textAlign: 'justify', marginBottom: '2rem' }}>
+                  En <strong>DeDecor</strong> fusionamos diseño y narrativa visual para crear espacios auténticos. Acompañamos con creatividad y atención al detalle, ofreciendo soluciones que reflejan la esencia de cada cliente.
                 </p>
-                <h3>Nuestro Proyecto</h3>
-                <p>
-                  <strong>DEdecor</strong>, fundada por <strong>Dayana Gafas</strong> y <strong>Eli Fernández</strong>, combina decoración y narrativa visual para transformar espacios con estilo y autenticidad. Desde asesorías hasta proyectos integrales, convertimos ideas en experiencias que inspiran.
+                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#000', textAlign: 'left' }}>Visión</h3>
+                <p style={{ textAlign: 'justify', marginBottom: '1rem' }}>
+                  Ser una referencia en decoración de interiores y creación de contenido en habla hispana, inspirando espacios con identidad, funcionalidad y propósito.                   Creemos que un buen diseño no solo embellece: transforma la forma en que vivimos y sentimos cada lugar.
+
                 </p>
+            
               </AboutText>
             </Col>
             <Col lg={6}>
-              <AboutImage style={{ backgroundImage: 'url(/images/s4.JPEG)' }} />
+              <AboutImage style={{ backgroundImage: 'url(/images/about-team.jpg)' }} />
             </Col>
           </Row>
         </AboutContainer>

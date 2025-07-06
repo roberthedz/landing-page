@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Actualización - DeDecorInfo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .timestamp {
+            font-size: 1.2rem;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+        .status {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Test de Actualización</h1>
+        <div class="timestamp">
+            <strong>Fecha y hora de actualización:</strong><br>
+            <span id="timestamp"></span>
+        </div>
+        <div class="status">
+            ✅ Si puedes ver esta página, los archivos se están actualizando correctamente
+        </div>
+        <p style="margin-top: 30px; font-size: 1.1rem;">
+            Este archivo fue creado para verificar que los cambios se reflejan en el servidor.<br>
+            Si ves esta página, significa que los archivos nuevos se están subiendo correctamente.
+        </p>
+    </div>
+
+    <script>
+        // Mostrar timestamp actual
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('es-ES', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        // Cambiar color cada segundo para confirmar que JavaScript funciona
+        let colors = ['#4CAF50', '#2196F3', '#FF9800', '#E91E63'];
+        let colorIndex = 0;
+        
+        setInterval(() => {
+            document.querySelector('.status').style.color = colors[colorIndex];
+            colorIndex = (colorIndex + 1) % colors.length;
+        }, 1000);
+    </script>
+</body>
+</html> 

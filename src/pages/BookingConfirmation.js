@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Container, Alert, Card, Button, Spinner } from 'react-bootstrap';
 import styled from 'styled-components';
 import axios from 'axios';
+import apiConfig from '../config/apiConfig';
 
 const ConfirmationSection = styled.section`
   padding: 5rem 0;
@@ -54,25 +55,19 @@ const BookingConfirmation = () => {
       
       try {
         // Llamar a la API para actualizar el estado de la reserva
-        const response = await axios.post(`/api/bookings/${bookingId}/status`, { action });
+        const response = await axios.post(`${apiConfig.API_BASE_URL}/bookings/${bookingId}/status`, { action });
         
         if (!response.data.success) {
           throw new Error(response.data.error || 'Error al procesar la reserva');
         }
         
-        // En un entorno real, obtendríamos los datos de la reserva de la API
-        // Aquí usamos localStorage como una simulación temporal
-        const pendingBookings = JSON.parse(localStorage.getItem('pendingBookings') || '[]');
-        const booking = pendingBookings.find(b => b.id === bookingId);
+        // Obtener los datos de la reserva desde el servidor
+        const bookingResponse = await axios.get(`${apiConfig.API_BASE_URL}/bookings/${bookingId}`);
         
-        if (!booking) {
-          setStatus('error');
-          setError('Reserva no encontrada. Es posible que ya haya sido procesada o que el ID sea incorrecto.');
-          setLoading(false);
-          return;
+        if (bookingResponse.data.success && bookingResponse.data.booking) {
+          setBookingData(bookingResponse.data.booking);
         }
         
-        setBookingData(booking);
         setStatus(action === 'confirm' ? 'confirmed' : 'rejected');
         
       } catch (err) {

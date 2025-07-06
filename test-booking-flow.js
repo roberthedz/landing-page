@@ -10,7 +10,7 @@
 const axios = require('axios');
 
 // URL base de la API
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://landing-page-534b.onrender.com/api';
 
 // Datos de prueba
 const testBooking = {
@@ -21,7 +21,7 @@ const testBooking = {
   servicePrice: '$99',
   date: '15/08/2023',
   time: '10:00',
-  type: 'presencial',
+  type: 'asesoria-completa',
   notes: 'Esta es una reserva de prueba'
 };
 
@@ -40,7 +40,7 @@ async function testBookingFlow() {
       servicePrice: '$99',
       date: '15/08/2023',
       time: '10:00',
-      type: 'presencial',
+      type: 'asesoria-completa',
       notes: 'Esta es una reserva de prueba'
     };
     
@@ -66,8 +66,8 @@ async function testBookingFlow() {
         type: bookingData.type,
         notes: bookingData.notes
       },
-      confirmUrl: `http://localhost:3000/confirm-booking?id=${bookingId}&action=confirm`,
-      rejectUrl: `http://localhost:3000/confirm-booking?id=${bookingId}&action=reject`
+      confirmUrl: `https://landing-page-534b.onrender.com/confirm-booking?id=${bookingId}&action=confirm`,
+      rejectUrl: `https://landing-page-534b.onrender.com/confirm-booking?id=${bookingId}&action=reject`
     };
     
     const emailResponse = await axios.post(`${API_URL}/send-booking-email`, emailData);
