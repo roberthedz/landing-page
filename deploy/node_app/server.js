@@ -390,6 +390,9 @@ app.post('/api/bookings', (req, res) => {
 app.get('/confirm-booking', async (req, res) => {
   const { id, action } = req.query;
   
+  console.log('Confirmación de reserva recibida:', { id, action, url: req.url });
+  console.log('Reservas disponibles:', bookings.map(b => ({ id: b.id, status: b.status })));
+  
   if (!id || !action) {
     return res.status(400).send(`
       <html>

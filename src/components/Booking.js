@@ -709,9 +709,11 @@ const Booking = () => {
         throw new Error('Error al crear la reserva');
       }
       
-      // Construir las URLs para confirmar/rechazar
-      const confirmUrl = `${window.location.origin.replace(':3001', ':3000')}/confirm-booking?id=${bookingId}&action=confirm`;
-      const rejectUrl = `${window.location.origin.replace(':3001', ':3000')}/confirm-booking?id=${bookingId}&action=reject`;
+      // Construir las URLs para confirmar/rechazar - siempre usar el dominio de producción
+      const baseUrl = 'https://landing-page-534b.onrender.com';
+      
+      const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
+      const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
       
       console.log('URL de confirmación:', confirmUrl);
       console.log('URL de rechazo:', rejectUrl);

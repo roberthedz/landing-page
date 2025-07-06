@@ -142,7 +142,7 @@ app.post('/api/send-booking-email', async (req, res) => {
             <p><strong>Cliente:</strong> ${clientName}</p>
             <p><strong>Email:</strong> ${clientEmail}</p>
             <p><strong>Teléfono:</strong> ${bookingDetails.phone}</p>
-            <p><strong>Servicio:</strong> ${bookingDetails.service}</p>
+            <p><strong>Servicio:</strong> ${bookingDetails.service}${bookingDetails.duration ? ` (${bookingDetails.duration})` : ''}</p>
             <p><strong>Fecha:</strong> ${bookingDetails.date}</p>
             <p><strong>Hora:</strong> ${bookingDetails.time}</p>
             <p><strong>Tipo de cita:</strong> ${bookingDetails.type}</p>
@@ -179,7 +179,7 @@ app.post('/api/send-booking-email', async (req, res) => {
           <p>Hemos recibido tu solicitud de reserva. Un miembro de nuestro equipo la revisará y te confirmará en breve.</p>
           
           <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Servicio:</strong> ${bookingDetails.service}</p>
+            <p><strong>Servicio:</strong> ${bookingDetails.service}${bookingDetails.duration ? ` (${bookingDetails.duration})` : ''}</p>
             <p><strong>Fecha:</strong> ${bookingDetails.date}</p>
             <p><strong>Hora:</strong> ${bookingDetails.time}</p>
             <p><strong>Tipo de cita:</strong> ${bookingDetails.type}</p>
