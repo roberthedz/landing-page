@@ -18,11 +18,39 @@ const mongoUri = 'mongodb+srv://rhzamora144:86e6FbGM00uV78RP@cluster0.4vwcokw.mo
 const connectDB = async () => {
   try {
     console.log('🔗 Conectando a MongoDB Atlas...');
-    await mongoose.connect(mongoUri);
+    console.log('🔗 URI:', mongoUri.replace(/:[^:@]*@/, ':***@')); // Ocultar password en logs
+    
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000, // Timeout después de 10s
+      socketTimeoutMS: 45000, // Cerrar sockets después de 45s de inactividad
+      maxPoolSize: 10, // Mantener hasta 10 conexiones de socket
+      family: 4 // Usar IPv4, omitir IPv6
+    });
+    
     console.log('✅ Conectado a MongoDB Atlas exitosamente');
+    
+    // Eventos de conexión
+    mongoose.connection.on('connected', () => {
+      console.log('🟢 Mongoose conectado a MongoDB Atlas');
+    });
+    
+    mongoose.connection.on('error', (err) => {
+      console.error('❌ Error de conexión MongoDB:', err);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.log('🔴 Mongoose desconectado de MongoDB Atlas');
+    });
+    
   } catch (error) {
     console.error('❌ Error al conectar a MongoDB Atlas:', error.message);
-    process.exit(1);
+    console.error('🔧 Verifica:');
+    console.error('   1. IP whitelist en MongoDB Atlas (0.0.0.0/0)');
+    console.error('   2. Usuario y contraseña correctos');
+    console.error('   3. Cluster activo');
+    
+    // No exit, permitir que el servidor siga corriendo para diagnosticar
+    console.log('⚠️ Servidor continuará sin MongoDB...');
   }
 };
 
@@ -94,24 +122,91 @@ emailTransporter.verify((error, success) => {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'https://landing-page-534b.onrender.com'],
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'https://landing-page-534b.onrender.com',
+    'https://dedecorinfo.com',
+    'http://dedecorinfo.com'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Middleware adicional para CORS
+app.use((req, res, next) => {
+  const origin = req.get('origin');
+  const allowedOrigins = [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'https://landing-page-534b.onrender.com',
+    'https://dedecorinfo.com',
+    'http://dedecorinfo.com'
+  ];
+  
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  console.log(`🌐 CORS: ${req.method} ${req.path} desde ${origin || 'unknown'}`);
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'build')));
+
+// Endpoint de salud para diagnosticar
+app.get('/api/health', async (req, res) => {
+  console.log('🔍 GET /api/health - Solicitud recibida desde:', req.get('origin'));
+  
+  try {
+    // Probar conexión a MongoDB
+    const bookingCount = await Booking.countDocuments();
+    const slotCount = await BookedSlot.countDocuments();
+    
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      mongodb: 'connected',
+      email: 'configured',
+      reservas: bookingCount,
+      horarios: slotCount,
+      cors: req.get('origin') || 'no-origin'
+    });
+  } catch (error) {
+    console.error('❌ Error en health check:', error);
+    res.status(500).json({
+      status: 'error',
+      mongodb: 'disconnected',
+      error: error.message
+    });
+  }
+});
 
 // API para obtener horarios ocupados
 app.get('/api/booked-slots', async (req, res) => {
+  console.log('🔍 GET /api/booked-slots - Solicitud recibida desde:', req.get('origin'));
+  
   try {
+    console.log('📡 Consultando MongoDB Atlas...');
     const bookedSlots = await BookedSlot.find({});
-    console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados`);
+    console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados:`, bookedSlots);
     
     res.set({
       'Cache-Control': 'public, max-age=30',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': req.get('origin') || '*'
     });
     
     res.json(bookedSlots);
@@ -126,10 +221,14 @@ app.get('/api/booked-slots', async (req, res) => {
 
 // API para crear una nueva reserva
 app.post('/api/bookings', async (req, res) => {
+  console.log('🔍 POST /api/bookings - Solicitud recibida desde:', req.get('origin'));
+  console.log('📝 Datos recibidos:', req.body);
+  
   try {
     const { clientName, clientEmail, clientPhone, service, date, time, type } = req.body;
     
     if (!clientName || !clientEmail || !clientPhone || !service || !date || !time || !type) {
+      console.log('❌ Faltan campos requeridos');
       return res.status(400).json({ 
         error: 'Faltan campos requeridos',
         success: false
