@@ -465,13 +465,20 @@ const Booking = () => {
       const response = await apiConfig.getCachedRequest(apiConfig.endpoints.bookedSlots);
       console.log('Horarios ocupados cargados:', response.data);
       
-      // Validar que la respuesta sea un array válido
-      if (Array.isArray(response.data)) {
-        setBookedSlots(response.data);
+      // Validar que la respuesta tenga la estructura correcta
+      if (response.data && response.data.success && Array.isArray(response.data.bookedSlots)) {
+        console.log(`✅ Procesando ${response.data.bookedSlots.length} horarios ocupados`);
+        setBookedSlots(response.data.bookedSlots);
         // Guardar en localStorage como backup
+        localStorage.setItem('bookedSlots', JSON.stringify(response.data.bookedSlots));
+      } else if (Array.isArray(response.data)) {
+        // Fallback para formato antiguo (array directo)
+        console.log('📋 Usando formato de respuesta directo (array)');
+        setBookedSlots(response.data);
         localStorage.setItem('bookedSlots', JSON.stringify(response.data));
       } else {
-        console.warn('La respuesta no es un array válido, usando array vacío');
+        console.warn('❌ La respuesta no tiene el formato esperado:', response.data);
+        console.warn('Expected: {success: true, bookedSlots: [...]} or [...]');
         setBookedSlots([]);
       }
     } catch (error) {
