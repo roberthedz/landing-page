@@ -120,23 +120,33 @@ emailTransporter.verify((error, success) => {
   }
 });
 
-// Middleware
+// Middleware CORS MEJORADO para permitir dedecorinfo.com
 app.use(cors({
   origin: [
     'http://localhost:3000', 
     'http://localhost:3001', 
     'https://landing-page-534b.onrender.com',
     'https://dedecorinfo.com',
-    'http://dedecorinfo.com'
+    'http://dedecorinfo.com',
+    'https://www.dedecorinfo.com',
+    'http://www.dedecorinfo.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ]
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Middleware adicional para CORS
+// Middleware adicional para CORS - ACTUALIZADO
 app.use((req, res, next) => {
   const origin = req.get('origin');
   const allowedOrigins = [
@@ -144,20 +154,26 @@ app.use((req, res, next) => {
     'http://localhost:3001', 
     'https://landing-page-534b.onrender.com',
     'https://dedecorinfo.com',
-    'http://dedecorinfo.com'
+    'http://dedecorinfo.com',
+    'https://www.dedecorinfo.com',
+    'http://www.dedecorinfo.com'
   ];
   
   if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    // Para debugging, mostrar orígenes no permitidos
+    console.log(`⚠️ Origen no permitido: ${origin}`);
   }
   
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
   res.header('Access-Control-Allow-Credentials', 'true');
   
-  console.log(`🌐 CORS: ${req.method} ${req.path} desde ${origin || 'unknown'}`);
+  console.log(`🌐 CORS: ${req.method} ${req.path} desde ${origin || 'unknown'} - ${allowedOrigins.includes(origin) ? '✅ PERMITIDO' : '❌ BLOQUEADO'}`);
   
   if (req.method === 'OPTIONS') {
+    console.log('🔧 Preflight OPTIONS request manejado');
     return res.sendStatus(200);
   }
   

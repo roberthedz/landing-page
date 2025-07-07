@@ -33,12 +33,11 @@ const API_CONFIG = {
   timeout: 15000, // 15 segundos timeout
   maxRetries: 3,
   retryDelay: 1000, // 1 segundo entre reintentos
-  // Configurar headers por defecto
+  // Configurar headers por defecto (solo los esenciales)
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    // Agregar origin para ayudar con CORS
-    'X-Requested-With': 'XMLHttpRequest'
+    'Accept': 'application/json'
+    // Quitamos X-Requested-With porque causa problemas de CORS
   }
 };
 
@@ -48,13 +47,13 @@ const CACHE_DURATION = 30000; // 30 segundos
 
 // Función para hacer peticiones con reintentos automáticos
 const makeRequest = async (url, options = {}, retries = API_CONFIG.maxRetries) => {
-  // Configurar headers por defecto y origen
+  // Configurar headers por defecto (SIN Origin manual)
   const requestConfig = {
     url,
     timeout: API_CONFIG.timeout,
     headers: {
       ...API_CONFIG.headers,
-      'Origin': window.location.origin,
+      // NO agregar Origin manualmente - el navegador lo hace automáticamente
       ...options.headers
     },
     // Configurar CORS
