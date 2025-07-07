@@ -816,6 +816,55 @@ app.get('/api/system-status', async (req, res) => {
   }
 });
 
+// API para eliminar una reserva específica por ID
+app.delete('/api/bookings/:bookingId', async (req, res) => {
+  const { bookingId } = req.params;
+  console.log(`🗑️ DELETE /api/bookings/${bookingId} - Eliminando reserva específica...`);
+  
+  try {
+    // Buscar la reserva
+    const booking = await Booking.findOne({ id: bookingId });
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: `No se encontró la reserva con ID: ${bookingId}`
+      });
+    }
+    
+    console.log(`📋 Encontrada reserva: ${booking.clientName} - ${booking.date} ${booking.time}`);
+    
+    // Eliminar la reserva
+    await Booking.deleteOne({ id: bookingId });
+    console.log(`✅ Reserva eliminada: ${bookingId}`);
+    
+    // Eliminar todos los horarios ocupados asociados a esta reserva
+    const deletedSlots = await BookedSlot.deleteMany({ bookingId: bookingId });
+    console.log(`✅ Eliminados ${deletedSlots.deletedCount} horarios ocupados asociados`);
+    
+    res.json({
+      success: true,
+      message: `Reserva ${bookingId} eliminada exitosamente`,
+      deletedBooking: {
+        id: bookingId,
+        clientName: booking.clientName,
+        date: booking.date,
+        time: booking.time,
+        service: booking.service
+      },
+      deletedSlots: deletedSlots.deletedCount
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error al eliminar reserva ${bookingId}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar la reserva',
+      details: error.message
+    });
+  }
+});
+
 // API para limpiar reservas de prueba - SOLO PARA DESARROLLO
 app.delete('/api/cleanup-test-data', async (req, res) => {
   console.log('🧹 DELETE /api/cleanup-test-data - Limpiando datos de prueba...');
@@ -857,6 +906,36 @@ app.delete('/api/cleanup-test-data', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Error al limpiar datos de prueba',
+      details: error.message
+    });
+  }
+});
+
+// API para eliminar TODAS las reservas (CUIDADO - SOLO PARA DESARROLLO)
+app.delete('/api/cleanup-all-data', async (req, res) => {
+  console.log('🚨 DELETE /api/cleanup-all-data - ELIMINANDO TODAS LAS RESERVAS...');
+  
+  try {
+    // Eliminar todas las reservas
+    const deletedBookings = await Booking.deleteMany({});
+    console.log(`🗑️ Eliminadas ${deletedBookings.deletedCount} reservas`);
+    
+    // Eliminar todos los horarios ocupados
+    const deletedSlots = await BookedSlot.deleteMany({});
+    console.log(`🗑️ Eliminados ${deletedSlots.deletedCount} horarios ocupados`);
+    
+    res.json({
+      success: true,
+      message: 'Todas las reservas y horarios han sido eliminados',
+      deletedBookings: deletedBookings.deletedCount,
+      deletedSlots: deletedSlots.deletedCount
+    });
+    
+  } catch (error) {
+    console.error('❌ Error al eliminar todos los datos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar todos los datos',
       details: error.message
     });
   }
