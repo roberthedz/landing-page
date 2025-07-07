@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@craco/craco": "^7.1.0",
     "@emailjs/browser": "^4.4.1",
     "@sendgrid/mail": "^8.1.5",
     "@testing-library/dom": "^10.4.0",
@@ -18,6 +19,7 @@
     "formik": "^2.4.6",
     "i18next": "^25.2.1",
     "i18next-browser-languagedetector": "^8.2.0",
+    "mongoose": "^8.16.2",
     "nodemailer": "^7.0.3",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.10",
@@ -27,20 +29,20 @@
     "react-router-dom": "^7.6.2",
     "react-scripts": "5.0.1",
     "styled-components": "^6.1.19",
+    "typescript": "^4.9.5",
     "web-vitals": "^2.1.4",
-    "yup": "^1.6.1",
-    "@craco/craco": "^7.1.0",
-    "typescript": "^4.9.5"
+    "yup": "^1.6.1"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node server-mongodb.js",
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
-    "server": "node server.js",
+    "server": "node server-mongodb.js",
     "dev": "concurrently \"npm run start\" \"npm run server\"",
     "setup-env": "node setup-env.js",
-    "test-booking": "node test-booking-flow.js"
+    "test-booking": "node test-booking-flow.js",
+    "test-mongodb": "node test-mongodb-connection.js"
   },
   "eslintConfig": {
     "extends": [

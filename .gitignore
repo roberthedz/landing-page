@@ -24,3 +24,6 @@ yarn-error.log*
 .env
 .env
 .env
+
+# Datos de reservas (no subir al repositorio)
+/data

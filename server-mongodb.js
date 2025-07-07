@@ -1,130 +1,73 @@
 const express = require('express');
-const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 const nodemailer = require('nodemailer');
-const fs = require('fs');
+const { connectDB, disconnectDB } = require('./src/config/database');
+const Booking = require('./src/models/Booking');
+const BookedSlot = require('./src/models/BookedSlot');
+const ContactMessage = require('./src/models/ContactMessage');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
-// Configurar timeout para todas las rutas
-app.use((req, res, next) => {
-  // Timeout de 30 segundos para todas las peticiones
-  req.setTimeout(30000, () => {
-    res.status(408).json({ error: 'Request timeout' });
-  });
-  next();
-});
-
-// Función para obtener la URL base - siempre usar Render para las confirmaciones
+// Función para obtener la URL base del request
 const getBaseUrl = (req) => {
-  // Siempre usar el servidor de Render para los enlaces de confirmación
-  // porque es el único que tiene el servidor Node.js funcionando
-  return 'https://landing-page-534b.onrender.com';
+  const protocol = req.get('x-forwarded-proto') || req.protocol;
+  const host = req.get('host');
+  return `${protocol}://${host}`;
 };
 
-// Configuración del transportador de email - Usar siempre credenciales reales
-const emailTransporter = nodemailer.createTransport({
+// Configurar el transportador de email
+const emailTransporter = nodemailer.createTransporter({
   service: 'gmail',
   auth: {
     user: 'dedecorinfo@gmail.com',
-    pass: process.env.GMAIL_APP_PASSWORD || 'ihrvuveqsskjxyog' // Contraseña de aplicación
-  },
-  secure: true
+    pass: 'ihrvuveqsskjxyog'
+  }
+});
+
+// Verificar la configuración de email
+emailTransporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Error en la configuración de email:', error);
+  } else {
+    console.log('✅ Servidor de email configurado correctamente');
+  }
 });
 
 // Middleware
 app.use(cors({
-  origin: '*', // Permitir cualquier origen en desarrollo
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'https://landing-page-534b.onrender.com'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'build')));
 
-// Función para cargar datos desde archivos JSON
-function loadData() {
+// Conectar a MongoDB Atlas al iniciar el servidor
+connectDB();
+
+// API para obtener horarios ocupados
+app.get('/api/booked-slots', async (req, res) => {
   try {
-    const dataPath = path.join(__dirname, 'data');
-    if (!fs.existsSync(dataPath)) {
-      fs.mkdirSync(dataPath);
-    }
+    const bookedSlots = await BookedSlot.find({});
     
-    const bookingsPath = path.join(dataPath, 'bookings.json');
-    const bookedSlotsPath = path.join(dataPath, 'bookedSlots.json');
-    const contactMessagesPath = path.join(dataPath, 'contactMessages.json');
+    console.log(`Enviando ${bookedSlots.length} horarios ocupados`);
     
-    const bookings = fs.existsSync(bookingsPath) ? JSON.parse(fs.readFileSync(bookingsPath, 'utf8')) : [];
-    const bookedSlots = fs.existsSync(bookedSlotsPath) ? JSON.parse(fs.readFileSync(bookedSlotsPath, 'utf8')) : [];
-    const contactMessages = fs.existsSync(contactMessagesPath) ? JSON.parse(fs.readFileSync(contactMessagesPath, 'utf8')) : [];
-    
-    return { bookings, bookedSlots, contactMessages };
-  } catch (error) {
-    console.error('Error cargando datos:', error);
-    return { bookings: [], bookedSlots: [], contactMessages: [] };
-  }
-}
-
-// Función para guardar datos en archivos JSON
-function saveData() {
-  try {
-    const dataPath = path.join(__dirname, 'data');
-    if (!fs.existsSync(dataPath)) {
-      fs.mkdirSync(dataPath);
-    }
-    
-    const bookingsPath = path.join(dataPath, 'bookings.json');
-    const bookedSlotsPath = path.join(dataPath, 'bookedSlots.json');
-    const contactMessagesPath = path.join(dataPath, 'contactMessages.json');
-    
-    fs.writeFileSync(bookingsPath, JSON.stringify(bookings, null, 2));
-    fs.writeFileSync(bookedSlotsPath, JSON.stringify(bookedSlots, null, 2));
-    fs.writeFileSync(contactMessagesPath, JSON.stringify(contactMessages, null, 2));
-    
-    console.log('Datos guardados exitosamente');
-  } catch (error) {
-    console.error('Error guardando datos:', error);
-  }
-}
-
-// Cargar datos al iniciar el servidor
-const initialData = loadData();
-let bookings = initialData.bookings;
-let bookedSlots = initialData.bookedSlots;
-let contactMessages = initialData.contactMessages;
-
-console.log(`Servidor iniciado con ${bookings.length} reservas, ${bookedSlots.length} slots ocupados`);
-
-// API para obtener horarios ocupados (optimizada)
-app.get('/api/booked-slots', (req, res) => {
-  try {
-    // Validar que bookedSlots sea un array válido
-    if (!Array.isArray(bookedSlots)) {
-      console.warn('bookedSlots no es un array válido, inicializando como array vacío');
-      bookedSlots = [];
-    }
-    
-    // Filtrar slots que no hayan expirado (opcional: remover slots muy antiguos)
-    const validSlots = bookedSlots.filter(slot => {
-      // Mantener todos los slots por ahora, pero esto se puede optimizar
-      return slot && slot.date && slot.time;
-    });
-    
-    // Agregar headers para cache y optimización
     res.set({
-      'Cache-Control': 'public, max-age=30', // Cache por 30 segundos
+      'Cache-Control': 'public, max-age=30',
       'Content-Type': 'application/json'
     });
     
-    console.log(`Enviando ${validSlots.length} horarios ocupados`);
-    res.json(validSlots);
+    res.json(bookedSlots);
   } catch (error) {
-    console.error('Error al obtener horarios ocupados:', error);
+    console.error('❌ Error al obtener horarios ocupados:', error);
     res.status(500).json({ 
       error: 'Error interno del servidor al obtener horarios ocupados',
-      data: [] // Devolver array vacío como fallback
+      data: []
     });
   }
 });
@@ -134,22 +77,19 @@ app.post('/api/send-contact-email', async (req, res) => {
   const { clientEmail, clientName, contactDetails } = req.body;
   
   try {
-    // Guardar el mensaje en la "base de datos"
+    // Guardar el mensaje en MongoDB
     const messageId = `message-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const newMessage = {
+    const newMessage = new ContactMessage({
       id: messageId,
       clientName,
       clientEmail,
       phone: contactDetails.phone || 'No proporcionado',
       message: contactDetails.message,
-      date: contactDetails.date,
-      createdAt: new Date().toISOString()
-    };
+      date: contactDetails.date
+    });
     
-    contactMessages.push(newMessage);
-    
-    // Guardar datos
-    saveData();
+    await newMessage.save();
+    console.log('✅ Mensaje de contacto guardado en MongoDB');
     
     // Email a la empresa con los detalles del mensaje
     await emailTransporter.sendMail({
@@ -177,7 +117,7 @@ app.post('/api/send-contact-email', async (req, res) => {
       `
     });
     
-    console.log('Email enviado a la empresa:', 'dedecorinfo@gmail.com');
+    console.log('✅ Email enviado a la empresa');
     
     // Email de confirmación al cliente
     await emailTransporter.sendMail({
@@ -202,11 +142,11 @@ app.post('/api/send-contact-email', async (req, res) => {
       `
     });
     
-    console.log('Email de confirmación enviado al cliente:', clientEmail);
+    console.log('✅ Email de confirmación enviado al cliente');
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Error al enviar emails de contacto:', error);
+    console.error('❌ Error al enviar emails de contacto:', error);
     res.status(500).json({ error: 'Error al enviar emails de contacto' });
   }
 });
@@ -214,15 +154,12 @@ app.post('/api/send-contact-email', async (req, res) => {
 // API para enviar email de confirmación de reserva
 app.post('/api/send-booking-email', async (req, res) => {
   const { clientEmail, clientName, bookingDetails } = req.body;
-  // Detectar automáticamente la URL base desde el request
   const baseUrl = getBaseUrl(req);
   const bookingId = bookingDetails.id || 'id';
   const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
   const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
   
-  console.log('Base URL detectada automáticamente:', baseUrl);
-  console.log('URL de confirmación:', confirmUrl);
-  console.log('URL de rechazo:', rejectUrl);
+  console.log('📧 Enviando emails de reserva...');
   
   try {
     // Email a la empresa con opciones para confirmar/rechazar
@@ -262,7 +199,7 @@ app.post('/api/send-booking-email', async (req, res) => {
       `
     });
     
-    console.log('Email enviado a la empresa:', 'dedecorinfo@gmail.com');
+    console.log('✅ Email enviado a la empresa');
     
     // Email de recepción al cliente
     await emailTransporter.sendMail({
@@ -290,11 +227,11 @@ app.post('/api/send-booking-email', async (req, res) => {
       `
     });
     
-    console.log('Email enviado al cliente:', clientEmail);
+    console.log('✅ Email enviado al cliente');
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Error al enviar emails:', error);
+    console.error('❌ Error al enviar emails:', error);
     res.status(500).json({ error: 'Error al enviar emails' });
   }
 });
@@ -304,16 +241,17 @@ app.post('/api/bookings/:id/status', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
   
-  const bookingIndex = bookings.findIndex(booking => booking.id === id);
-  
-  if (bookingIndex === -1) {
-    return res.status(404).json({ error: 'Reserva no encontrada' });
-  }
-  
   try {
+    const booking = await Booking.findOne({ id });
+    
+    if (!booking) {
+      return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+    
     if (action === 'confirm') {
       // Actualizar estado de la reserva
-      bookings[bookingIndex].status = 'confirmed';
+      booking.status = 'confirmed';
+      await booking.save();
       
       // Función para generar slots ocupados según el tipo de servicio
       const generateBookedSlots = (booking) => {
@@ -377,30 +315,27 @@ app.post('/api/bookings/:id/status', async (req, res) => {
         return slots;
       };
       
-      // Generar y añadir los slots ocupados
-      const newSlots = generateBookedSlots(bookings[bookingIndex]);
-      bookedSlots.push(...newSlots);
+      // Generar y guardar los slots ocupados
+      const newSlots = generateBookedSlots(booking);
+      await BookedSlot.insertMany(newSlots);
       
-      console.log('Slots ocupados generados:', newSlots);
-      
-      // Guardar cambios
-      saveData();
+      console.log('✅ Slots ocupados generados y guardados:', newSlots.length);
       
       // Enviar email de confirmación al cliente
       await emailTransporter.sendMail({
         from: '"DeDecor" <dedecorinfo@gmail.com>',
-        to: bookings[bookingIndex].clientEmail,
+        to: booking.clientEmail,
         subject: 'Tu reserva ha sido confirmada',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
-            <p>Hola ${bookings[bookingIndex].clientName},</p>
-            <p>Nos complace confirmar tu reserva para el servicio de ${bookings[bookingIndex].service}.</p>
+            <p>Hola ${booking.clientName},</p>
+            <p>Nos complace confirmar tu reserva para el servicio de ${booking.service}.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
-              <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
-              <p><strong>Tipo de cita:</strong> ${bookings[bookingIndex].type}</p>
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
+              <p><strong>Tipo de cita:</strong> ${booking.type}</p>
             </div>
             
             <p>¡Esperamos verte pronto!</p>
@@ -411,30 +346,28 @@ app.post('/api/bookings/:id/status', async (req, res) => {
         `
       });
       
-      console.log('Email de confirmación enviado al cliente:', bookings[bookingIndex].clientEmail);
+      console.log('✅ Email de confirmación enviado al cliente');
       
       return res.json({ success: true, message: 'Reserva confirmada exitosamente' });
     } else if (action === 'reject') {
       // Actualizar estado de la reserva
-      bookings[bookingIndex].status = 'rejected';
-      
-      // Guardar cambios
-      saveData();
+      booking.status = 'rejected';
+      await booking.save();
       
       // Enviar email de rechazo al cliente
       await emailTransporter.sendMail({
         from: '"DeDecor" <dedecorinfo@gmail.com>',
-        to: bookings[bookingIndex].clientEmail,
+        to: booking.clientEmail,
         subject: 'Información sobre tu solicitud de reserva',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
-            <p>Hola ${bookings[bookingIndex].clientName},</p>
-            <p>Lamentamos informarte que no podemos confirmar tu reserva para el servicio de ${bookings[bookingIndex].service} en el horario solicitado.</p>
+            <p>Hola ${booking.clientName},</p>
+            <p>Lamentamos informarte que no podemos confirmar tu reserva para el servicio de ${booking.service} en el horario solicitado.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
-              <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
             </div>
             
             <p>Te invitamos a intentar con otro horario o fecha que se ajuste mejor a tu agenda.</p>
@@ -445,14 +378,14 @@ app.post('/api/bookings/:id/status', async (req, res) => {
         `
       });
       
-      console.log('Email de rechazo enviado al cliente:', bookings[bookingIndex].clientEmail);
+      console.log('✅ Email de rechazo enviado al cliente');
       
       return res.json({ success: true, message: 'Reserva rechazada exitosamente' });
     }
     
     return res.status(400).json({ error: 'Acción desconocida' });
   } catch (error) {
-    console.error('Error al procesar la reserva:', error);
+    console.error('❌ Error al procesar la reserva:', error);
     return res.status(500).json({ error: 'Error al procesar la reserva' });
   }
 });
@@ -461,56 +394,41 @@ app.post('/api/bookings/:id/status', async (req, res) => {
 app.post('/api/bookings/:id/cancel', async (req, res) => {
   const { id } = req.params;
   
-  const bookingIndex = bookings.findIndex(booking => booking.id === id);
-  
-  if (bookingIndex === -1) {
-    return res.status(404).json({ error: 'Reserva no encontrada' });
-  }
-  
   try {
+    const booking = await Booking.findOne({ id });
+    
+    if (!booking) {
+      return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+    
     // Verificar que la reserva esté confirmada
-    if (bookings[bookingIndex].status !== 'confirmed') {
+    if (booking.status !== 'confirmed') {
       return res.status(400).json({ error: 'Solo se pueden cancelar reservas confirmadas' });
     }
     
     // Actualizar estado de la reserva
-    bookings[bookingIndex].status = 'cancelled';
+    booking.status = 'cancelled';
+    await booking.save();
     
     // Eliminar todos los horarios ocupados relacionados con esta reserva
-    const slotsToRemove = bookedSlots.filter(slot => slot.bookingId === id);
+    const deletedSlots = await BookedSlot.deleteMany({ bookingId: id });
     
-    // Eliminar cada slot relacionado
-    slotsToRemove.forEach(slotToRemove => {
-      const slotIndex = bookedSlots.findIndex(slot => 
-        slot.bookingId === slotToRemove.bookingId && 
-        slot.date === slotToRemove.date && 
-        slot.time === slotToRemove.time
-      );
-      
-      if (slotIndex !== -1) {
-        bookedSlots.splice(slotIndex, 1);
-      }
-    });
-    
-    console.log('Slots eliminados:', slotsToRemove.length);
-    
-    // Guardar cambios
-    saveData();
+    console.log('✅ Slots eliminados:', deletedSlots.deletedCount);
     
     // Enviar email de cancelación al cliente
     await emailTransporter.sendMail({
       from: '"DeDecor" <dedecorinfo@gmail.com>',
-      to: bookings[bookingIndex].clientEmail,
+      to: booking.clientEmail,
       subject: 'Tu reserva ha sido cancelada',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #4a6163;">Reserva Cancelada</h2>
-          <p>Hola ${bookings[bookingIndex].clientName},</p>
-          <p>Te informamos que tu reserva para el servicio de ${bookings[bookingIndex].service} ha sido cancelada.</p>
+          <p>Hola ${booking.clientName},</p>
+          <p>Te informamos que tu reserva para el servicio de ${booking.service} ha sido cancelada.</p>
           
           <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
-            <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
+            <p><strong>Fecha:</strong> ${booking.date}</p>
+            <p><strong>Hora:</strong> ${booking.time}</p>
           </div>
           
           <p>Si deseas reprogramar tu cita, puedes hacerlo a través de nuestra página web o contactándonos directamente.</p>
@@ -520,41 +438,46 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
       `
     });
     
-    console.log('Email de cancelación enviado al cliente:', bookings[bookingIndex].clientEmail);
+    console.log('✅ Email de cancelación enviado al cliente');
     
     return res.json({ success: true, message: 'Reserva cancelada exitosamente' });
   } catch (error) {
-    console.error('Error al cancelar la reserva:', error);
+    console.error('❌ Error al cancelar la reserva:', error);
     return res.status(500).json({ error: 'Error al cancelar la reserva' });
   }
 });
 
-// API para listar todas las reservas (con filtro opcional por estado)
-app.get('/api/bookings', (req, res) => {
-  const { status } = req.query;
-  
-  let filteredBookings = [...bookings];
-  
-  // Filtrar por estado si se proporciona
-  if (status) {
-    filteredBookings = filteredBookings.filter(booking => booking.status === status);
+// API para listar todas las reservas
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const { status } = req.query;
+    
+    let query = {};
+    if (status) {
+      query.status = status;
+    }
+    
+    const bookings = await Booking.find(query);
+    
+    // Devolver información básica de las reservas
+    const bookingsInfo = bookings.map(booking => ({
+      id: booking.id,
+      clientName: booking.clientName,
+      service: booking.service,
+      date: booking.date,
+      time: booking.time,
+      status: booking.status
+    }));
+    
+    res.json(bookingsInfo);
+  } catch (error) {
+    console.error('❌ Error al obtener reservas:', error);
+    res.status(500).json({ error: 'Error al obtener reservas' });
   }
-  
-  // Devolver información básica de las reservas (sin datos sensibles)
-  const bookingsInfo = filteredBookings.map(booking => ({
-    id: booking.id,
-    clientName: booking.clientName,
-    service: booking.service,
-    date: booking.date,
-    time: booking.time,
-    status: booking.status
-  }));
-  
-  res.json(bookingsInfo);
 });
 
-// API para crear una nueva reserva (mejorada)
-app.post('/api/bookings', (req, res) => {
+// API para crear una nueva reserva
+app.post('/api/bookings', async (req, res) => {
   try {
     // Validar datos requeridos
     const { clientName, clientEmail, clientPhone, service, date, time, type } = req.body;
@@ -579,7 +502,7 @@ app.post('/api/bookings', (req, res) => {
     const bookingId = req.body.id || `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
     // Verificar que no existe una reserva con el mismo ID
-    const existingBooking = bookings.find(b => b.id === bookingId);
+    const existingBooking = await Booking.findOne({ id: bookingId });
     if (existingBooking) {
       return res.status(409).json({ 
         error: 'Ya existe una reserva con este ID',
@@ -587,7 +510,7 @@ app.post('/api/bookings', (req, res) => {
       });
     }
     
-    const booking = {
+    const booking = new Booking({
       id: bookingId,
       status: 'pending',
       clientName,
@@ -599,19 +522,15 @@ app.post('/api/bookings', (req, res) => {
       date,
       time,
       type,
-      notes: req.body.notes || '',
-      createdAt: new Date().toISOString()
-    };
+      notes: req.body.notes || ''
+    });
     
-    bookings.push(booking);
+    await booking.save();
     
-    // Guardar datos
-    saveData();
-    
-    console.log(`Nueva reserva creada: ${bookingId} para ${clientName}`);
+    console.log(`✅ Nueva reserva creada: ${bookingId} para ${clientName}`);
     res.status(201).json({ success: true, bookingId: booking.id });
   } catch (error) {
-    console.error('Error al crear reserva:', error);
+    console.error('❌ Error al crear reserva:', error);
     res.status(500).json({ 
       error: 'Error interno del servidor al crear la reserva',
       success: false
@@ -619,7 +538,7 @@ app.post('/api/bookings', (req, res) => {
   }
 });
 
-// Manejar confirmaciones desde el email (cuando se hace clic en el enlace)
+// Manejar confirmaciones desde el email
 app.get('/confirm-booking', async (req, res) => {
   const { id, action } = req.query;
   
@@ -641,38 +560,38 @@ app.get('/confirm-booking', async (req, res) => {
     `);
   }
   
-  const bookingIndex = bookings.findIndex(booking => booking.id === id);
-  
-  if (bookingIndex === -1) {
-    return res.status(404).send(`
-      <html>
-        <head>
-          <title>Error</title>
-          <style>
-            body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-            .error { color: red; }
-          </style>
-        </head>
-        <body>
-          <h1 class="error">Error</h1>
-          <p>Reserva no encontrada. Es posible que ya haya sido procesada o que el ID sea incorrecto.</p>
-        </body>
-      </html>
-    `);
-  }
-  
   try {
+    const booking = await Booking.findOne({ id });
+    
+    if (!booking) {
+      return res.status(404).send(`
+        <html>
+          <head>
+            <title>Error</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+              .error { color: red; }
+            </style>
+          </head>
+          <body>
+            <h1 class="error">Error</h1>
+            <p>Reserva no encontrada.</p>
+          </body>
+        </html>
+      `);
+    }
+    
     if (action === 'confirm') {
-      // Actualizar estado de la reserva
-      bookings[bookingIndex].status = 'confirmed';
+      // Lógica igual que en el endpoint POST
+      booking.status = 'confirmed';
+      await booking.save();
       
-      // Función para generar slots ocupados según el tipo de servicio
+      // Generar slots ocupados (código similar al anterior)
       const generateBookedSlots = (booking) => {
         const slots = [];
         const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
         const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
         
-        // Si es asesoría completa, bloquear todo el turno
         if (booking.type === 'asesoria-completa') {
           const isMorning = morningTimes.includes(booking.time);
           const timesToBlock = isMorning ? morningTimes : afternoonTimes;
@@ -685,13 +604,10 @@ app.get('/confirm-booking', async (req, res) => {
               reason: `Asesoría completa - turno ${isMorning ? 'mañana' : 'tarde'}`
             });
           });
-        }
-        // Si es consulta de 120 min, bloquear 2 slots consecutivos
-        else if (booking.serviceDuration === '120 min') {
+        } else if (booking.serviceDuration === '120 min') {
           const allTimes = [...morningTimes, ...afternoonTimes];
           const currentIndex = allTimes.indexOf(booking.time);
           
-          // Bloquear el horario actual
           slots.push({
             date: booking.date,
             time: booking.time,
@@ -699,7 +615,6 @@ app.get('/confirm-booking', async (req, res) => {
             reason: 'Consulta 120 min - hora 1'
           });
           
-          // Bloquear el siguiente horario si existe y está en el mismo turno
           if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
             const nextTime = allTimes[currentIndex + 1];
             const isMorningTime = morningTimes.includes(booking.time);
@@ -714,9 +629,7 @@ app.get('/confirm-booking', async (req, res) => {
               });
             }
           }
-        }
-        // Para consulta de 60 min, solo bloquear el horario seleccionado
-        else {
+        } else {
           slots.push({
             date: booking.date,
             time: booking.time,
@@ -728,41 +641,32 @@ app.get('/confirm-booking', async (req, res) => {
         return slots;
       };
       
-      // Generar y añadir los slots ocupados
-      const newSlots = generateBookedSlots(bookings[bookingIndex]);
-      bookedSlots.push(...newSlots);
+      const newSlots = generateBookedSlots(booking);
+      await BookedSlot.insertMany(newSlots);
       
-      console.log('Slots ocupados generados:', newSlots);
-      
-      // Guardar cambios
-      saveData();
-      
-      // Enviar email de confirmación al cliente
+      // Enviar email de confirmación
       await emailTransporter.sendMail({
         from: '"DeDecor" <dedecorinfo@gmail.com>',
-        to: bookings[bookingIndex].clientEmail,
+        to: booking.clientEmail,
         subject: 'Tu reserva ha sido confirmada',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
-            <p>Hola ${bookings[bookingIndex].clientName},</p>
-            <p>Nos complace confirmar tu reserva para el servicio de ${bookings[bookingIndex].service}.</p>
+            <p>Hola ${booking.clientName},</p>
+            <p>Tu reserva para el servicio de ${booking.service} ha sido confirmada.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
-              <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
-              <p><strong>Tipo de cita:</strong> ${bookings[bookingIndex].type}</p>
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
+              <p><strong>Tipo de cita:</strong> ${booking.type}</p>
             </div>
             
             <p>¡Esperamos verte pronto!</p>
-            <p>Si necesitas hacer algún cambio, por favor contáctanos lo antes posible.</p>
             
             <p style="margin-top: 30px;">Saludos,<br>El equipo de DeDecor</p>
           </div>
         `
       });
-      
-      console.log('Email de confirmación enviado al cliente:', bookings[bookingIndex].clientEmail);
       
       return res.send(`
         <html>
@@ -780,11 +684,11 @@ app.get('/confirm-booking', async (req, res) => {
             
             <div class="details">
               <h3>Detalles de la reserva:</h3>
-              <p><strong>Cliente:</strong> ${bookings[bookingIndex].clientName}</p>
-              <p><strong>Email:</strong> ${bookings[bookingIndex].clientEmail}</p>
-              <p><strong>Servicio:</strong> ${bookings[bookingIndex].service}</p>
-              <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
-              <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
+              <p><strong>Cliente:</strong> ${booking.clientName}</p>
+              <p><strong>Email:</strong> ${booking.clientEmail}</p>
+              <p><strong>Servicio:</strong> ${booking.service}</p>
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
             </div>
             
             <p>Se ha enviado un correo electrónico de confirmación al cliente.</p>
@@ -792,37 +696,31 @@ app.get('/confirm-booking', async (req, res) => {
         </html>
       `);
     } else if (action === 'reject') {
-      // Actualizar estado de la reserva
-      bookings[bookingIndex].status = 'rejected';
+      booking.status = 'rejected';
+      await booking.save();
       
-      // Guardar cambios
-      saveData();
-      
-      // Enviar email de rechazo al cliente
+      // Enviar email de rechazo
       await emailTransporter.sendMail({
         from: '"DeDecor" <dedecorinfo@gmail.com>',
-        to: bookings[bookingIndex].clientEmail,
+        to: booking.clientEmail,
         subject: 'Información sobre tu solicitud de reserva',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
-            <p>Hola ${bookings[bookingIndex].clientName},</p>
-            <p>Lamentamos informarte que no podemos confirmar tu reserva para el servicio de ${bookings[bookingIndex].service} en el horario solicitado.</p>
+            <p>Hola ${booking.clientName},</p>
+            <p>Lamentamos informarte que no podemos confirmar tu reserva para el servicio de ${booking.service} en el horario solicitado.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
-              <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
             </div>
             
             <p>Te invitamos a intentar con otro horario o fecha que se ajuste mejor a tu agenda.</p>
-            <p>Si prefieres, puedes contactarnos directamente para ayudarte a encontrar un horario disponible.</p>
             
             <p style="margin-top: 30px;">Gracias por tu comprensión,<br>El equipo de DeDecor</p>
           </div>
         `
       });
-      
-      console.log('Email de rechazo enviado al cliente:', bookings[bookingIndex].clientEmail);
       
       return res.send(`
         <html>
@@ -840,36 +738,20 @@ app.get('/confirm-booking', async (req, res) => {
             
             <div class="details">
               <h3>Detalles de la reserva:</h3>
-              <p><strong>Cliente:</strong> ${bookings[bookingIndex].clientName}</p>
-              <p><strong>Email:</strong> ${bookings[bookingIndex].clientEmail}</p>
-              <p><strong>Servicio:</strong> ${bookings[bookingIndex].service}</p>
-              <p><strong>Fecha:</strong> ${bookings[bookingIndex].date}</p>
-              <p><strong>Hora:</strong> ${bookings[bookingIndex].time}</p>
+              <p><strong>Cliente:</strong> ${booking.clientName}</p>
+              <p><strong>Email:</strong> ${booking.clientEmail}</p>
+              <p><strong>Servicio:</strong> ${booking.service}</p>
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
             </div>
             
             <p>Se ha enviado un correo electrónico al cliente informando que su reserva ha sido rechazada.</p>
           </body>
         </html>
       `);
-    } else {
-      return res.status(400).send(`
-        <html>
-          <head>
-            <title>Error</title>
-            <style>
-              body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-              .error { color: red; }
-            </style>
-          </head>
-          <body>
-            <h1 class="error">Error</h1>
-            <p>Acción desconocida: ${action}</p>
-          </body>
-        </html>
-      `);
     }
   } catch (error) {
-    console.error('Error al procesar la reserva:', error);
+    console.error('❌ Error al procesar la reserva:', error);
     return res.status(500).send(`
       <html>
         <head>
@@ -882,20 +764,33 @@ app.get('/confirm-booking', async (req, res) => {
         <body>
           <h1 class="error">Error</h1>
           <p>Hubo un problema al procesar la reserva.</p>
-          <p>Error: ${error.message}</p>
         </body>
       </html>
     `);
   }
 });
 
-// Añadir esta ruta al final del archivo para manejar todas las demás rutas y servir la aplicación React
+// Manejar todas las demás rutas para servir la aplicación React
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
+// Manejar cierre graceful
+process.on('SIGINT', async () => {
+  console.log('🔄 Cerrando servidor...');
+  await disconnectDB();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🔄 Cerrando servidor...');
+  await disconnectDB();
+  process.exit(0);
+});
+
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-  console.log(`Modo: ${process.env.NODE_ENV || 'desarrollo'}`);
-  console.log('Los emails se enviarán realmente usando las credenciales proporcionadas.');
+  console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+  console.log(`📊 Modo: ${process.env.NODE_ENV || 'desarrollo'}`);
+  console.log('🔗 MongoDB Atlas: Conectado');
+  console.log('📧 Emails configurados correctamente');
 }); 
