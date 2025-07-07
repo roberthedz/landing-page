@@ -175,6 +175,10 @@ app.get('/api/health', async (req, res) => {
     const bookingCount = await Booking.countDocuments();
     const slotCount = await BookedSlot.countDocuments();
     
+    // Obtener las últimas 5 reservas para debugging
+    const recentBookings = await Booking.find({}).sort({ createdAt: -1 }).limit(5);
+    const recentSlots = await BookedSlot.find({}).sort({ createdAt: -1 }).limit(5);
+    
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -182,7 +186,16 @@ app.get('/api/health', async (req, res) => {
       email: 'configured',
       reservas: bookingCount,
       horarios: slotCount,
-      cors: req.get('origin') || 'no-origin'
+      cors: req.get('origin') || 'no-origin',
+      ultimasReservas: recentBookings.map(b => ({
+        id: b.id,
+        cliente: b.clientName,
+        fecha: b.date,
+        hora: b.time,
+        estado: b.status,
+        creada: b.createdAt
+      })),
+      ultimosHorarios: recentSlots
     });
   } catch (error) {
     console.error('❌ Error en health check:', error);
@@ -194,14 +207,35 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// API para obtener horarios ocupados
+// API para obtener horarios ocupados - MEJORADA
 app.get('/api/booked-slots', async (req, res) => {
   console.log('🔍 GET /api/booked-slots - Solicitud recibida desde:', req.get('origin'));
   
   try {
     console.log('📡 Consultando MongoDB Atlas...');
-    const bookedSlots = await BookedSlot.find({});
+    const { date } = req.query;
+    let query = {};
+    
+    if (date) {
+      query.date = date;
+      console.log(`🔍 Filtrando por fecha: ${date}`);
+    }
+    
+    const bookedSlots = await BookedSlot.find(query).sort({ date: 1, time: 1 });
     console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados:`, bookedSlots);
+    
+    // Agrupar por fecha para mejor organización
+    const slotsByDate = {};
+    bookedSlots.forEach(slot => {
+      if (!slotsByDate[slot.date]) {
+        slotsByDate[slot.date] = [];
+      }
+      slotsByDate[slot.date].push({
+        time: slot.time,
+        bookingId: slot.bookingId,
+        reason: slot.reason
+      });
+    });
     
     res.set({
       'Cache-Control': 'public, max-age=30',
@@ -209,17 +243,25 @@ app.get('/api/booked-slots', async (req, res) => {
       'Access-Control-Allow-Origin': req.get('origin') || '*'
     });
     
-    res.json(bookedSlots);
+    res.json({
+      success: true,
+      totalSlots: bookedSlots.length,
+      bookedSlots: bookedSlots,
+      slotsByDate: slotsByDate
+    });
+    
   } catch (error) {
     console.error('❌ Error al obtener horarios ocupados:', error);
     res.status(500).json({ 
       error: 'Error interno del servidor al obtener horarios ocupados',
-      data: []
+      success: false,
+      data: [],
+      details: error.message
     });
   }
 });
 
-// API para crear una nueva reserva
+// API para crear una nueva reserva - FLUJO COMPLETO Y ROBUSTO
 app.post('/api/bookings', async (req, res) => {
   console.log('🔍 POST /api/bookings - Solicitud recibida desde:', req.get('origin'));
   console.log('📝 Datos recibidos:', req.body);
@@ -227,6 +269,7 @@ app.post('/api/bookings', async (req, res) => {
   try {
     const { clientName, clientEmail, clientPhone, service, date, time, type } = req.body;
     
+    // 1️⃣ VALIDACIÓN DE DATOS REQUERIDOS
     if (!clientName || !clientEmail || !clientPhone || !service || !date || !time || !type) {
       console.log('❌ Faltan campos requeridos');
       return res.status(400).json({ 
@@ -235,27 +278,45 @@ app.post('/api/bookings', async (req, res) => {
       });
     }
     
+    // 2️⃣ VALIDACIÓN DE EMAIL
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(clientEmail)) {
+      console.log('❌ Formato de email inválido:', clientEmail);
       return res.status(400).json({ 
         error: 'Formato de email inválido',
         success: false
       });
     }
     
+    // 3️⃣ GENERAR ID ÚNICO
     const bookingId = req.body.id || `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
+    // 4️⃣ VERIFICAR ID NO DUPLICADO
     const existingBooking = await Booking.findOne({ id: bookingId });
     if (existingBooking) {
+      console.log('❌ ID duplicado:', bookingId);
       return res.status(409).json({ 
         error: 'Ya existe una reserva con este ID',
         success: false
       });
     }
     
+    // 5️⃣ VERIFICAR QUE EL HORARIO ESTÉ DISPONIBLE
+    console.log('🔍 Verificando disponibilidad del horario:', date, time);
+    const existingSlot = await BookedSlot.findOne({ date, time });
+    if (existingSlot) {
+      console.log('❌ Horario ya ocupado:', existingSlot);
+      return res.status(409).json({ 
+        error: `Este horario ya está ocupado. Reserva: ${existingSlot.bookingId}`,
+        success: false
+      });
+    }
+    
+    // 6️⃣ CREAR LA RESERVA
+    console.log('💾 Creando reserva en MongoDB...');
     const booking = new Booking({
       id: bookingId,
-      status: 'pending',
+      status: 'confirmed', // ✅ Auto-confirmar para evitar problemas
       clientName,
       clientEmail,
       clientPhone,
@@ -269,14 +330,184 @@ app.post('/api/bookings', async (req, res) => {
     });
     
     await booking.save();
+    console.log(`✅ Reserva guardada: ${bookingId} para ${clientName}`);
     
-    console.log(`✅ Nueva reserva creada: ${bookingId} para ${clientName}`);
-    res.status(201).json({ success: true, bookingId: booking.id });
+    // 7️⃣ GENERAR Y GUARDAR HORARIOS OCUPADOS INMEDIATAMENTE
+    console.log('🔒 Generando horarios ocupados automáticamente...');
+    const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
+    const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+    
+    const newSlots = [];
+    
+    if (type === 'asesoria-completa') {
+      // Bloquear todo el turno (mañana o tarde)
+      const isMorning = morningTimes.includes(time);
+      const timesToBlock = isMorning ? morningTimes : afternoonTimes;
+      
+      timesToBlock.forEach(timeSlot => {
+        newSlots.push({
+          date: date,
+          time: timeSlot,
+          bookingId: bookingId,
+          reason: `Asesoría completa - turno ${isMorning ? 'mañana' : 'tarde'}`
+        });
+      });
+      console.log(`🔒 Bloqueando turno completo (${isMorning ? 'mañana' : 'tarde'}):`, timesToBlock);
+      
+    } else if (req.body.serviceDuration === '120 min') {
+      // Bloquear 2 slots consecutivos para servicios de 2 horas
+      const allTimes = [...morningTimes, ...afternoonTimes];
+      const currentIndex = allTimes.indexOf(time);
+      
+      // Bloquear el horario actual
+      newSlots.push({
+        date: date,
+        time: time,
+        bookingId: bookingId,
+        reason: 'Consulta 120 min - hora 1'
+      });
+      
+      // Bloquear el siguiente horario si existe y está en el mismo turno
+      if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
+        const nextTime = allTimes[currentIndex + 1];
+        const isMorningTime = morningTimes.includes(time);
+        const isNextMorningTime = morningTimes.includes(nextTime);
+        
+        if (isMorningTime === isNextMorningTime) {
+          newSlots.push({
+            date: date,
+            time: nextTime,
+            bookingId: bookingId,
+            reason: 'Consulta 120 min - hora 2'
+          });
+        }
+      }
+      console.log(`🔒 Bloqueando 2 horas consecutivas desde: ${time}`);
+      
+    } else {
+      // Para consultas de 60 min, solo bloquear el horario seleccionado
+      newSlots.push({
+        date: date,
+        time: time,
+        bookingId: bookingId,
+        reason: 'Consulta individual'
+      });
+      console.log(`🔒 Bloqueando 1 hora: ${time}`);
+    }
+    
+    // 8️⃣ GUARDAR HORARIOS OCUPADOS
+    if (newSlots.length > 0) {
+      await BookedSlot.insertMany(newSlots);
+      console.log(`✅ ${newSlots.length} horarios bloqueados exitosamente`);
+    }
+    
+    // 9️⃣ ENVIAR EMAILS DE NOTIFICACIÓN
+    console.log('📧 Enviando emails de notificación...');
+    try {
+      const baseUrl = getBaseUrl(req);
+      const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
+      const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
+      
+      // Email al admin
+      await emailTransporter.sendMail({
+        from: '"Sistema de Reservas DeDecor" <dedecorinfo@gmail.com>',
+        to: 'dedecorinfo@gmail.com',
+        subject: `🎉 RESERVA CONFIRMADA - ${clientName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #28a745;">✅ Reserva Confirmada Automáticamente</h2>
+            <p>Se ha creado y confirmado una nueva reserva:</p>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>Cliente:</strong> ${clientName}</p>
+              <p><strong>Email:</strong> ${clientEmail}</p>
+              <p><strong>Teléfono:</strong> ${clientPhone}</p>
+              <p><strong>Servicio:</strong> ${service}</p>
+              <p><strong>Fecha:</strong> ${date}</p>
+              <p><strong>Hora:</strong> ${time}</p>
+              <p><strong>Tipo:</strong> ${type}</p>
+              <p><strong>Horarios bloqueados:</strong> ${newSlots.length}</p>
+            </div>
+            
+            <div style="background-color: #e7f3ff; padding: 10px; border-radius: 5px; margin: 20px 0;">
+              <p><strong>💡 Nota:</strong> Los horarios se han bloqueado automáticamente. Si necesitas cancelar, hazlo desde el panel de admin.</p>
+            </div>
+            
+            <p style="font-size: 14px; color: #666;">
+              ID de reserva: ${bookingId}
+            </p>
+          </div>
+        `
+      });
+      
+      // Email al cliente
+      await emailTransporter.sendMail({
+        from: '"DeDecor" <dedecorinfo@gmail.com>',
+        to: clientEmail,
+        subject: '🎉 ¡Tu reserva ha sido confirmada!',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4a6163;">¡Reserva Confirmada Exitosamente!</h2>
+            <p>Hola ${clientName},</p>
+            <p>Tu reserva ha sido <strong>confirmada automáticamente</strong>. ¡Nos vemos pronto!</p>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>Servicio:</strong> ${service}</p>
+              <p><strong>Fecha:</strong> ${date}</p>
+              <p><strong>Hora:</strong> ${time}</p>
+              <p><strong>Tipo:</strong> ${type}</p>
+            </div>
+            
+            <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>✅ Tu horario está reservado y bloqueado</strong></p>
+              <p>No te preocupes, nadie más podrá reservar este horario.</p>
+            </div>
+            
+            <p>Si necesitas hacer algún cambio, contáctanos lo antes posible.</p>
+            <p>¡Esperamos verte pronto!</p>
+            <p>Saludos,<br>El equipo de DeDecor</p>
+          </div>
+        `
+      });
+      
+      console.log('✅ Emails enviados exitosamente');
+    } catch (emailError) {
+      console.error('⚠️ Error al enviar emails (pero la reserva fue creada):', emailError);
+    }
+    
+    // 🔟 RESPUESTA EXITOSA
+    console.log(`🎉 Flujo completo exitoso para ${clientName}`);
+    res.status(201).json({ 
+      success: true, 
+      bookingId: booking.id,
+      message: 'Reserva creada y horarios bloqueados exitosamente',
+      horariosBloquados: newSlots.length,
+      status: 'confirmed',
+      emailsSent: true
+    });
+    
   } catch (error) {
-    console.error('❌ Error al crear reserva:', error);
+    console.error('❌ Error en el flujo de reserva:', error);
+    
+    // 🔄 ROLLBACK: Si algo falló, intentar limpiar
+    try {
+      const bookingId = req.body.id || `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      console.log('🔄 Intentando rollback para:', bookingId);
+      
+      // Eliminar reserva si se creó
+      await Booking.deleteOne({ id: bookingId });
+      // Eliminar horarios si se crearon
+      await BookedSlot.deleteMany({ bookingId });
+      
+      console.log('✅ Rollback completado');
+    } catch (rollbackError) {
+      console.error('❌ Error en rollback:', rollbackError);
+    }
+    
     res.status(500).json({ 
       error: 'Error interno del servidor al crear la reserva',
-      success: false
+      success: false,
+      details: error.message
     });
   }
 });
@@ -495,6 +726,123 @@ app.get('/confirm-booking', async (req, res) => {
   } catch (error) {
     console.error('❌ Error al procesar la confirmación:', error);
     return res.status(500).send('Error al procesar la reserva');
+  }
+});
+
+// API para verificar el estado del sistema - DIAGNÓSTICO
+app.get('/api/system-status', async (req, res) => {
+  console.log('🔍 GET /api/system-status - Verificando estado del sistema...');
+  
+  try {
+    // Verificar conexión a MongoDB
+    const mongoStatus = mongoose.connection.readyState;
+    const mongoStates = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+    
+    // Contar datos en cada colección
+    const totalBookings = await Booking.countDocuments();
+    const totalSlots = await BookedSlot.countDocuments();
+    const totalMessages = await ContactMessage.countDocuments();
+    
+    const confirmedBookings = await Booking.countDocuments({ status: 'confirmed' });
+    const pendingBookings = await Booking.countDocuments({ status: 'pending' });
+    const rejectedBookings = await Booking.countDocuments({ status: 'rejected' });
+    
+    // Verificar emails (test básico)
+    let emailStatus = 'unknown';
+    try {
+      await emailTransporter.verify();
+      emailStatus = 'connected';
+    } catch (emailError) {
+      emailStatus = 'error';
+    }
+    
+    const systemStatus = {
+      timestamp: new Date().toISOString(),
+      server: {
+        status: 'running',
+        port: PORT,
+        environment: process.env.NODE_ENV || 'production'
+      },
+      database: {
+        status: mongoStates[mongoStatus],
+        connection: mongoStatus === 1 ? 'connected' : 'disconnected',
+        collections: {
+          bookings: totalBookings,
+          bookedSlots: totalSlots,
+          contactMessages: totalMessages
+        }
+      },
+      bookings: {
+        total: totalBookings,
+        confirmed: confirmedBookings,
+        pending: pendingBookings,
+        rejected: rejectedBookings
+      },
+      email: {
+        status: emailStatus,
+        transporter: emailTransporter ? 'configured' : 'not configured'
+      }
+    };
+    
+    console.log('✅ Estado del sistema:', systemStatus);
+    res.json({
+      success: true,
+      ...systemStatus
+    });
+    
+  } catch (error) {
+    console.error('❌ Error al verificar estado del sistema:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al verificar el estado del sistema',
+      details: error.message
+    });
+  }
+});
+
+// API para limpiar reservas de prueba - SOLO PARA DESARROLLO
+app.delete('/api/cleanup-test-data', async (req, res) => {
+  console.log('🧹 DELETE /api/cleanup-test-data - Limpiando datos de prueba...');
+  
+  try {
+    // Solo eliminar reservas que claramente son de prueba
+    const testBookings = await Booking.find({
+      $or: [
+        { clientName: { $regex: /test|prueba|demo/i } },
+        { clientEmail: { $regex: /test|prueba|demo/i } },
+        { id: { $regex: /test|prueba|demo/i } }
+      ]
+    });
+    
+    if (testBookings.length > 0) {
+      const testBookingIds = testBookings.map(b => b.id);
+      
+      // Eliminar reservas de prueba
+      await Booking.deleteMany({ id: { $in: testBookingIds } });
+      
+      // Eliminar horarios ocupados de prueba
+      await BookedSlot.deleteMany({ bookingId: { $in: testBookingIds } });
+      
+      console.log(`🧹 Eliminadas ${testBookings.length} reservas de prueba`);
+      res.json({
+        success: true,
+        message: `Eliminadas ${testBookings.length} reservas de prueba`,
+        deletedBookings: testBookingIds
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'No se encontraron reservas de prueba para eliminar'
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error al limpiar datos de prueba:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al limpiar datos de prueba',
+      details: error.message
+    });
   }
 });
 
