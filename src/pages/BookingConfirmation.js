@@ -55,14 +55,21 @@ const BookingConfirmation = () => {
       
       try {
         // Llamar a la API para actualizar el estado de la reserva
-        const response = await axios.post(`${apiConfig.API_BASE_URL}/bookings/${bookingId}/status`, { action });
+        console.log(`📝 Procesando acción: ${action} para reserva: ${bookingId}`);
+        const response = await apiConfig.makeRequest(`${apiConfig.API_BASE_URL}/bookings/${bookingId}/status`, {
+          method: 'POST',
+          data: { action }
+        });
         
         if (!response.data.success) {
           throw new Error(response.data.error || 'Error al procesar la reserva');
         }
         
         // Obtener los datos de la reserva desde el servidor
-        const bookingResponse = await axios.get(`${apiConfig.API_BASE_URL}/bookings/${bookingId}`);
+        console.log(`📋 Obteniendo datos de la reserva: ${bookingId}`);
+        const bookingResponse = await apiConfig.makeRequest(`${apiConfig.API_BASE_URL}/bookings/${bookingId}`, {
+          method: 'GET'
+        });
         
         if (bookingResponse.data.success && bookingResponse.data.booking) {
           setBookingData(bookingResponse.data.booking);

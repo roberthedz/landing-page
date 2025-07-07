@@ -3,24 +3,43 @@
  */
 import axios from 'axios';
 
-// Detectar automáticamente el dominio base
+// CONFIGURACIÓN FORZADA: Siempre usar Render para APIs en producción
 const getBaseUrl = () => {
-  // En desarrollo, usar localhost
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // En desarrollo local, usar localhost
+  if (window.location.hostname === 'localhost' || 
+      window.location.hostname === '127.0.0.1' ||
+      window.location.port === '3000' ||
+      window.location.port === '3001') {
     return 'http://localhost:3001/api';
   }
-  // En producción, SIEMPRE usar el servidor de Render para las APIs
-  // porque es el único que tiene el servidor Node.js funcionando
+  
+  // EN CUALQUIER OTRO CASO (dedecorinfo.com, render, etc.)
+  // SIEMPRE usar la URL directa de Render porque es donde está el servidor Node.js
+  // dedecorinfo.com solo sirve HTML estático, las APIs están en Render
   return 'https://landing-page-534b.onrender.com/api';
 };
 
 const API_BASE_URL = getBaseUrl();
 
+// LOG DE DEBUGGING PARA VERIFICAR LA CONFIGURACIÓN
+console.log('🔧 API Configuration:');
+console.log('  - Current hostname:', window.location.hostname);
+console.log('  - Current port:', window.location.port);
+console.log('  - API Base URL:', API_BASE_URL);
+console.log('  - Full origin:', window.location.origin);
+
 // Configuración de timeout y reintentos
 const API_CONFIG = {
   timeout: 15000, // 15 segundos timeout
   maxRetries: 3,
-  retryDelay: 1000 // 1 segundo entre reintentos
+  retryDelay: 1000, // 1 segundo entre reintentos
+  // Configurar headers por defecto
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    // Agregar origin para ayudar con CORS
+    'X-Requested-With': 'XMLHttpRequest'
+  }
 };
 
 // Cache simple para evitar múltiples llamadas
@@ -29,18 +48,42 @@ const CACHE_DURATION = 30000; // 30 segundos
 
 // Función para hacer peticiones con reintentos automáticos
 const makeRequest = async (url, options = {}, retries = API_CONFIG.maxRetries) => {
+  // Configurar headers por defecto y origen
+  const requestConfig = {
+    url,
+    timeout: API_CONFIG.timeout,
+    headers: {
+      ...API_CONFIG.headers,
+      'Origin': window.location.origin,
+      ...options.headers
+    },
+    // Configurar CORS
+    withCredentials: false,
+    ...options
+  };
+  
+  console.log(`📡 API Request: ${options.method || 'GET'} ${url}`);
+  console.log(`   Origin: ${window.location.origin}`);
+  
   try {
-    const response = await axios({
-      url,
-      timeout: API_CONFIG.timeout,
-      ...options
-    });
+    const response = await axios(requestConfig);
+    console.log(`✅ API Success: ${url} (${response.status})`);
     return response;
   } catch (error) {
-    console.error(`Error en petición a ${url}:`, error);
+    console.error(`❌ Error en petición a ${url}:`, {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      message: error.message,
+      origin: window.location.origin
+    });
     
-    if (retries > 0 && (error.code === 'ECONNABORTED' || error.response?.status >= 500)) {
-      console.log(`Reintentando petición a ${url}. Intentos restantes: ${retries - 1}`);
+    // Reintentar en casos específicos
+    if (retries > 0 && (
+      error.code === 'ECONNABORTED' || 
+      error.response?.status >= 500 ||
+      error.message.includes('Network Error')
+    )) {
+      console.log(`🔄 Reintentando petición a ${url}. Intentos restantes: ${retries - 1}`);
       await new Promise(resolve => setTimeout(resolve, API_CONFIG.retryDelay));
       return makeRequest(url, options, retries - 1);
     }
@@ -55,12 +98,13 @@ const getCachedRequest = async (url) => {
   const cached = cache.get(cacheKey);
   
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log(`Usando cache para ${url}`);
+    console.log(`💾 Usando cache para ${url}`);
     return cached.data;
   }
   
   try {
     const response = await makeRequest(url, { method: 'GET' });
+    console.log(`💾 Guardando en cache: ${url}`);
     cache.set(cacheKey, {
       data: response,
       timestamp: Date.now()
@@ -69,9 +113,10 @@ const getCachedRequest = async (url) => {
   } catch (error) {
     // Si falla y tenemos datos en cache, usarlos como fallback
     if (cached) {
-      console.log(`Usando cache como fallback para ${url}`);
+      console.log(`💾 Usando cache como fallback para ${url}`);
       return cached.data;
     }
+    console.error(`❌ No hay datos en cache para ${url}, propagando error`);
     throw error;
   }
 };
@@ -89,6 +134,12 @@ const clearCache = (pattern = null) => {
   }
 };
 
+// Log final de configuración
+console.log('🎯 Endpoints configurados:');
+console.log(`  - Bookings: ${API_BASE_URL}/bookings`);
+console.log(`  - Booked Slots: ${API_BASE_URL}/booked-slots`);
+console.log(`  - System Status: ${API_BASE_URL}/system-status`);
+
 export default {
   API_BASE_URL,
   API_CONFIG,
@@ -99,6 +150,9 @@ export default {
     bookings: `${API_BASE_URL}/bookings`,
     bookedSlots: `${API_BASE_URL}/booked-slots`,
     sendBookingEmail: `${API_BASE_URL}/send-booking-email`,
-    sendContactEmail: `${API_BASE_URL}/send-contact-email`
+    sendContactEmail: `${API_BASE_URL}/send-contact-email`,
+    // Nuevos endpoints para debugging
+    systemStatus: `${API_BASE_URL}/system-status`,
+    health: `${API_BASE_URL}/health`
   }
 }; 
