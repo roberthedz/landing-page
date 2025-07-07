@@ -7,6 +7,15 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurar timeout para todas las rutas
+app.use((req, res, next) => {
+  // Timeout de 30 segundos para todas las peticiones
+  req.setTimeout(30000, () => {
+    res.status(408).json({ error: 'Request timeout' });
+  });
+  next();
+});
+
 // Función para obtener la URL base - siempre usar Render para las confirmaciones
 const getBaseUrl = (req) => {
   // Siempre usar el servidor de Render para los enlaces de confirmación
@@ -39,9 +48,36 @@ let bookings = [];
 let bookedSlots = [];
 let contactMessages = [];
 
-// API para obtener horarios ocupados
+// API para obtener horarios ocupados (optimizada)
 app.get('/api/booked-slots', (req, res) => {
-  res.json(bookedSlots);
+  try {
+    // Validar que bookedSlots sea un array válido
+    if (!Array.isArray(bookedSlots)) {
+      console.warn('bookedSlots no es un array válido, inicializando como array vacío');
+      bookedSlots = [];
+    }
+    
+    // Filtrar slots que no hayan expirado (opcional: remover slots muy antiguos)
+    const validSlots = bookedSlots.filter(slot => {
+      // Mantener todos los slots por ahora, pero esto se puede optimizar
+      return slot && slot.date && slot.time;
+    });
+    
+    // Agregar headers para cache y optimización
+    res.set({
+      'Cache-Control': 'public, max-age=30', // Cache por 30 segundos
+      'Content-Type': 'application/json'
+    });
+    
+    console.log(`Enviando ${validSlots.length} horarios ocupados`);
+    res.json(validSlots);
+  } catch (error) {
+    console.error('Error al obtener horarios ocupados:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor al obtener horarios ocupados',
+      data: [] // Devolver array vacío como fallback
+    });
+  }
 });
 
 // API para enviar email de contacto
@@ -456,18 +492,67 @@ app.get('/api/bookings', (req, res) => {
   res.json(bookingsInfo);
 });
 
-// API para crear una nueva reserva
+// API para crear una nueva reserva (mejorada)
 app.post('/api/bookings', (req, res) => {
-  const booking = {
-    id: `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    status: 'pending',
-    ...req.body,
-    createdAt: new Date().toISOString()
-  };
-  
-  bookings.push(booking);
-  
-  res.status(201).json({ success: true, bookingId: booking.id });
+  try {
+    // Validar datos requeridos
+    const { clientName, clientEmail, clientPhone, service, date, time, type } = req.body;
+    
+    if (!clientName || !clientEmail || !clientPhone || !service || !date || !time || !type) {
+      return res.status(400).json({ 
+        error: 'Faltan campos requeridos',
+        success: false
+      });
+    }
+    
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(clientEmail)) {
+      return res.status(400).json({ 
+        error: 'Formato de email inválido',
+        success: false
+      });
+    }
+    
+    // Generar ID único para la reserva
+    const bookingId = req.body.id || `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
+    // Verificar que no existe una reserva con el mismo ID
+    const existingBooking = bookings.find(b => b.id === bookingId);
+    if (existingBooking) {
+      return res.status(409).json({ 
+        error: 'Ya existe una reserva con este ID',
+        success: false
+      });
+    }
+    
+    const booking = {
+      id: bookingId,
+      status: 'pending',
+      clientName,
+      clientEmail,
+      clientPhone,
+      service,
+      serviceDuration: req.body.serviceDuration,
+      servicePrice: req.body.servicePrice,
+      date,
+      time,
+      type,
+      notes: req.body.notes || '',
+      createdAt: new Date().toISOString()
+    };
+    
+    bookings.push(booking);
+    
+    console.log(`Nueva reserva creada: ${bookingId} para ${clientName}`);
+    res.status(201).json({ success: true, bookingId: booking.id });
+  } catch (error) {
+    console.error('Error al crear reserva:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor al crear la reserva',
+      success: false
+    });
+  }
 });
 
 // Manejar confirmaciones desde el email (cuando se hace clic en el enlace)

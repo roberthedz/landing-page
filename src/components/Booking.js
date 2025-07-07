@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -7,7 +7,6 @@ import { Formik, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import emailConfig from '../config/emailTemplates';
 import apiConfig from '../config/apiConfig';
-import axios from 'axios';
 
 const BookingSection = styled.section`
   padding: 5rem 0;
@@ -449,35 +448,60 @@ const Booking = () => {
   const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
   const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
   
-  // Cargar horarios ocupados al montar el componente
-  useEffect(() => {
-    const loadBookedSlots = async () => {
-      setLoadingSlots(true);
+  // Función optimizada para cargar horarios ocupados con debouncing
+  const loadBookedSlots = useCallback(async (forceRefresh = false) => {
+    setLoadingSlots(true);
+    setError(null);
+    
+    try {
+      // Limpiar cache si se fuerza el refresh
+      if (forceRefresh) {
+        apiConfig.clearCache('booked-slots');
+      }
+      
+      console.log('Cargando horarios ocupados desde:', apiConfig.endpoints.bookedSlots);
+      
+      // Usar la función optimizada con cache y reintentos
+      const response = await apiConfig.getCachedRequest(apiConfig.endpoints.bookedSlots);
+      console.log('Horarios ocupados cargados:', response.data);
+      
+      // Validar que la respuesta sea un array válido
+      if (Array.isArray(response.data)) {
+        setBookedSlots(response.data);
+        // Guardar en localStorage como backup
+        localStorage.setItem('bookedSlots', JSON.stringify(response.data));
+      } else {
+        console.warn('La respuesta no es un array válido, usando array vacío');
+        setBookedSlots([]);
+      }
+    } catch (error) {
+      console.error('Error al cargar horarios ocupados:', error);
+      
+      // Fallback a localStorage si la API falla
       try {
-        // Obtener los horarios ocupados desde la API
-        console.log('Cargando horarios ocupados desde:', apiConfig.endpoints.bookedSlots);
-        const response = await axios.get(apiConfig.endpoints.bookedSlots);
-        console.log('Horarios ocupados cargados:', response.data);
-        
-        // Validar que la respuesta sea un array válido
-        if (Array.isArray(response.data)) {
-          setBookedSlots(response.data);
+        const storedBookedSlots = JSON.parse(localStorage.getItem('bookedSlots') || '[]');
+        if (Array.isArray(storedBookedSlots)) {
+          setBookedSlots(storedBookedSlots);
+          console.log('Usando horarios desde localStorage como fallback');
         } else {
-          console.warn('La respuesta no es un array válido, usando array vacío');
           setBookedSlots([]);
         }
-      } catch (error) {
-        console.error('Error al cargar horarios ocupados:', error);
-        // Fallback a localStorage si la API falla
-        const storedBookedSlots = JSON.parse(localStorage.getItem('bookedSlots') || '[]');
-        setBookedSlots(storedBookedSlots);
-      } finally {
-        setLoadingSlots(false);
+      } catch (parseError) {
+        console.error('Error al parsear localStorage:', parseError);
+        setBookedSlots([]);
       }
-    };
-    
-    loadBookedSlots();
+      
+      // Mostrar error no crítico al usuario
+      setError('No se pudieron cargar algunos horarios. Los horarios mostrados pueden no estar completamente actualizados.');
+    } finally {
+      setLoadingSlots(false);
+    }
   }, []);
+
+  // Cargar horarios ocupados al montar el componente
+  useEffect(() => {
+    loadBookedSlots();
+  }, [loadBookedSlots]);
 
   // Limpiar error cuando el usuario empiece a completar campos
   useEffect(() => {
@@ -733,41 +757,47 @@ const Booking = () => {
       
       console.log('Enviando solicitud a:', apiConfig.endpoints.bookings);
       
-      // Crear la reserva en el servidor
-      const bookingResponse = await axios.post(apiConfig.endpoints.bookings, {
-        id: bookingId,
-        clientName: values.name,
-        clientEmail: values.email,
-        clientPhone: values.phone,
-        service: serviceObj.title,
-        serviceDuration: serviceObj.duration,
-        servicePrice: serviceObj.price,
-        date: formatDate(values.date),
-        time: values.time,
-        type: values.appointmentType,
-        notes: values.notes || ''
+      // Crear la reserva en el servidor con reintentos automáticos
+      const bookingResponse = await apiConfig.makeRequest(apiConfig.endpoints.bookings, {
+        method: 'POST',
+        data: {
+          id: bookingId,
+          clientName: values.name,
+          clientEmail: values.email,
+          clientPhone: values.phone,
+          service: serviceObj.title,
+          serviceDuration: serviceObj.duration,
+          servicePrice: serviceObj.price,
+          date: formatDate(values.date),
+          time: values.time,
+          type: values.appointmentType,
+          notes: values.notes || ''
+        }
       });
       
       console.log('Respuesta de creación de reserva:', bookingResponse.data);
       
       if (!bookingResponse.data.success) {
-        throw new Error('Error al crear la reserva');
+        throw new Error('Error al crear la reserva en el servidor');
       }
       
-      // Enviar emails de notificación (el servidor genera las URLs automáticamente)
+      // Enviar emails de notificación con reintentos automáticos
       console.log('Enviando solicitud a:', apiConfig.endpoints.sendBookingEmail);
-      const emailResponse = await axios.post(apiConfig.endpoints.sendBookingEmail, {
-        clientEmail: values.email,
-        clientName: values.name,
-        bookingDetails: {
-          id: bookingId,
-          service: serviceObj.title,
-          duration: serviceObj.duration,
-          date: formatDate(values.date),
-          time: values.time,
-          type: values.appointmentType,
-          phone: values.phone,
-          notes: values.notes || ''
+      const emailResponse = await apiConfig.makeRequest(apiConfig.endpoints.sendBookingEmail, {
+        method: 'POST',
+        data: {
+          clientEmail: values.email,
+          clientName: values.name,
+          bookingDetails: {
+            id: bookingId,
+            service: serviceObj.title,
+            duration: serviceObj.duration,
+            date: formatDate(values.date),
+            time: values.time,
+            type: values.appointmentType,
+            phone: values.phone,
+            notes: values.notes || ''
+          }
         }
       });
       
@@ -800,15 +830,37 @@ const Booking = () => {
       setIsSubmitted(true);
     } catch (err) {
       console.error('Error al procesar la reserva:', err);
+      
+      let errorMessage = 'Hubo un problema al procesar tu reserva. Por favor, inténtalo de nuevo.';
+      
       if (err.response) {
         console.error('Detalles del error:', err.response.data);
-        setError(`Error: ${err.response.data.error || 'Hubo un problema al procesar tu reserva. Por favor, inténtalo de nuevo.'}`);
+        // Errores del servidor
+        if (err.response.status === 400) {
+          errorMessage = 'Los datos enviados no son válidos. Por favor, revisa la información e inténtalo de nuevo.';
+        } else if (err.response.status === 409) {
+          errorMessage = 'Este horario ya está ocupado. Por favor, selecciona otro horario.';
+        } else if (err.response.status === 500) {
+          errorMessage = 'Error del servidor. Por favor, inténtalo de nuevo en unos minutos.';
+        } else {
+          errorMessage = err.response.data.error || errorMessage;
+        }
       } else if (err.request) {
         console.error('No se recibió respuesta del servidor');
-        setError('No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e inténtalo de nuevo.');
+        // Error de conexión
+        errorMessage = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e inténtalo de nuevo.';
+      } else if (err.code === 'ECONNABORTED') {
+        // Timeout
+        errorMessage = 'La solicitud tardó demasiado tiempo. Por favor, inténtalo de nuevo.';
       } else {
-        setError('Hubo un problema al procesar tu reserva. Por favor, inténtalo de nuevo.');
+        // Otros errores
+        errorMessage = err.message || errorMessage;
       }
+      
+      setError(errorMessage);
+      
+      // Refrescar horarios ocupados para evitar conflictos
+      loadBookedSlots(true);
     } finally {
       setIsLoading(false);
       setSubmitting(false);
@@ -827,23 +879,15 @@ const Booking = () => {
     // Recargar los horarios ocupados para tener la información más actualizada
     try {
       console.log('Recargando horarios ocupados...');
-      const response = await axios.get(apiConfig.endpoints.bookedSlots);
-      console.log('Horarios ocupados actualizados:', response.data);
-      
-      // Validar que la respuesta sea un array válido
-      if (Array.isArray(response.data)) {
-        setBookedSlots(response.data);
-      } else {
-        console.warn('La respuesta no es un array válido, usando array vacío');
-        setBookedSlots([]);
-      }
+      await loadBookedSlots(true); // Forzar refresh del cache
+      console.log('Horarios ocupados actualizados exitosamente');
     } catch (error) {
       console.error('Error al recargar horarios ocupados:', error);
-      setBookedSlots([]);
+      setError('No se pudieron actualizar los horarios. Algunos horarios pueden no estar actualizados.');
     }
     
-    // Forzar un refresco de la página para asegurar que todo se reinicie correctamente
-    window.location.reload();
+    // Scroll al inicio de la página suavemente
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Renderizar los horarios disponibles
@@ -1232,15 +1276,31 @@ const Booking = () => {
                         
                         <Col lg={5} md={6}>
                           <div className="text-center">
-                            <h6 className="mb-3 d-flex align-items-center justify-content-center">
-                              <i className="bi bi-clock me-2" style={{ color: 'var(--primary-color)' }}></i>
-                              Horarios disponibles
-                            </h6>
+                            <div className="d-flex align-items-center justify-content-center mb-3">
+                              <h6 className="mb-0 me-2 d-flex align-items-center">
+                                <i className="bi bi-clock me-2" style={{ color: 'var(--primary-color)' }}></i>
+                                Horarios disponibles
+                              </h6>
+                              {!loadingSlots && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-secondary"
+                                  onClick={() => loadBookedSlots(true)}
+                                  title="Actualizar horarios"
+                                  style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
+                                >
+                                  <i className="bi bi-arrow-clockwise"></i>
+                                </button>
+                              )}
+                            </div>
                             
                             {loadingSlots ? (
                               <div className="text-center py-4">
                                 <Spinner animation="border" style={{ color: 'var(--primary-color)' }} size="sm" />
-                                <p className="mt-2 text-muted small">Cargando horarios...</p>
+                                <p className="mt-2 text-muted small">Cargando horarios disponibles...</p>
+                                <div className="mt-2">
+                                  <small className="text-muted">Por favor espera un momento</small>
+                                </div>
                               </div>
                             ) : (
                               <div className="text-center">
@@ -1312,6 +1372,15 @@ const Booking = () => {
                                     </div>
                                   )}
                                 </div>
+                              </div>
+                            )}
+                            
+                            {!loadingSlots && bookedSlots.length >= 0 && (
+                              <div className="mt-3">
+                                <small className="text-muted">
+                                  <i className="bi bi-info-circle me-1"></i>
+                                  Horarios actualizados: {new Date().toLocaleTimeString()}
+                                </small>
                               </div>
                             )}
                             
