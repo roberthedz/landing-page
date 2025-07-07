@@ -8,6 +8,9 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+console.log('🔍 Puerto configurado:', PORT);
+console.log('🌐 Environment:', process.env.NODE_ENV || 'development');
+
 // Configuración MongoDB Atlas directa
 const mongoUri = 'mongodb+srv://rhzamora144:86e6FbGM00uV78RP@cluster0.4vwcokw.mongodb.net/reservas?retryWrites=true&w=majority&appName=Cluster0';
 
@@ -461,7 +464,7 @@ const startServer = async () => {
   try {
     await connectDB();
     
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
       console.log(`🔗 MongoDB Atlas: Conectado`);
       console.log(`📧 Email: Configurado`);
