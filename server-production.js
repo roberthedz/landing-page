@@ -312,11 +312,11 @@ app.post('/api/bookings', async (req, res) => {
       });
     }
     
-    // 6️⃣ CREAR LA RESERVA
-    console.log('💾 Creando reserva en MongoDB...');
+    // 6️⃣ CREAR LA RESERVA (COMO PENDING - NO AUTO-CONFIRMAR)
+    console.log('💾 Creando reserva en MongoDB como PENDING...');
     const booking = new Booking({
       id: bookingId,
-      status: 'confirmed', // ✅ Auto-confirmar para evitar problemas
+      status: 'pending', // ⏳ PENDING - Requiere confirmación manual
       clientName,
       clientEmail,
       clientPhone,
@@ -330,93 +330,28 @@ app.post('/api/bookings', async (req, res) => {
     });
     
     await booking.save();
-    console.log(`✅ Reserva guardada: ${bookingId} para ${clientName}`);
+    console.log(`✅ Reserva guardada como PENDING: ${bookingId} para ${clientName}`);
     
-    // 7️⃣ GENERAR Y GUARDAR HORARIOS OCUPADOS INMEDIATAMENTE
-    console.log('🔒 Generando horarios ocupados automáticamente...');
-    const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
-    const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+    // 7️⃣ NO BLOQUEAR HORARIOS TODAVÍA
+    // Los horarios se bloquearán solo cuando el admin confirme manualmente
+    console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
     
-    const newSlots = [];
-    
-    if (type === 'asesoria-completa') {
-      // Bloquear todo el turno (mañana o tarde)
-      const isMorning = morningTimes.includes(time);
-      const timesToBlock = isMorning ? morningTimes : afternoonTimes;
-      
-      timesToBlock.forEach(timeSlot => {
-        newSlots.push({
-          date: date,
-          time: timeSlot,
-          bookingId: bookingId,
-          reason: `Asesoría completa - turno ${isMorning ? 'mañana' : 'tarde'}`
-        });
-      });
-      console.log(`🔒 Bloqueando turno completo (${isMorning ? 'mañana' : 'tarde'}):`, timesToBlock);
-      
-    } else if (req.body.serviceDuration === '120 min') {
-      // Bloquear 2 slots consecutivos para servicios de 2 horas
-      const allTimes = [...morningTimes, ...afternoonTimes];
-      const currentIndex = allTimes.indexOf(time);
-      
-      // Bloquear el horario actual
-      newSlots.push({
-        date: date,
-        time: time,
-        bookingId: bookingId,
-        reason: 'Consulta 120 min - hora 1'
-      });
-      
-      // Bloquear el siguiente horario si existe y está en el mismo turno
-      if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
-        const nextTime = allTimes[currentIndex + 1];
-        const isMorningTime = morningTimes.includes(time);
-        const isNextMorningTime = morningTimes.includes(nextTime);
-        
-        if (isMorningTime === isNextMorningTime) {
-          newSlots.push({
-            date: date,
-            time: nextTime,
-            bookingId: bookingId,
-            reason: 'Consulta 120 min - hora 2'
-          });
-        }
-      }
-      console.log(`🔒 Bloqueando 2 horas consecutivas desde: ${time}`);
-      
-    } else {
-      // Para consultas de 60 min, solo bloquear el horario seleccionado
-      newSlots.push({
-        date: date,
-        time: time,
-        bookingId: bookingId,
-        reason: 'Consulta individual'
-      });
-      console.log(`🔒 Bloqueando 1 hora: ${time}`);
-    }
-    
-    // 8️⃣ GUARDAR HORARIOS OCUPADOS
-    if (newSlots.length > 0) {
-      await BookedSlot.insertMany(newSlots);
-      console.log(`✅ ${newSlots.length} horarios bloqueados exitosamente`);
-    }
-    
-    // 9️⃣ ENVIAR EMAILS DE NOTIFICACIÓN
-    console.log('📧 Enviando emails de notificación...');
+    // 8️⃣ ENVIAR EMAILS DE SOLICITUD (NO DE CONFIRMACIÓN)
+    console.log('📧 Enviando emails de nueva solicitud...');
     try {
       const baseUrl = getBaseUrl(req);
       const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
       const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
       
-      // Email al admin
+      // Email al ADMIN - Nueva solicitud que requiere confirmación
       await emailTransporter.sendMail({
         from: '"Sistema de Reservas DeDecor" <dedecorinfo@gmail.com>',
         to: 'dedecorinfo@gmail.com',
-        subject: `🎉 RESERVA CONFIRMADA - ${clientName}`,
+        subject: `📋 NUEVA SOLICITUD DE RESERVA - ${clientName}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #28a745;">✅ Reserva Confirmada Automáticamente</h2>
-            <p>Se ha creado y confirmado una nueva reserva:</p>
+            <h2 style="color: #4a6163;">📋 Nueva Solicitud de Reserva</h2>
+            <p>Has recibido una nueva solicitud de reserva que <strong>requiere tu confirmación</strong>:</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Cliente:</strong> ${clientName}</p>
@@ -426,30 +361,40 @@ app.post('/api/bookings', async (req, res) => {
               <p><strong>Fecha:</strong> ${date}</p>
               <p><strong>Hora:</strong> ${time}</p>
               <p><strong>Tipo:</strong> ${type}</p>
-              <p><strong>Horarios bloqueados:</strong> ${newSlots.length}</p>
+              ${req.body.notes ? `<p><strong>Notas:</strong> ${req.body.notes}</p>` : ''}
             </div>
             
-            <div style="background-color: #e7f3ff; padding: 10px; border-radius: 5px; margin: 20px 0;">
-              <p><strong>💡 Nota:</strong> Los horarios se han bloqueado automáticamente. Si necesitas cancelar, hazlo desde el panel de admin.</p>
+            <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>⚠️ IMPORTANTE:</strong> Los horarios NO están bloqueados hasta que confirmes esta reserva.</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${confirmUrl}" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; margin-right: 15px; font-weight: bold;">
+                ✅ CONFIRMAR RESERVA
+              </a>
+              <a href="${rejectUrl}" style="background-color: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                ❌ RECHAZAR RESERVA
+              </a>
             </div>
             
             <p style="font-size: 14px; color: #666;">
-              ID de reserva: ${bookingId}
+              ID de reserva: ${bookingId}<br>
+              Estado: PENDIENTE
             </p>
           </div>
         `
       });
       
-      // Email al cliente
+      // Email al CLIENTE - Solicitud recibida (no confirmada)
       await emailTransporter.sendMail({
         from: '"DeDecor" <dedecorinfo@gmail.com>',
         to: clientEmail,
-        subject: '🎉 ¡Tu reserva ha sido confirmada!',
+        subject: '📋 Hemos recibido tu solicitud de reserva',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #4a6163;">¡Reserva Confirmada Exitosamente!</h2>
+            <h2 style="color: #4a6163;">📋 Solicitud de Reserva Recibida</h2>
             <p>Hola ${clientName},</p>
-            <p>Tu reserva ha sido <strong>confirmada automáticamente</strong>. ¡Nos vemos pronto!</p>
+            <p>Hemos recibido tu solicitud de reserva y <strong>la revisaremos pronto</strong>.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Servicio:</strong> ${service}</p>
@@ -458,32 +403,36 @@ app.post('/api/bookings', async (req, res) => {
               <p><strong>Tipo:</strong> ${type}</p>
             </div>
             
-            <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>✅ Tu horario está reservado y bloqueado</strong></p>
-              <p>No te preocupes, nadie más podrá reservar este horario.</p>
+            <div style="background-color: #d1ecf1; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>📝 Estado:</strong> Tu solicitud está siendo revisada</p>
+              <p><strong>⏳ Tiempo estimado:</strong> Te contactaremos dentro de las próximas 24 horas</p>
+              <p><strong>📧 Confirmación:</strong> Recibirás un email cuando tu reserva sea confirmada</p>
             </div>
             
-            <p>Si necesitas hacer algún cambio, contáctanos lo antes posible.</p>
-            <p>¡Esperamos verte pronto!</p>
+            <p>Te contactaremos pronto para confirmar tu reserva.</p>
             <p>Saludos,<br>El equipo de DeDecor</p>
+            
+            <p style="font-size: 14px; color: #666;">
+              Referencia: ${bookingId}
+            </p>
           </div>
         `
       });
       
-      console.log('✅ Emails enviados exitosamente');
+      console.log('✅ Emails de solicitud enviados exitosamente');
     } catch (emailError) {
       console.error('⚠️ Error al enviar emails (pero la reserva fue creada):', emailError);
     }
     
-    // 🔟 RESPUESTA EXITOSA
-    console.log(`🎉 Flujo completo exitoso para ${clientName}`);
+    // 9️⃣ RESPUESTA EXITOSA
+    console.log(`🎉 Flujo completo exitoso para ${clientName} - Estado: PENDING`);
     res.status(201).json({ 
       success: true, 
       bookingId: booking.id,
-      message: 'Reserva creada y horarios bloqueados exitosamente',
-      horariosBloquados: newSlots.length,
-      status: 'confirmed',
-      emailsSent: true
+      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
+      status: 'pending',
+      emailsSent: true,
+      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
     });
     
   } catch (error) {
@@ -699,26 +648,187 @@ app.get('/confirm-booking', async (req, res) => {
     }
     
     if (action === 'confirm') {
+      console.log(`✅ CONFIRMANDO RESERVA: ${booking.id} - ${booking.clientName}`);
+      
+      // 1️⃣ Cambiar status a confirmado
       booking.status = 'confirmed';
       await booking.save();
+      console.log('✅ Status cambiado a confirmed');
+      
+      // 2️⃣ BLOQUEAR HORARIOS AHORA
+      console.log('🔒 Bloqueando horarios...');
+      const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
+      const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+      
+      const newSlots = [];
+      
+      if (booking.type === 'asesoria-completa') {
+        // Bloquear todo el turno
+        const isMorning = morningTimes.includes(booking.time);
+        const timesToBlock = isMorning ? morningTimes : afternoonTimes;
+        
+        timesToBlock.forEach(timeSlot => {
+          newSlots.push({
+            date: booking.date,
+            time: timeSlot,
+            bookingId: booking.id,
+            reason: `Asesoría completa - turno ${isMorning ? 'mañana' : 'tarde'}`
+          });
+        });
+        console.log(`🔒 Bloqueando turno completo (${isMorning ? 'mañana' : 'tarde'}):`, timesToBlock);
+        
+      } else if (booking.serviceDuration === '120 min') {
+        // Bloquear 2 slots consecutivos
+        const allTimes = [...morningTimes, ...afternoonTimes];
+        const currentIndex = allTimes.indexOf(booking.time);
+        
+        newSlots.push({
+          date: booking.date,
+          time: booking.time,
+          bookingId: booking.id,
+          reason: 'Consulta 120 min - hora 1'
+        });
+        
+        if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
+          const nextTime = allTimes[currentIndex + 1];
+          const isMorningTime = morningTimes.includes(booking.time);
+          const isNextMorningTime = morningTimes.includes(nextTime);
+          
+          if (isMorningTime === isNextMorningTime) {
+            newSlots.push({
+              date: booking.date,
+              time: nextTime,
+              bookingId: booking.id,
+              reason: 'Consulta 120 min - hora 2'
+            });
+          }
+        }
+        console.log(`🔒 Bloqueando 2 horas consecutivas desde: ${booking.time}`);
+        
+      } else {
+        // Bloquear solo el horario seleccionado
+        newSlots.push({
+          date: booking.date,
+          time: booking.time,
+          bookingId: booking.id,
+          reason: 'Consulta individual'
+        });
+        console.log(`🔒 Bloqueando 1 hora: ${booking.time}`);
+      }
+      
+      // Guardar horarios bloqueados
+      if (newSlots.length > 0) {
+        await BookedSlot.insertMany(newSlots);
+        console.log(`✅ ${newSlots.length} horarios bloqueados exitosamente`);
+      }
+      
+      // 3️⃣ ENVIAR EMAIL DE CONFIRMACIÓN FINAL
+      console.log('📧 Enviando email de confirmación final...');
+      try {
+        await emailTransporter.sendMail({
+          from: '"DeDecor" <dedecorinfo@gmail.com>',
+          to: booking.clientEmail,
+          subject: '🎉 ¡Tu reserva ha sido confirmada!',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #4a6163;">🎉 ¡Reserva Confirmada Exitosamente!</h2>
+              <p>Hola ${booking.clientName},</p>
+              <p>¡Excelente noticia! Tu reserva ha sido <strong>confirmada oficialmente</strong>.</p>
+              
+              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>Servicio:</strong> ${booking.service}</p>
+                <p><strong>Fecha:</strong> ${booking.date}</p>
+                <p><strong>Hora:</strong> ${booking.time}</p>
+                <p><strong>Tipo:</strong> ${booking.type}</p>
+              </div>
+              
+              <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>✅ Tu horario está oficialmente reservado</strong></p>
+                <p>Ya no está disponible para otras personas.</p>
+                <p><strong>🔒 Horarios bloqueados:</strong> ${newSlots.length}</p>
+              </div>
+              
+              <p>Si necesitas hacer algún cambio, contáctanos lo antes posible.</p>
+              <p>¡Esperamos verte pronto!</p>
+              <p>Saludos,<br>El equipo de DeDecor</p>
+              
+              <p style="font-size: 14px; color: #666;">
+                Referencia: ${booking.id}
+              </p>
+            </div>
+          `
+        });
+        console.log('✅ Email de confirmación enviado al cliente');
+      } catch (emailError) {
+        console.error('⚠️ Error al enviar email de confirmación:', emailError);
+      }
       
       return res.send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
-            <h1 style="color: green;">¡Reserva Confirmada!</h1>
-            <p>La reserva de ${booking.clientName} ha sido confirmada exitosamente.</p>
+            <h1 style="color: green;">✅ ¡Reserva Confirmada!</h1>
+            <div style="background-color: #d4edda; padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 500px;">
+              <p><strong>Cliente:</strong> ${booking.clientName}</p>
+              <p><strong>Servicio:</strong> ${booking.service}</p>
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
+              <p><strong>Horarios bloqueados:</strong> ${newSlots.length}</p>
+            </div>
+            <p>✅ Email de confirmación enviado al cliente</p>
+            <p>🔒 Horarios bloqueados automáticamente</p>
           </body>
         </html>
       `);
+      
     } else if (action === 'reject') {
+      console.log(`❌ RECHAZANDO RESERVA: ${booking.id} - ${booking.clientName}`);
+      
       booking.status = 'rejected';
       await booking.save();
+      
+      // Enviar email de rechazo
+      try {
+        await emailTransporter.sendMail({
+          from: '"DeDecor" <dedecorinfo@gmail.com>',
+          to: booking.clientEmail,
+          subject: '📋 Actualización sobre tu solicitud de reserva',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #4a6163;">📋 Actualización de tu Solicitud</h2>
+              <p>Hola ${booking.clientName},</p>
+              <p>Lamentamos informarte que no podemos confirmar tu reserva en el horario solicitado.</p>
+              
+              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>Servicio solicitado:</strong> ${booking.service}</p>
+                <p><strong>Fecha:</strong> ${booking.date}</p>
+                <p><strong>Hora:</strong> ${booking.time}</p>
+              </div>
+              
+              <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>💡 Sugerencia:</strong> Puedes intentar con otro horario disponible en nuestra página web.</p>
+              </div>
+              
+              <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+              <p>Gracias por tu comprensión,<br>El equipo de DeDecor</p>
+            </div>
+          `
+        });
+        console.log('✅ Email de rechazo enviado al cliente');
+      } catch (emailError) {
+        console.error('⚠️ Error al enviar email de rechazo:', emailError);
+      }
       
       return res.send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
-            <h1 style="color: red;">Reserva Rechazada</h1>
-            <p>La reserva de ${booking.clientName} ha sido rechazada.</p>
+            <h1 style="color: red;">❌ Reserva Rechazada</h1>
+            <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 500px;">
+              <p><strong>Cliente:</strong> ${booking.clientName}</p>
+              <p><strong>Servicio:</strong> ${booking.service}</p>
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
+            </div>
+            <p>📧 Email de rechazo enviado al cliente</p>
           </body>
         </html>
       `);

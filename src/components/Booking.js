@@ -788,38 +788,16 @@ const Booking = () => {
         throw new Error('Error al crear la reserva en el servidor');
       }
       
-      // Enviar emails de notificación con reintentos automáticos
-      console.log('Enviando solicitud a:', apiConfig.endpoints.sendBookingEmail);
-      const emailResponse = await apiConfig.makeRequest(apiConfig.endpoints.sendBookingEmail, {
-        method: 'POST',
-        data: {
-          clientEmail: values.email,
-          clientName: values.name,
-          bookingDetails: {
-            id: bookingId,
-            service: serviceObj.title,
-            duration: serviceObj.duration,
-            date: formatDate(values.date),
-            time: values.time,
-            type: values.appointmentType,
-            phone: values.phone,
-            notes: values.notes || ''
-          }
-        }
-      });
+      // ✅ Los emails ya se envían automáticamente en el servidor
+      // No necesitamos hacer una segunda llamada a /api/send-booking-email
+      console.log('✅ Reserva creada exitosamente. Emails enviados automáticamente por el servidor.');
       
-      console.log('Respuesta de envío de email:', emailResponse.data);
-      
-      if (!emailResponse.data.success) {
-        throw new Error('Error al enviar las notificaciones por email');
-      }
-      
-      // Guardar los datos de la reserva en localStorage para referencia futura
-      // En un entorno real, esto se haría solo en el servidor
+      // ✅ Guardar la solicitud en localStorage como referencia
+      // El estado real se mantiene en el servidor (MongoDB)
       const pendingBookings = JSON.parse(localStorage.getItem('pendingBookings') || '[]');
       pendingBookings.push({
         id: bookingId,
-        status: 'pending',
+        status: 'pending', // ⏳ Estado: Esperando confirmación del admin
         clientName: values.name,
         clientEmail: values.email,
         clientPhone: values.phone,
@@ -829,11 +807,13 @@ const Booking = () => {
         time: values.time,
         type: values.appointmentType,
         notes: values.notes,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        note: 'Esperando confirmación por email del administrador'
       });
       localStorage.setItem('pendingBookings', JSON.stringify(pendingBookings));
       
-      console.log('Solicitud de reserva enviada:', bookingId);
+      console.log('✅ Solicitud de reserva enviada exitosamente:', bookingId);
+      console.log('⏳ Estado: PENDING - Esperando confirmación del admin por email');
       setIsSubmitted(true);
     } catch (err) {
       console.error('Error al procesar la reserva:', err);
@@ -1028,14 +1008,19 @@ const Booking = () => {
         </style>
         
         {isSubmitted ? (
-          <Alert variant="success" className="p-4 text-center shadow-sm">
+          <Alert variant="info" className="p-4 text-center shadow-sm">
             <div className="mb-3">
-              <i className="bi bi-check-circle-fill text-success" style={{ fontSize: '3rem' }}></i>
+              <i className="bi bi-clock-history text-info" style={{ fontSize: '3rem' }}></i>
             </div>
-            <h3 className="text-success mb-3">¡Solicitud Recibida!</h3>
-            <p className="mb-3">Hemos recibido tu solicitud de cita. Te hemos enviado un correo electrónico con los detalles.</p>
-            <p className="mb-3"><strong>Tu reserva está pendiente de confirmación.</strong> Recibirás un email cuando sea aprobada por nuestro equipo.</p>
-            <p className="mb-4">Si tienes alguna pregunta, no dudes en contactarnos.</p>
+            <h3 className="text-info mb-3">📋 ¡Solicitud Enviada!</h3>
+            <p className="mb-3">Hemos recibido tu solicitud de reserva y <strong>la revisaremos pronto</strong>.</p>
+            <div className="alert alert-light border-0 mb-3">
+              <p className="mb-2"><strong>📝 Estado actual:</strong> Pendiente de confirmación</p>
+              <p className="mb-2"><strong>⏳ Tiempo estimado:</strong> Te contactaremos dentro de las próximas 24 horas</p>
+              <p className="mb-0"><strong>📧 Confirmación:</strong> Recibirás un email cuando tu reserva sea aprobada</p>
+            </div>
+            <p className="mb-3"><strong>✉️ Nota:</strong> Hemos enviado un email de confirmación a tu bandeja de entrada con los detalles de tu solicitud.</p>
+            <p className="mb-4">Si tienes alguna pregunta urgente, no dudes en contactarnos.</p>
             <div className="d-grid gap-2 col-md-6 mx-auto">
               <Button 
                 size="lg"
@@ -1048,7 +1033,7 @@ const Booking = () => {
                 }}
               >
                 <i className="bi bi-calendar-plus me-2"></i>
-                Hacer otra reserva
+                Hacer otra solicitud
               </Button>
             </div>
           </Alert>
