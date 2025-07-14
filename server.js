@@ -226,21 +226,21 @@ app.get('/api/health', async (req, res) => {
 // API para obtener horarios ocupados - MEJORADA
 app.get('/api/booked-slots', async (req, res) => {
   console.log('🔍 GET /api/booked-slots - Solicitud recibida desde:', req.get('origin'));
-  
   try {
-    console.log('📡 Consultando MongoDB Atlas...');
     const { date } = req.query;
-    let query = {};
-    
-    if (date) {
-      query.date = date;
-      console.log(`🔍 Filtrando por fecha: ${date}`);
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        error: 'El parámetro "date" es obligatorio para consultar los horarios ocupados.',
+        bookedSlots: [],
+        slotsByDate: {}
+      });
     }
-    
+    console.log('📡 Consultando MongoDB Atlas...');
+    let query = { date };
+    console.log(`🔍 Filtrando por fecha: ${date}`);
     const bookedSlots = await BookedSlot.find(query).sort({ date: 1, time: 1 });
     console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados:`, bookedSlots);
-    
-    // Agrupar por fecha para mejor organización
     const slotsByDate = {};
     bookedSlots.forEach(slot => {
       if (!slotsByDate[slot.date]) {
@@ -252,23 +252,20 @@ app.get('/api/booked-slots', async (req, res) => {
         reason: slot.reason
       });
     });
-    
     res.set({
       'Cache-Control': 'public, max-age=30',
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': req.get('origin') || '*'
     });
-    
     res.json({
       success: true,
       totalSlots: bookedSlots.length,
       bookedSlots: bookedSlots,
       slotsByDate: slotsByDate
     });
-    
   } catch (error) {
     console.error('❌ Error al obtener horarios ocupados:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error interno del servidor al obtener horarios ocupados',
       success: false,
       data: [],

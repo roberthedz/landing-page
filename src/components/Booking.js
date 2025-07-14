@@ -449,7 +449,7 @@ const Booking = () => {
   const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
   
   // Función optimizada para cargar horarios ocupados con debouncing
-  const loadBookedSlots = useCallback(async (forceRefresh = false) => {
+  const loadBookedSlots = useCallback(async (forceRefresh = false, selectedDateParam = null) => {
     setLoadingSlots(true);
     setError(null);
     
@@ -459,26 +459,29 @@ const Booking = () => {
         apiConfig.clearCache('booked-slots');
       }
       
-      console.log('Cargando horarios ocupados desde:', apiConfig.endpoints.bookedSlots);
+      // Obtener la fecha seleccionada (del estado o parámetro)
+      const dateToQuery = selectedDateParam || selectedDate;
+      if (!dateToQuery) {
+        setBookedSlots([]);
+        setLoadingSlots(false);
+        return;
+      }
+      const formattedDate = formatDate(dateToQuery);
+      const endpoint = `${apiConfig.endpoints.bookedSlots}?date=${formattedDate}`;
+      console.log('Cargando horarios ocupados desde:', endpoint);
       
       // Usar la función optimizada con cache y reintentos
-      const response = await apiConfig.getCachedRequest(apiConfig.endpoints.bookedSlots);
+      const response = await apiConfig.getCachedRequest(endpoint);
       console.log('Horarios ocupados cargados:', response.data);
       
       // Validar que la respuesta tenga la estructura correcta
       if (response.data && response.data.success && Array.isArray(response.data.bookedSlots)) {
-        console.log(`✅ Procesando ${response.data.bookedSlots.length} horarios ocupados`);
         setBookedSlots(response.data.bookedSlots);
-        // Guardar en localStorage como backup
         localStorage.setItem('bookedSlots', JSON.stringify(response.data.bookedSlots));
       } else if (Array.isArray(response.data)) {
-        // Fallback para formato antiguo (array directo)
-        console.log('📋 Usando formato de respuesta directo (array)');
         setBookedSlots(response.data);
         localStorage.setItem('bookedSlots', JSON.stringify(response.data));
       } else {
-        console.warn('❌ La respuesta no tiene el formato esperado:', response.data);
-        console.warn('Expected: {success: true, bookedSlots: [...]} or [...]');
         setBookedSlots([]);
       }
     } catch (error) {
@@ -503,12 +506,14 @@ const Booking = () => {
     } finally {
       setLoadingSlots(false);
     }
-  }, []);
+  }, [selectedDate]);
 
-  // Cargar horarios ocupados al montar el componente
+  // Cargar horarios ocupados al cambiar la fecha seleccionada
   useEffect(() => {
-    loadBookedSlots();
-  }, [loadBookedSlots]);
+    if (selectedDate) {
+      loadBookedSlots(false, selectedDate);
+    }
+  }, [selectedDate, loadBookedSlots]);
 
   // Limpiar error cuando el usuario empiece a completar campos
   useEffect(() => {
