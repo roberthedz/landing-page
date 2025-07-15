@@ -223,12 +223,16 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// API para obtener horarios ocupados - MEJORADA
+// API para obtener horarios ocupados - MEJORADA CON VALIDACIÓN ESTRICTA
 app.get('/api/booked-slots', async (req, res) => {
   console.log('🔍 GET /api/booked-slots - Solicitud recibida desde:', req.get('origin'));
+  
   try {
     const { date } = req.query;
+    
+    // Validación estricta del parámetro date
     if (!date) {
+      console.log('❌ Error: Parámetro "date" no proporcionado');
       return res.status(400).json({
         success: false,
         error: 'El parámetro "date" es obligatorio para consultar los horarios ocupados.',
@@ -236,11 +240,28 @@ app.get('/api/booked-slots', async (req, res) => {
         slotsByDate: {}
       });
     }
-    console.log('📡 Consultando MongoDB Atlas...');
-    let query = { date };
-    console.log(`🔍 Filtrando por fecha: ${date}`);
-    const bookedSlots = await BookedSlot.find(query).sort({ date: 1, time: 1 });
-    console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados:`, bookedSlots);
+    
+    // Validar formato de fecha (MM/DD/YYYY)
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(date)) {
+      console.log('❌ Error: Formato de fecha inválido:', date);
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de fecha inválido. Use MM/DD/YYYY (ejemplo: 07/15/2025)',
+        bookedSlots: [],
+        slotsByDate: {}
+      });
+    }
+    
+    console.log('📡 Consultando MongoDB Atlas para fecha:', date);
+    
+    // Consulta estricta solo para la fecha especificada
+    const query = { date: date };
+    const bookedSlots = await BookedSlot.find(query).sort({ time: 1 });
+    
+    console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados para ${date}:`, bookedSlots);
+    
+    // Agrupar por fecha (aunque solo debería haber una fecha)
     const slotsByDate = {};
     bookedSlots.forEach(slot => {
       if (!slotsByDate[slot.date]) {
@@ -252,24 +273,35 @@ app.get('/api/booked-slots', async (req, res) => {
         reason: slot.reason
       });
     });
+    
+    // Configurar headers de respuesta
     res.set({
       'Cache-Control': 'public, max-age=30',
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': req.get('origin') || '*'
+      'Access-Control-Allow-Origin': req.get('origin') || '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     });
+    
+    // Respuesta exitosa
     res.json({
       success: true,
       totalSlots: bookedSlots.length,
+      date: date,
       bookedSlots: bookedSlots,
       slotsByDate: slotsByDate
     });
+    
   } catch (error) {
     console.error('❌ Error al obtener horarios ocupados:', error);
+    
+    // Respuesta de error con detalles
     res.status(500).json({
-      error: 'Error interno del servidor al obtener horarios ocupados',
       success: false,
-      data: [],
-      details: error.message
+      error: 'Error interno del servidor al obtener horarios ocupados',
+      details: error.message,
+      bookedSlots: [],
+      slotsByDate: {}
     });
   }
 });

@@ -448,7 +448,7 @@ const Booking = () => {
   const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
   const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
   
-  // Función optimizada para cargar horarios ocupados con debouncing
+  // Función optimizada para cargar horarios ocupados con debouncing y reintentos
   const loadBookedSlots = useCallback(async (forceRefresh = false, selectedDateParam = null) => {
     setLoadingSlots(true);
     setError(null);
@@ -466,26 +466,53 @@ const Booking = () => {
         setLoadingSlots(false);
         return;
       }
+      
       const formattedDate = formatDate(dateToQuery);
       const endpoint = `${apiConfig.endpoints.bookedSlots}?date=${formattedDate}`;
       console.log('Cargando horarios ocupados desde:', endpoint);
       
-      // Usar la función optimizada con cache y reintentos
-      const response = await apiConfig.getCachedRequest(endpoint);
-      console.log('Horarios ocupados cargados:', response.data);
+      // Implementar reintentos automáticos (3 veces con intervalo de 1 segundo)
+      let response = null;
+      let lastError = null;
+      
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`Intento ${attempt}/3 de cargar horarios ocupados...`);
+          response = await apiConfig.getCachedRequest(endpoint);
+          console.log('Horarios ocupados cargados exitosamente:', response.data);
+          break; // Si llegamos aquí, la petición fue exitosa
+        } catch (error) {
+          lastError = error;
+          console.error(`Error en intento ${attempt}/3:`, error);
+          
+          // Si es el último intento, no esperar
+          if (attempt < 3) {
+            console.log(`Esperando 1 segundo antes del siguiente intento...`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
+      
+      // Si después de 3 intentos no tenemos respuesta, lanzar el último error
+      if (!response) {
+        throw lastError || new Error('No se pudo cargar los horarios después de 3 intentos');
+      }
       
       // Validar que la respuesta tenga la estructura correcta
       if (response.data && response.data.success && Array.isArray(response.data.bookedSlots)) {
+        console.log(`✅ Procesando ${response.data.bookedSlots.length} horarios ocupados para ${formattedDate}`);
         setBookedSlots(response.data.bookedSlots);
         localStorage.setItem('bookedSlots', JSON.stringify(response.data.bookedSlots));
       } else if (Array.isArray(response.data)) {
+        console.log('📋 Usando formato de respuesta directo (array)');
         setBookedSlots(response.data);
         localStorage.setItem('bookedSlots', JSON.stringify(response.data));
       } else {
+        console.warn('❌ La respuesta no tiene el formato esperado:', response.data);
         setBookedSlots([]);
       }
     } catch (error) {
-      console.error('Error al cargar horarios ocupados:', error);
+      console.error('Error al cargar horarios ocupados después de todos los intentos:', error);
       
       // Fallback a localStorage si la API falla
       try {
