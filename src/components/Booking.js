@@ -596,7 +596,13 @@ const Booking = ({ preloadedData = {} }) => {
     }
     
     // Los slots ya están filtrados por fecha en el backend, solo comparar el tiempo
-    const isBooked = bookedSlots.some(slot => slot.time === time);
+    console.log('Comparando tiempo:', time, 'con slots:', bookedSlots.map(slot => slot.time));
+    
+    const isBooked = bookedSlots.some(slot => {
+      const matches = slot.time === time;
+      console.log(`Slot ${slot.time} === ${time}? ${matches}`);
+      return matches;
+    });
     
     console.log('¿Está ocupado?', isBooked);
     return isBooked;
