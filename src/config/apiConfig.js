@@ -148,6 +148,7 @@ export default {
   endpoints: {
     bookings: `${API_BASE_URL}/bookings`,
     bookedSlots: `${API_BASE_URL}/booked-slots`,
+    bookedSlotsBatch: `${API_BASE_URL}/booked-slots-batch`,
     sendBookingEmail: `${API_BASE_URL}/send-booking-email`,
     sendContactEmail: `${API_BASE_URL}/send-contact-email`,
     // Nuevos endpoints para debugging

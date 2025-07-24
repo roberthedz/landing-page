@@ -164,6 +164,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware para medir tiempo de respuesta
+app.use((req, res, next) => {
+  req.startTime = Date.now();
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'build')));
 
 // Endpoint de salud para diagnosticar
@@ -207,7 +213,7 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// API para obtener horarios ocupados - MEJORADA CON VALIDACIÓN ESTRICTA
+// API para obtener horarios ocupados - ULTRA OPTIMIZADA
 app.get('/api/booked-slots', async (req, res) => {
   console.log('🔍 GET /api/booked-slots - Solicitud recibida desde:', req.get('origin'));
   
@@ -239,53 +245,162 @@ app.get('/api/booked-slots', async (req, res) => {
     
     console.log('📡 Consultando MongoDB Atlas para fecha:', date);
     
-    // Consulta estricta solo para la fecha especificada
+    // 🚀 OPTIMIZACIÓN: Consulta ultra rápida con proyección específica
     const query = { date: date };
-    const bookedSlots = await BookedSlot.find(query).sort({ time: 1 });
+    const projection = { 
+      _id: 1, 
+      date: 1, 
+      time: 1, 
+      bookingId: 1, 
+      reason: 1 
+    };
     
-    console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados para ${date}:`, bookedSlots);
+    // Usar lean() para obtener objetos JavaScript planos (más rápido)
+    const bookedSlots = await BookedSlot.find(query, projection)
+      .lean()
+      .sort({ time: 1 })
+      .limit(20); // Límite de seguridad
     
-    // Agrupar por fecha (aunque solo debería haber una fecha)
-    const slotsByDate = {};
-    bookedSlots.forEach(slot => {
-      if (!slotsByDate[slot.date]) {
-        slotsByDate[slot.date] = [];
-      }
-      slotsByDate[slot.date].push({
+    console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados para ${date}`);
+    
+    // 🚀 OPTIMIZACIÓN: Procesamiento más eficiente
+    const slotsByDate = {
+      [date]: bookedSlots.map(slot => ({
         time: slot.time,
         bookingId: slot.bookingId,
         reason: slot.reason
-      });
-    });
+      }))
+    };
     
-    // Configurar headers de respuesta
+    // Configurar headers de respuesta optimizados
     res.set({
-      'Cache-Control': 'public, max-age=30',
+      'Cache-Control': 'public, max-age=60', // Cache por 1 minuto
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': req.get('origin') || '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'X-Response-Time': `${Date.now() - req.startTime || Date.now()}ms`
     });
     
-    // Respuesta exitosa
+    // Respuesta ultra optimizada
     res.json({
       success: true,
       totalSlots: bookedSlots.length,
       date: date,
       bookedSlots: bookedSlots,
-      slotsByDate: slotsByDate
+      slotsByDate: slotsByDate,
+      cached: false,
+      timestamp: new Date().toISOString()
     });
     
   } catch (error) {
     console.error('❌ Error al obtener horarios ocupados:', error);
     
-    // Respuesta de error con detalles
+    // Respuesta de error optimizada
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor al obtener horarios ocupados',
       details: error.message,
       bookedSlots: [],
       slotsByDate: {}
+    });
+  }
+});
+
+// API para obtener múltiples fechas de horarios ocupados - OPTIMIZACIÓN EN LOTE
+app.get('/api/booked-slots-batch', async (req, res) => {
+  console.log('🔍 GET /api/booked-slots-batch - Solicitud recibida desde:', req.get('origin'));
+  
+  try {
+    const { dates } = req.query;
+    
+    if (!dates) {
+      return res.status(400).json({
+        success: false,
+        error: 'El parámetro "dates" es obligatorio (formato: dates=07/15/2025,07/16/2025)',
+        bookedSlots: {}
+      });
+    }
+    
+    const dateArray = dates.split(',');
+    const validDates = [];
+    
+    // Validar formato de fechas
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    for (const date of dateArray) {
+      if (dateRegex.test(date.trim())) {
+        validDates.push(date.trim());
+      }
+    }
+    
+    if (validDates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se proporcionaron fechas válidas',
+        bookedSlots: {}
+      });
+    }
+    
+    console.log('📡 Consultando MongoDB Atlas para fechas:', validDates);
+    
+    // 🚀 OPTIMIZACIÓN: Consulta en lote para múltiples fechas
+    const query = { date: { $in: validDates } };
+    const projection = { 
+      _id: 1, 
+      date: 1, 
+      time: 1, 
+      bookingId: 1, 
+      reason: 1 
+    };
+    
+    const bookedSlots = await BookedSlot.find(query, projection)
+      .lean()
+      .sort({ date: 1, time: 1 })
+      .limit(100); // Límite de seguridad para múltiples fechas
+    
+    // Agrupar por fecha
+    const slotsByDate = {};
+    validDates.forEach(date => {
+      slotsByDate[date] = [];
+    });
+    
+    bookedSlots.forEach(slot => {
+      if (slotsByDate[slot.date]) {
+        slotsByDate[slot.date].push({
+          time: slot.time,
+          bookingId: slot.bookingId,
+          reason: slot.reason
+        });
+      }
+    });
+    
+    console.log(`📊 Enviando horarios para ${validDates.length} fechas`);
+    
+    res.set({
+      'Cache-Control': 'public, max-age=60',
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': req.get('origin') || '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'X-Response-Time': `${Date.now() - req.startTime}ms`
+    });
+    
+    res.json({
+      success: true,
+      totalDates: validDates.length,
+      totalSlots: bookedSlots.length,
+      bookedSlots: slotsByDate,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error al obtener horarios en lote:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor al obtener horarios en lote',
+      details: error.message,
+      bookedSlots: {}
     });
   }
 });

@@ -371,7 +371,7 @@ const ErrorText = styled.div`
   margin-top: 0.25rem;
 `;
 
-const Booking = () => {
+const Booking = ({ preloadedData = {} }) => {
   console.log("=== COMPONENTE BOOKING SE ESTÁ EJECUTANDO ===");
   
   const [selectedDate, setSelectedDate] = useState(null);
@@ -448,17 +448,12 @@ const Booking = () => {
   const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
   const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
   
-  // Función optimizada para cargar horarios ocupados con debouncing y reintentos
+  // Función optimizada para cargar horarios ocupados con cache inteligente
   const loadBookedSlots = useCallback(async (forceRefresh = false, selectedDateParam = null) => {
     setLoadingSlots(true);
     setError(null);
     
     try {
-      // Limpiar cache si se fuerza el refresh
-      if (forceRefresh) {
-        apiConfig.clearCache('booked-slots');
-      }
-      
       // Obtener la fecha seleccionada (del estado o parámetro)
       const dateToQuery = selectedDateParam || selectedDate;
       if (!dateToQuery) {
@@ -468,8 +463,37 @@ const Booking = () => {
       }
       
       const formattedDate = formatDate(dateToQuery);
+      
+      // 🚀 ESTRATEGIA 1: Usar datos precargados si están disponibles
+      if (preloadedData[formattedDate] && !forceRefresh) {
+        console.log(`⚡ Usando datos precargados para ${formattedDate}`);
+        setBookedSlots(preloadedData[formattedDate]);
+        setLoadingSlots(false);
+        return;
+      }
+      
+      // 🚀 ESTRATEGIA 2: Verificar cache local
+      const cachedTimestamp = localStorage.getItem('cachedTimestamp');
+      const cachedData = localStorage.getItem('cachedBookedSlots');
+      
+      if (cachedData && cachedTimestamp && !forceRefresh) {
+        const timeDiff = Date.now() - parseInt(cachedTimestamp);
+        const cacheValidTime = 2 * 60 * 1000; // 2 minutos
+        
+        if (timeDiff < cacheValidTime) {
+          const parsedData = JSON.parse(cachedData);
+          if (parsedData[formattedDate]) {
+            console.log(`📋 Usando cache local para ${formattedDate}`);
+            setBookedSlots(parsedData[formattedDate]);
+            setLoadingSlots(false);
+            return;
+          }
+        }
+      }
+      
+      // 🚀 ESTRATEGIA 3: Hacer petición a la API con reintentos
       const endpoint = `${apiConfig.endpoints.bookedSlots}?date=${formattedDate}`;
-      console.log('Cargando horarios ocupados desde:', endpoint);
+      console.log('🌐 Cargando horarios ocupados desde API:', endpoint);
       
       // Implementar reintentos automáticos (3 veces con intervalo de 1 segundo)
       let response = null;
@@ -501,12 +525,17 @@ const Booking = () => {
       // Validar que la respuesta tenga la estructura correcta
       if (response.data && response.data.success && Array.isArray(response.data.bookedSlots)) {
         console.log(`✅ Procesando ${response.data.bookedSlots.length} horarios ocupados para ${formattedDate}`);
+        
+        // 🚀 ESTRATEGIA 4: Actualizar cache local
+        const currentCache = JSON.parse(localStorage.getItem('cachedBookedSlots') || '{}');
+        currentCache[formattedDate] = response.data.bookedSlots;
+        localStorage.setItem('cachedBookedSlots', JSON.stringify(currentCache));
+        localStorage.setItem('cachedTimestamp', Date.now().toString());
+        
         setBookedSlots(response.data.bookedSlots);
-        localStorage.setItem('bookedSlots', JSON.stringify(response.data.bookedSlots));
       } else if (Array.isArray(response.data)) {
         console.log('📋 Usando formato de respuesta directo (array)');
         setBookedSlots(response.data);
-        localStorage.setItem('bookedSlots', JSON.stringify(response.data));
       } else {
         console.warn('❌ La respuesta no tiene el formato esperado:', response.data);
         setBookedSlots([]);
@@ -533,7 +562,7 @@ const Booking = () => {
     } finally {
       setLoadingSlots(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, preloadedData]);
 
   // Cargar horarios ocupados al cambiar la fecha seleccionada
   useEffect(() => {
