@@ -1,132 +1,100 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { usePreload } from '../context/PreloadContext';
+import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import styled from 'styled-components';
+
+const StyledNavbar = styled(Navbar)`
+  box-shadow: var(--shadow);
+  background-color: var(--white);
+  padding: 0.8rem 0;
+`;
+
+const NavContainer = styled(Container)`
+  max-width: 1400px;
+`;
+
+const Logo = styled(Navbar.Brand)`
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-color);
+`;
+
+const NavLinksContainer = styled(Nav)`
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+`;
+
+const StyledNavLink = styled(Nav.Link)`
+  margin: 0 1rem;
+  font-weight: 500;
+  color: var(--text-color) !important;
+  text-align: center;
+  
+  &:hover {
+    color: var(--accent-color) !important;
+  }
+`;
+
+const BookButton = styled(Button)`
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  margin-left: 1rem;
+  border-radius: var(--button-radius);
+  padding: var(--button-padding);
+  color: var(--white);
+  
+  &:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: var(--hover-shadow);
+  }
+`;
 
 const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const location = useLocation();
-  const { refreshPreloadedData, hasPreloaded } = usePreload();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const handleRefreshData = async () => {
-    console.log('🔄 Usuario solicitó recarga de datos...');
-    await refreshPreloadedData();
+  const handleLinkClick = () => {
+    setExpanded(false);
+    window.scrollTo(0, 0);
   };
 
   return (
-    <header className={`fixed-top ${isScrolled ? 'scrolled' : ''}`} style={{
-      backgroundColor: isScrolled ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
-      backdropFilter: isScrolled ? 'blur(10px)' : 'none',
-      transition: 'all 0.3s ease',
-      borderBottom: isScrolled ? '1px solid rgba(0,0,0,0.1)' : 'none',
-      zIndex: 1000
-    }}>
-      <nav className="navbar navbar-expand-lg">
-        <div className="container">
-          <Link className="navbar-brand fw-bold" to="/" style={{ color: 'var(--primary-color)' }}>
-            DeDecor
-          </Link>
-
-          <button
-            className="navbar-toggler"
-            type="button"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            style={{ border: 'none' }}
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
-
-          <div className={`collapse navbar-collapse ${isMobileMenuOpen ? 'show' : ''}`}>
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/') ? 'active' : ''}`} 
-                  to="/"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Inicio
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/servicios') ? 'active' : ''}`} 
-                  to="/servicios"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Servicios
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/sobre-nosotros') ? 'active' : ''}`} 
-                  to="/sobre-nosotros"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Sobre Nosotros
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/contacto') ? 'active' : ''}`} 
-                  to="/contacto"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Contacto
-                </Link>
-              </li>
-            </ul>
-
-            <div className="d-flex align-items-center gap-2">
-              {/* Botón de refresh de datos (solo visible si ya se precargó) */}
-              {hasPreloaded && (
-                <button
-                  onClick={handleRefreshData}
-                  className="btn btn-sm btn-outline-secondary"
-                  title="Actualizar datos de horarios"
-                  style={{
-                    fontSize: '0.8rem',
-                    padding: '0.25rem 0.5rem',
-                    border: '1px solid var(--primary-color)',
-                    color: 'var(--primary-color)',
-                    background: 'transparent'
-                  }}
-                >
-                  <i className="bi bi-arrow-clockwise"></i>
-                </button>
-              )}
-              
-              <Link 
-                to="/agendar" 
-                className="btn btn-primary rounded-pill px-3"
-                onClick={() => setIsMobileMenuOpen(false)}
-                style={{
-                  backgroundColor: 'var(--primary-color)',
-                  borderColor: 'var(--primary-color)',
-                  color: 'white',
-                  fontWeight: '600'
-                }}
-              >
-                <i className="bi bi-calendar-check me-2"></i>
-                Agendar Cita
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-    </header>
+    <StyledNavbar expand="lg" fixed="top" expanded={expanded}>
+      <NavContainer>
+        <Logo as={Link} to="/">DEdecor</Logo>
+        <Navbar.Toggle 
+          aria-controls="basic-navbar-nav" 
+          onClick={() => setExpanded(expanded ? false : "expanded")}
+        />
+        <Navbar.Collapse id="basic-navbar-nav">
+          <NavLinksContainer>
+            <StyledNavLink as={Link} to="/" onClick={handleLinkClick}>
+              Inicio
+            </StyledNavLink>
+            <StyledNavLink as={Link} to="/servicios" onClick={handleLinkClick}>
+              Servicios
+            </StyledNavLink>
+            <StyledNavLink as={Link} to="/sobre-nosotros" onClick={handleLinkClick}>
+              Sobre Nosotros
+            </StyledNavLink>
+            <StyledNavLink as={Link} to="/redes-sociales" onClick={handleLinkClick}>
+              Redes Sociales
+            </StyledNavLink>
+            <StyledNavLink as={Link} to="/contacto" onClick={handleLinkClick}>
+              Contacto
+            </StyledNavLink>
+            <BookButton as={Link} to="/agendar" onClick={handleLinkClick}>
+              Agendar Cita
+            </BookButton>
+          </NavLinksContainer>
+        </Navbar.Collapse>
+      </NavContainer>
+    </StyledNavbar>
   );
 };
 
