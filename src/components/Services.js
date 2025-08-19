@@ -134,20 +134,29 @@ const ServiceButton = styled(Button)`
 const Services = () => {
   const asesoriaBasicaServices = [
     {
-      id: 'consulta-online-60',
-      title: 'Consulta Online',
-      price: '$180',
-      description: 'Sesión de 60 minutos donde te asesoramos para crear un espacio armonioso y funcional que refleje tu personalidad y estilo.',
+      id: 'consulta-online-habitacion-cerrada',
+      title: 'Habitación Cerrada 12x12',
+      price: '$150',
+      description: 'Asesoría personalizada de 1 hora en línea para transformar una habitación específica de hasta 12x12 pies. Incluye moodboard digital, recomendaciones de productos y sesión de videollamada.',
       image: '/images/service1.jpg',
-      tag: 'Básico',
+      tag: 'Online',
       duration: '60 min'
     },
     {
-      id: 'consulta-online-120',
-      title: 'Consulta Online',
-      price: '$300',
-      description: 'Sesión extendida de 120 minutos para un asesoramiento más detallado sobre tendencias, estilos y decisiones para lograr un resultado impactante.',
+      id: 'consulta-online-open-concept-1-2',
+      title: '1-2 Habitaciones Open Concept',
+      price: '$220',
+      description: 'Ideal para espacios abiertos donde conviven sala, comedor, cocina. Enfoque estratégico para mantener armonía entre zonas. Incluye moodboard y 6 horas de preparación previa.',
       image: '/images/service2.jpg',
+      tag: 'Open Concept',
+      duration: '60 min'
+    },
+    {
+      id: 'consulta-online-open-concept-3-4',
+      title: '3-4 Habitaciones Open Concept',
+      price: '$400',
+      description: 'Para renovar múltiples áreas en espacios abiertos. Transiciones fluidas entre habitaciones con coherencia visual. Incluye 8 horas de preparación previa y sesión extendida.',
+      image: '/images/service3.jpg',
       tag: 'Completo',
       duration: '120 min'
     }
@@ -157,29 +166,29 @@ const Services = () => {
     {
       id: 'paquete-esencial',
       title: 'Paquete Esencial',
-      price: 'Contáctanos para estimado GRATIS',
-      description: 'Ideal para quienes quieren una guía clara y profesional para transformar un espacio con estilo, sin complicaciones.',
+      price: '$500',
+      description: 'Guía profesional para transformar un espacio (12x12) con estilo. Incluye reunión inicial, moodboard, paleta de colores, propuesta de distribución y lista de recomendaciones. Entrega en 10-12 días.',
       image: '/images/service3.jpg',
-      tag: 'Popular',
-      duration: ''
+      tag: 'Por Habitación',
+      duration: 'Presencial'
     },
     {
       id: 'paquete-intermedio',
       title: 'Paquete Intermedio',
-      price: 'Contáctanos para estimado GRATIS',
-      description: 'Ideal para quienes desean transformar un espacio con estilo y funcionalidad, contando con asesoría personalizada y dos propuestas de decoración para elegir la que mejor se adapte a su visión.',
+      price: '$750',
+      description: 'Transformación con estilo y funcionalidad. Dos moodboards, plano 2D, reunión de revisión, seguimiento por WhatsApp. Incluye descuentos hasta 20% en proveedores. Entrega en 15-18 días.',
       image: '/images/service4.jpg',
-      tag: 'Recomendado',
-      duration: ''
+      tag: 'Por Habitación',
+      duration: 'Presencial'
     },
     {
       id: 'paquete-premium',
       title: 'Paquete Premium',
-      price: 'Contáctanos para estimado GRATIS',
-      description: 'Orientado para quienes quieren un paquete exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada paso del proceso.',
+      price: '$1,200',
+      description: 'Proyecto exclusivo y detallado con diseño a medida. Incluye render 3D profesional, acompañamiento integral, guía de montaje y seguimiento a 30 días. Entrega en 21-25 días.',
       image: '/images/service5.jpg',
-      tag: 'Premium',
-      duration: ''
+      tag: 'Por Habitación',
+      duration: 'Presencial'
     }
   ];
 

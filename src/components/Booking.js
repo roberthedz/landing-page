@@ -392,54 +392,66 @@ const Booking = ({ preloadedData = {} }) => {
   const projectDescriptionSectionRef = useRef();
   
   const services = [
+    // SERVICIOS ONLINE
     {
-      id: 'consulta-online-60',
-      title: 'Consulta Online',
-      price: '$180',
-      description: 'Sesión de 60 minutos donde te asesoramos para crear un espacio armonioso y funcional que refleje tu personalidad y estilo.',
+      id: 'consulta-online-habitacion-cerrada',
+      title: 'Habitación Cerrada 12x12',
+      price: '$150',
+      description: 'Asesoría personalizada de 1 hora en línea para transformar una habitación específica de hasta 12x12 pies. Incluye moodboard digital, recomendaciones de productos y sesión de videollamada.',
       image: '/images/service1.jpg',
-      tag: 'Básico',
+      tag: 'Online',
       duration: '60 min',
       type: 'asesoria-basica'
     },
     {
-      id: 'consulta-online-120',
-      title: 'Consulta Online',
-      price: '$300',
-      description: 'Sesión extendida de 120 minutos para un asesoramiento más detallado sobre tendencias, estilos y decisiones para lograr un resultado impactante.',
+      id: 'consulta-online-open-concept-1-2',
+      title: '1-2 Habitaciones Open Concept',
+      price: '$220',
+      description: 'Ideal para espacios abiertos donde conviven sala, comedor, cocina. Enfoque estratégico para mantener armonía entre zonas. Incluye moodboard y 6 horas de preparación previa.',
       image: '/images/service2.jpg',
+      tag: 'Open Concept',
+      duration: '60 min',
+      type: 'asesoria-basica'
+    },
+    {
+      id: 'consulta-online-open-concept-3-4',
+      title: '3-4 Habitaciones Open Concept',
+      price: '$400',
+      description: 'Para renovar múltiples áreas en espacios abiertos. Transiciones fluidas entre habitaciones con coherencia visual. Incluye 8 horas de preparación previa y sesión extendida.',
+      image: '/images/service3.jpg',
       tag: 'Completo',
       duration: '120 min',
       type: 'asesoria-basica'
     },
+    // SERVICIOS PRESENCIALES
     {
       id: 'paquete-esencial',
       title: 'Paquete Esencial',
-      price: 'Estimado GRATIS',
-      description: 'Transformación de una habitación con guía profesional que incluye reunión inicial, moodboard, paleta de colores y propuesta de distribución.',
-      image: '/images/service3.jpg',
-      tag: 'Popular',
-      duration: 'Por Habitación',
+      price: '$500',
+      description: 'Guía profesional para transformar un espacio (12x12) con estilo. Incluye reunión inicial, moodboard, paleta de colores, propuesta de distribución y lista de recomendaciones. Entrega en 10-12 días.',
+      image: '/images/service4.jpg',
+      tag: 'Por Habitación',
+      duration: 'Presencial',
       type: 'asesoria-completa'
     },
     {
       id: 'paquete-intermedio',
       title: 'Paquete Intermedio',
-      price: 'Estimado GRATIS',
-      description: 'Servicio personalizado con dos propuestas decorativas, paleta detallada, plano 2D, reuniones de revisión y lista de compras recomendadas.',
-      image: '/images/service4.jpg',
-      tag: 'Recomendado',
-      duration: 'Por Habitación',
+      price: '$750',
+      description: 'Transformación con estilo y funcionalidad. Dos moodboards, plano 2D, reunión de revisión, seguimiento por WhatsApp. Incluye descuentos hasta 20% en proveedores. Entrega en 15-18 días.',
+      image: '/images/service5.jpg',
+      tag: 'Por Habitación',
+      duration: 'Presencial',
       type: 'asesoria-completa'
     },
     {
       id: 'paquete-premium',
       title: 'Paquete Premium',
-      price: 'Estimado GRATIS',
-      description: 'Diseño exclusivo y detallado con acompañamiento integral, render 3D profesional, guía de montaje y seguimiento personalizado del proyecto.',
-      image: '/images/service5.jpg',
-      tag: 'Premium',
-      duration: 'Por Habitación',
+      price: '$1,200',
+      description: 'Proyecto exclusivo y detallado con diseño a medida. Incluye render 3D profesional, acompañamiento integral, guía de montaje y seguimiento a 30 días. Entrega en 21-25 días.',
+      image: '/images/service1.jpg',
+      tag: 'Por Habitación',
+      duration: 'Presencial',
       type: 'asesoria-completa'
     }
   ];
@@ -1163,8 +1175,8 @@ const Booking = ({ preloadedData = {} }) => {
                             <div className="mb-2" style={{ color: 'var(--primary-color)' }}>
                               <i className="bi bi-star-fill fs-1"></i>
                             </div>
-                            <Card.Title className="h6 fw-bold mb-1">Asesoría Completa</Card.Title>
-                            <Card.Text className="text-muted small">Servicio integral y personalizado</Card.Text>
+                            <Card.Title className="h6 fw-bold mb-1">Servicios Presenciales</Card.Title>
+                            <Card.Text className="text-muted small">Paquetes integrales con visita presencial</Card.Text>
                           </Card.Body>
                         </Card>
                       </Col>
@@ -1183,8 +1195,8 @@ const Booking = ({ preloadedData = {} }) => {
                             <div className="mb-2" style={{ color: 'var(--primary-color)' }}>
                               <i className="bi bi-chat-dots fs-1"></i>
                             </div>
-                            <Card.Title className="h6 fw-bold mb-1">Asesoría Básica</Card.Title>
-                            <Card.Text className="text-muted small">Consulta especializada online</Card.Text>
+                            <Card.Title className="h6 fw-bold mb-1">Servicios Online</Card.Title>
+                            <Card.Text className="text-muted small">Consultas especializadas virtuales</Card.Text>
                           </Card.Body>
                         </Card>
                       </Col>
@@ -1210,7 +1222,7 @@ const Booking = ({ preloadedData = {} }) => {
                     <div className="d-flex align-items-center">
                       <i className="bi bi-grid-3x3-gap fs-5 me-3"></i>
                       <h5 className="m-0 fw-semibold">
-                        {appointmentType === 'asesoria-basica' ? 'Servicios de Asesoría Básica' : appointmentType === 'asesoria-completa' ? 'Servicios de Asesoría Completa' : 'Servicios'}
+                        {appointmentType === 'asesoria-basica' ? 'Servicios Online' : appointmentType === 'asesoria-completa' ? 'Servicios Presenciales' : 'Servicios'}
                       </h5>
                       {selectedService && <i className="bi bi-check-circle-fill ms-auto"></i>}
                     </div>

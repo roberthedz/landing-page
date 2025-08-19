@@ -5,59 +5,70 @@ import { Container, Row, Col, Card, Button, Badge, Breadcrumb } from 'react-boot
 const ServicesPage = () => {
   const services = [
     {
-      id: 'consulta-online-60',
-      title: 'Consulta Online',
-      price: '$180',
-      description: 'Sesión de 60 minutos donde te asesoramos para crear un espacio armonioso y funcional que refleje tu personalidad y estilo.',
+      id: 'consulta-online-habitacion-cerrada',
+      title: 'Habitación Cerrada 12x12',
+      price: '$150',
+      description: 'Asesoría personalizada de 1 hora en línea para transformar una habitación específica de hasta 12x12 pies. Incluye moodboard digital, recomendaciones de productos y sesión de videollamada.',
       image: '/images/service1.jpg',
-      tag: 'Básico',
+      tag: 'Online',
       duration: '60 min',
       type: 'asesoria-basica',
-      features: ['Asesoría personalizada en tiempo real', 'Recomendaciones de color y estilo', 'Sugerencias de distribución']
+      features: ['Cuestionario de estilo personalizado', 'Sesión de videollamada de 60 min', 'Moodboard digital', 'Documento resumen con enlaces de compra', 'Selección de tiendas con descuentos hasta 20%']
     },
     {
-      id: 'consulta-online-120',
-      title: 'Consulta Online',
-      price: '$300',
-      description: 'Sesión extendida de 120 minutos para un asesoramiento más detallado sobre tendencias, estilos y decisiones para lograr un resultado impactante.',
+      id: 'consulta-online-open-concept-1-2',
+      title: '1-2 Habitaciones Open Concept',
+      price: '$220',
+      description: 'Ideal para espacios abiertos donde conviven sala, comedor, cocina. Enfoque estratégico para mantener armonía entre zonas. Incluye moodboard y 6 horas de preparación previa.',
       image: '/images/service2.jpg',
+      tag: 'Open Concept',
+      duration: '60 min',
+      type: 'asesoria-basica',
+      features: ['6 horas de preparación previa', 'Enfoque estratégico para open concept', 'Transiciones fluidas entre áreas', 'Moodboard digital', 'Selección de tiendas con descuentos hasta 20%']
+    },
+    {
+      id: 'consulta-online-open-concept-3-4',
+      title: '3-4 Habitaciones Open Concept',
+      price: '$400',
+      description: 'Para renovar múltiples áreas en espacios abiertos. Transiciones fluidas entre habitaciones con coherencia visual. Incluye 8 horas de preparación previa y sesión extendida.',
+      image: '/images/service3.jpg',
       tag: 'Completo',
       duration: '120 min',
       type: 'asesoria-basica',
-      features: ['Análisis profundo del espacio', 'Planificación completa', 'Recomendaciones detalladas']
+      features: ['8 horas de preparación previa', 'Sesión extendida de 120 min', 'Coherencia visual entre múltiples áreas', 'Moodboard digital', 'Selección de tiendas con descuentos hasta 20%']
     },
     {
       id: 'paquete-esencial',
       title: 'Paquete Esencial',
-      price: 'Contáctanos para estimado GRATIS',
-      description: 'Ideal para quienes quieren una guía clara y profesional para transformar un espacio con estilo, sin complicaciones.',
-      image: '/images/service3.jpg',
-      tag: 'Popular',
-      duration: '',
+      price: '$500',
+      description: 'Guía profesional para transformar un espacio (12x12) con estilo. Incluye reunión inicial, moodboard, paleta de colores, propuesta de distribución y lista de recomendaciones. Entrega en 10-12 días.',
+      image: '/images/service4.jpg',
+      tag: 'Por Habitación',
+      duration: 'Presencial',
       type: 'asesoria-completa',
-      features: ['Reunión inicial (60 min)', 'Moodboard digital', 'Paleta de colores', 'Lista de recomendaciones', 'PDF de presentación final']
+      features: ['Reunión inicial (60 min)', 'Moodboard digital', 'Paleta de colores sugerida', 'Propuesta de distribución', 'Lista de recomendaciones con links', 'PDF de presentación final', 'Entrega en 10-12 días']
     },
     {
       id: 'paquete-intermedio',
       title: 'Paquete Intermedio',
-      price: 'Contáctanos para estimado GRATIS',
-      description: 'Ideal para quienes desean transformar un espacio con estilo y funcionalidad, contando con asesoría personalizada y dos propuestas de decoración para elegir la que mejor se adapte a su visión.',
-      image: '/images/service4.jpg',
-      tag: 'Recomendado',
-      duration: '',
+      price: '$750',
+      description: 'Transformación con estilo y funcionalidad. Dos moodboards, plano 2D, reunión de revisión, seguimiento por WhatsApp. Incluye descuentos hasta 20% en proveedores. Entrega en 15-18 días.',
+      image: '/images/service5.jpg',
+      tag: 'Por Habitación',
+      duration: 'Presencial',
       type: 'asesoria-completa',
-      features: ['Dos moodboards por área', 'Plano 2D a escala', 'Reunión de revisión', 'Lista de compras detallada']
+      features: ['Dos moodboards por área', 'Plano 2D a escala', 'Reunión de revisión', 'Seguimiento por WhatsApp', 'Lista de compras detallada', 'Descuentos hasta 20%', 'Entrega en 15-18 días']
     },
     {
       id: 'paquete-premium',
       title: 'Paquete Premium',
-      price: 'Contáctanos para estimado GRATIS',
-      description: 'Orientado para quienes quieren un paquete exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada paso del proceso.',
-      image: '/images/service5.jpg',
-      tag: 'Premium',
-      duration: '',
+      price: '$1,200',
+      description: 'Proyecto exclusivo y detallado con diseño a medida. Incluye render 3D profesional, acompañamiento integral, guía de montaje y seguimiento a 30 días. Entrega en 21-25 días.',
+      image: '/images/service1.jpg',
+      tag: 'Por Habitación',
+      duration: 'Presencial',
       type: 'asesoria-completa',
-      features: ['Render 3D profesional', 'Acompañamiento integral', 'Atención preferente', 'Seguimiento personalizado']
+      features: ['Render 3D profesional', 'Acompañamiento integral', 'Guía de montaje personalizada', 'Seguimiento a 30 días', 'Atención preferente', 'Descuentos hasta 20%', 'Entrega en 21-25 días']
     }
   ];
 

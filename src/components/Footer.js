@@ -117,8 +117,9 @@ const Footer = () => {
         <FooterSection>
           <h3>Servicios</h3>
           <ul>
-            <li><Link to="/servicios/consulta-online-60">Consulta Online (60 min)</Link></li>
-            <li><Link to="/servicios/consulta-online-120">Consulta Online (120 min)</Link></li>
+            <li><Link to="/servicios/consulta-online-habitacion-cerrada">Habitación Cerrada 12x12</Link></li>
+            <li><Link to="/servicios/consulta-online-open-concept-1-2">1-2 Habitaciones Open Concept</Link></li>
+            <li><Link to="/servicios/consulta-online-open-concept-3-4">3-4 Habitaciones Open Concept</Link></li>
             <li><Link to="/servicios/paquete-esencial">Paquete Esencial</Link></li>
             <li><Link to="/servicios/paquete-intermedio">Paquete Intermedio</Link></li>
             <li><Link to="/servicios/paquete-premium">Paquete Premium</Link></li>
