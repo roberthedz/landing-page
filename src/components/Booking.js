@@ -1235,56 +1235,169 @@ const Booking = ({ preloadedData = {} }) => {
                       </div>
                     ) : (
                       <>
-                        <Row xs={1} md={appointmentType === 'asesoria-basica' ? 2 : 3} className="g-3">
-                          {getFilteredServices().map(service => (
-                            <Col key={service.id} className="d-flex">
-                              <Card 
-                                className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
-                                onClick={() => handleServiceSelect(service, setFieldValue)}
-                                style={{ 
-                                  cursor: 'pointer', 
-                                  transition: 'all 0.3s ease',
-                                  borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
-                                  borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
-                                }}
-                              >
-                                <Card.Header 
-                                  className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
-                                  style={{ 
-                                    backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#f8f9fa',
-                                    minHeight: '70px', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    flexDirection: 'column' 
-                                  }}
-                                >
-                                  <h6 className="m-0">{service.title}</h6>
-                                  {service.duration && (
-                                    <small className="mt-1 opacity-75">({service.duration})</small>
-                                  )}
-                                </Card.Header>
-                                <Card.Body className="text-center p-3">
-                                  <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
-                                  <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
-                                  {service.tag && (
-                                    <span 
-                                      className="badge mt-2"
+                        {appointmentType === 'asesoria-basica' ? (
+                          // Layout especial para servicios online (2 arriba, 1 centrado abajo)
+                          <>
+                            <Row xs={1} md={2} className="g-3 justify-content-center mb-3">
+                              {getFilteredServices().slice(0, 2).map(service => (
+                                <Col key={service.id} className="d-flex">
+                                  <Card 
+                                    className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
+                                    onClick={() => handleServiceSelect(service, setFieldValue)}
+                                    style={{ 
+                                      cursor: 'pointer', 
+                                      transition: 'all 0.3s ease',
+                                      borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
+                                      borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                                    }}
+                                  >
+                                    <Card.Header 
+                                      className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
                                       style={{ 
-                                        fontSize: '0.7rem', 
-                                        backgroundColor: 'var(--primary-color)', 
-                                        color: 'white',
-                                        padding: '0.25rem 0.5rem'
+                                        backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#f8f9fa',
+                                        minHeight: '70px', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center', 
+                                        flexDirection: 'column' 
                                       }}
                                     >
-                                      {service.tag}
-                                    </span>
-                                  )}
-                                </Card.Body>
-                              </Card>
-                            </Col>
-                          ))}
-                        </Row>
+                                      <h6 className="m-0">{service.title}</h6>
+                                      {service.duration && (
+                                        <small className="mt-1 opacity-75">({service.duration})</small>
+                                      )}
+                                    </Card.Header>
+                                    <Card.Body className="text-center p-3">
+                                      <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
+                                      <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
+                                      {service.tag && (
+                                        <span 
+                                          className="badge mt-2"
+                                          style={{ 
+                                            fontSize: '0.7rem', 
+                                            backgroundColor: 'var(--primary-color)', 
+                                            color: 'white',
+                                            padding: '0.25rem 0.5rem'
+                                          }}
+                                        >
+                                          {service.tag}
+                                        </span>
+                                      )}
+                                    </Card.Body>
+                                  </Card>
+                                </Col>
+                              ))}
+                            </Row>
+                            {/* Tercer servicio centrado */}
+                            {getFilteredServices().length > 2 && (
+                              <Row className="justify-content-center">
+                                <Col md={6} lg={4} className="d-flex">
+                                  {(() => {
+                                    const service = getFilteredServices()[2];
+                                    return (
+                                      <Card 
+                                        className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
+                                        onClick={() => handleServiceSelect(service, setFieldValue)}
+                                        style={{ 
+                                          cursor: 'pointer', 
+                                          transition: 'all 0.3s ease',
+                                          borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
+                                          borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                                        }}
+                                      >
+                                        <Card.Header 
+                                          className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
+                                          style={{ 
+                                            backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#f8f9fa',
+                                            minHeight: '70px', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            flexDirection: 'column' 
+                                          }}
+                                        >
+                                          <h6 className="m-0">{service.title}</h6>
+                                          {service.duration && (
+                                            <small className="mt-1 opacity-75">({service.duration})</small>
+                                          )}
+                                        </Card.Header>
+                                        <Card.Body className="text-center p-3">
+                                          <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
+                                          <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
+                                          {service.tag && (
+                                            <span 
+                                              className="badge mt-2"
+                                              style={{ 
+                                                fontSize: '0.7rem', 
+                                                backgroundColor: 'var(--primary-color)', 
+                                                color: 'white',
+                                                padding: '0.25rem 0.5rem'
+                                              }}
+                                            >
+                                              {service.tag}
+                                            </span>
+                                          )}
+                                        </Card.Body>
+                                      </Card>
+                                    );
+                                  })()}
+                                </Col>
+                              </Row>
+                            )}
+                          </>
+                        ) : (
+                          // Layout normal para servicios presenciales (3 en fila)
+                          <Row xs={1} md={3} className="g-3">
+                            {getFilteredServices().map(service => (
+                              <Col key={service.id} className="d-flex">
+                                <Card 
+                                  className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
+                                  onClick={() => handleServiceSelect(service, setFieldValue)}
+                                  style={{ 
+                                    cursor: 'pointer', 
+                                    transition: 'all 0.3s ease',
+                                    borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
+                                    borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                                  }}
+                                >
+                                  <Card.Header 
+                                    className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
+                                    style={{ 
+                                      backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#f8f9fa',
+                                      minHeight: '70px', 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      justifyContent: 'center', 
+                                      flexDirection: 'column' 
+                                    }}
+                                  >
+                                    <h6 className="m-0">{service.title}</h6>
+                                    {service.duration && (
+                                      <small className="mt-1 opacity-75">({service.duration})</small>
+                                    )}
+                                  </Card.Header>
+                                  <Card.Body className="text-center p-3">
+                                    <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
+                                    <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
+                                    {service.tag && (
+                                      <span 
+                                        className="badge mt-2"
+                                        style={{ 
+                                          fontSize: '0.7rem', 
+                                          backgroundColor: 'var(--primary-color)', 
+                                          color: 'white',
+                                          padding: '0.25rem 0.5rem'
+                                        }}
+                                      >
+                                        {service.tag}
+                                      </span>
+                                    )}
+                                  </Card.Body>
+                                </Card>
+                              </Col>
+                            ))}
+                          </Row>
+                        )}
                         {touched.service && errors.service && (
                           <div className="text-danger text-center mt-3 small">
                             <i className="bi bi-exclamation-circle me-1"></i>
