@@ -401,7 +401,7 @@ const Booking = ({ preloadedData = {} }) => {
       image: '/images/service1.jpg',
       tag: 'Online',
       duration: '60 min',
-      type: 'asesoria-basica'
+      type: 'asesoria-online'
     },
     {
       id: 'consulta-online-open-concept-1-2',
@@ -411,7 +411,7 @@ const Booking = ({ preloadedData = {} }) => {
       image: '/images/service2.jpg',
       tag: 'Open Concept',
       duration: '60 min',
-      type: 'asesoria-basica'
+      type: 'asesoria-online'
     },
     {
       id: 'consulta-online-open-concept-3-4',
@@ -421,7 +421,7 @@ const Booking = ({ preloadedData = {} }) => {
       image: '/images/service3.jpg',
       tag: 'Completo',
       duration: '120 min',
-      type: 'asesoria-basica'
+      type: 'asesoria-online'
     },
     // SERVICIOS PRESENCIALES
     {
@@ -432,7 +432,7 @@ const Booking = ({ preloadedData = {} }) => {
       image: '/images/service4.jpg',
       tag: 'Por Habitación',
       duration: 'Presencial',
-      type: 'asesoria-completa'
+      type: 'asesoria-presencial'
     },
     {
       id: 'paquete-intermedio',
@@ -442,7 +442,7 @@ const Booking = ({ preloadedData = {} }) => {
       image: '/images/service5.jpg',
       tag: 'Por Habitación',
       duration: 'Presencial',
-      type: 'asesoria-completa'
+      type: 'asesoria-presencial'
     },
     {
       id: 'paquete-premium',
@@ -452,7 +452,7 @@ const Booking = ({ preloadedData = {} }) => {
       image: '/images/service1.jpg',
       tag: 'Por Habitación',
       duration: 'Presencial',
-      type: 'asesoria-completa'
+      type: 'asesoria-presencial'
     }
   ];
   
@@ -1162,13 +1162,13 @@ const Booking = ({ preloadedData = {} }) => {
                     <Row xs={1} md={2} className="g-4">
                       <Col className="d-flex">
                         <Card 
-                          className={`w-100 text-center border ${appointmentType === 'asesoria-completa' ? 'bg-light' : ''}`}
-                          onClick={() => handleAppointmentTypeSelect('asesoria-completa', setFieldValue)}
+                          className={`w-100 text-center border ${appointmentType === 'asesoria-presencial' ? 'bg-light' : ''}`}
+                          onClick={() => handleAppointmentTypeSelect('asesoria-presencial', setFieldValue)}
                           style={{ 
                             cursor: 'pointer', 
                             transition: 'all 0.3s ease',
-                            borderColor: appointmentType === 'asesoria-completa' ? 'var(--primary-color)' : '#dee2e6',
-                            borderWidth: appointmentType === 'asesoria-completa' ? '2px' : '1px'
+                            borderColor: appointmentType === 'asesoria-presencial' ? 'var(--primary-color)' : '#dee2e6',
+                            borderWidth: appointmentType === 'asesoria-presencial' ? '2px' : '1px'
                           }}
                         >
                           <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
@@ -1182,13 +1182,13 @@ const Booking = ({ preloadedData = {} }) => {
                       </Col>
                       <Col className="d-flex">
                         <Card 
-                          className={`w-100 text-center border ${appointmentType === 'asesoria-basica' ? 'bg-light' : ''}`}
-                          onClick={() => handleAppointmentTypeSelect('asesoria-basica', setFieldValue)}
+                          className={`w-100 text-center border ${appointmentType === 'asesoria-online' ? 'bg-light' : ''}`}
+                          onClick={() => handleAppointmentTypeSelect('asesoria-online', setFieldValue)}
                           style={{ 
                             cursor: 'pointer', 
                             transition: 'all 0.3s ease',
-                            borderColor: appointmentType === 'asesoria-basica' ? 'var(--primary-color)' : '#dee2e6',
-                            borderWidth: appointmentType === 'asesoria-basica' ? '2px' : '1px'
+                            borderColor: appointmentType === 'asesoria-online' ? 'var(--primary-color)' : '#dee2e6',
+                            borderWidth: appointmentType === 'asesoria-online' ? '2px' : '1px'
                           }}
                         >
                           <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
@@ -1222,7 +1222,7 @@ const Booking = ({ preloadedData = {} }) => {
                     <div className="d-flex align-items-center">
                       <i className="bi bi-grid-3x3-gap fs-5 me-3"></i>
                       <h5 className="m-0 fw-semibold">
-                        {appointmentType === 'asesoria-basica' ? 'Servicios Online' : appointmentType === 'asesoria-completa' ? 'Servicios Presenciales' : 'Servicios'}
+                        {appointmentType === 'asesoria-online' ? 'Servicios Online' : appointmentType === 'asesoria-presencial' ? 'Servicios Presenciales' : 'Servicios'}
                       </h5>
                       {selectedService && <i className="bi bi-check-circle-fill ms-auto"></i>}
                     </div>
@@ -1235,7 +1235,7 @@ const Booking = ({ preloadedData = {} }) => {
                       </div>
                     ) : (
                       <>
-                        {appointmentType === 'asesoria-basica' ? (
+                        {appointmentType === 'asesoria-online' ? (
                           // Layout especial para servicios online (2 arriba, 1 centrado abajo)
                           <>
                             <Row xs={1} md={2} className="g-3 justify-content-center mb-3">

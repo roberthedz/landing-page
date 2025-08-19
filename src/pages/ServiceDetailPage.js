@@ -165,7 +165,7 @@ const ServiceDetailPage = () => {
           longDescription: 'Si desea transformar una habitación específica de su hogar, este paquete es perfecto para usted. En DEdecor le ofrecemos una asesoría personalizada de 1 hora en línea, pensada para ayudarle a crear un espacio armónico, funcional y lleno de estilo dentro de una habitación cerrada de hasta 12x12 pies. Para garantizar un servicio de calidad, le pedimos que agende su cita con al menos 24 horas de antelación.',
           image: '/images/service1.jpg',
           tag: 'Online',
-          category: 'asesoria-basica',
+          category: 'asesoria-online',
           features: [
             'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
             'Definición de estilo y elección de elementos clave: paredes, textiles, sofás, camas, etc.',
@@ -193,7 +193,7 @@ const ServiceDetailPage = () => {
           longDescription: 'Este paquete está diseñado especialmente para quienes tienen espacios abiertos y conectados (open concept) donde la sala, el comedor, la cocina u otras áreas conviven en un mismo entorno. Para quienes desean renovar una o dos áreas principales de su hogar, pero entienden que en un espacio abierto es fundamental mantener la armonía con las zonas alrededor.',
           image: '/images/service2.jpg',
           tag: 'Open Concept',
-          category: 'asesoria-basica',
+          category: 'asesoria-online',
           features: [
             'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
             'Definición de estilo y elección de elementos clave: paredes, textiles, sofás, camas, etc.',
@@ -222,7 +222,7 @@ const ServiceDetailPage = () => {
           longDescription: 'Este paquete está diseñado especialmente para quienes tienen espacios abiertos y conectados (open concept) donde múltiples áreas conviven en un mismo entorno. Para quienes desean renovar 3-4 áreas principales pero entienden que en un espacio abierto es fundamental mantener la armonía y coherencia visual entre todas las zonas.',
           image: '/images/service3.jpg',
           tag: 'Completo',
-          category: 'asesoria-basica',
+          category: 'asesoria-online',
           features: [
             'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
             'Definición de estilo y elección de elementos clave: paredes, textiles, sofás, camas, etc.',
@@ -251,7 +251,7 @@ const ServiceDetailPage = () => {
           longDescription: 'Ideal para quienes quieran una guía clara y profesional para transformar un espacio con estilo, sin complicaciones. Este paquete incluye una propuesta única y final, cuidadosamente diseñada según tus gustos y necesidades. Una habitación standard es 12\'x12\'. Entrega entre 10 y 12 días hábiles después de nuestra reunión inicial.',
           image: '/images/service4.jpg',
           tag: 'Por Habitación',
-          category: 'asesoria-completa',
+          category: 'asesoria-presencial',
           features: [
             '1 reunión inicial (virtual o presencial) para conocer el espacio, necesidades y estilo del cliente (hasta 60 min)',
             '1 Moodboard digital con la propuesta estética',
@@ -279,7 +279,7 @@ const ServiceDetailPage = () => {
           longDescription: 'Ideal para quienes desean transformar un espacio con estilo y funcionalidad, contando con asesoría personalizada y dos propuestas de decoración para elegir la que mejor se adapte a su visión. Una habitación standard es 12\'x12\'. Entrega en 15 a 18 días hábiles.',
           image: '/images/service5.jpg',
           tag: 'Por Habitación',
-          category: 'asesoria-completa',
+          category: 'asesoria-presencial',
           features: [
             'Una (1) reunión inicial (sin costo adicional 60 min)',
             'Dos (2) moodboards por área (para que EL CLIENTE elija o combine a su gusto)',
@@ -309,7 +309,7 @@ const ServiceDetailPage = () => {
           longDescription: 'Diseñado para quienes buscan un proyecto exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada etapa del proceso. Entrega en 21 a 25 días hábiles.',
           image: '/images/service1.jpg',
           tag: 'Por Habitación',
-          category: 'asesoria-completa',
+          category: 'asesoria-presencial',
           features: [
             '1 reunión inicial + 2 reuniones de seguimiento (virtual o presencial 60min)',
             'Estudio del espacio con análisis de luz, proporciones y flujo',

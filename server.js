@@ -600,7 +600,7 @@ app.post('/api/bookings/:id/status', async (req, res) => {
       
       const newSlots = [];
       
-      if (booking.type === 'asesoria-completa') {
+      if (booking.type === 'asesoria-presencial') {
         const isMorning = morningTimes.includes(booking.time);
         const timesToBlock = isMorning ? morningTimes : afternoonTimes;
         
@@ -707,7 +707,7 @@ app.get('/confirm-booking', async (req, res) => {
       
       const newSlots = [];
       
-      if (booking.type === 'asesoria-completa') {
+      if (booking.type === 'asesoria-presencial') {
         // Bloquear todo el turno
         const isMorning = morningTimes.includes(booking.time);
         const timesToBlock = isMorning ? morningTimes : afternoonTimes;

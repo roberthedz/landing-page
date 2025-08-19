@@ -234,7 +234,7 @@ const Services = () => {
         
         <CategoryContainer>
           <div className="d-flex justify-content-center mb-3">
-            <CategoryTitle>Servicios de Asesoría Básica</CategoryTitle>
+            <CategoryTitle>Servicios de Asesoría Online</CategoryTitle>
           </div>
           <Row className="g-4 justify-content-center">
             {asesoriaBasicaServices.map(renderServiceCard)}
@@ -243,7 +243,7 @@ const Services = () => {
         
         <CategoryContainer>
           <div className="d-flex justify-content-center mb-3">
-            <CategoryTitle>Servicios de Asesoría Completa</CategoryTitle>
+            <CategoryTitle>Servicios de Asesoría Presencial</CategoryTitle>
           </div>
           <Row className="g-4">
             {asesoriaCompletaServices.map(renderServiceCard)}

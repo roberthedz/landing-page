@@ -12,7 +12,7 @@ const ServicesPage = () => {
       image: '/images/service1.jpg',
       tag: 'Online',
       duration: '60 min',
-      type: 'asesoria-basica',
+      type: 'asesoria-online',
       features: ['Cuestionario de estilo personalizado', 'Sesión de videollamada de 60 min', 'Moodboard digital', 'Documento resumen con enlaces de compra', 'Selección de tiendas con descuentos hasta 20%']
     },
     {
@@ -23,7 +23,7 @@ const ServicesPage = () => {
       image: '/images/service2.jpg',
       tag: 'Open Concept',
       duration: '60 min',
-      type: 'asesoria-basica',
+      type: 'asesoria-online',
       features: ['6 horas de preparación previa', 'Enfoque estratégico para open concept', 'Transiciones fluidas entre áreas', 'Moodboard digital', 'Selección de tiendas con descuentos hasta 20%']
     },
     {
@@ -34,7 +34,7 @@ const ServicesPage = () => {
       image: '/images/service3.jpg',
       tag: 'Completo',
       duration: '120 min',
-      type: 'asesoria-basica',
+      type: 'asesoria-online',
       features: ['8 horas de preparación previa', 'Sesión extendida de 120 min', 'Coherencia visual entre múltiples áreas', 'Moodboard digital', 'Selección de tiendas con descuentos hasta 20%']
     },
     {
@@ -45,7 +45,7 @@ const ServicesPage = () => {
       image: '/images/service4.jpg',
       tag: 'Por Habitación',
       duration: 'Presencial',
-      type: 'asesoria-completa',
+      type: 'asesoria-presencial',
       features: ['Reunión inicial (60 min)', 'Moodboard digital', 'Paleta de colores sugerida', 'Propuesta de distribución', 'Lista de recomendaciones con links', 'PDF de presentación final', 'Entrega en 10-12 días']
     },
     {
@@ -56,7 +56,7 @@ const ServicesPage = () => {
       image: '/images/service5.jpg',
       tag: 'Por Habitación',
       duration: 'Presencial',
-      type: 'asesoria-completa',
+      type: 'asesoria-presencial',
       features: ['Dos moodboards por área', 'Plano 2D a escala', 'Reunión de revisión', 'Seguimiento por WhatsApp', 'Lista de compras detallada', 'Descuentos hasta 20%', 'Entrega en 15-18 días']
     },
     {
@@ -67,7 +67,7 @@ const ServicesPage = () => {
       image: '/images/service1.jpg',
       tag: 'Por Habitación',
       duration: 'Presencial',
-      type: 'asesoria-completa',
+      type: 'asesoria-presencial',
       features: ['Render 3D profesional', 'Acompañamiento integral', 'Guía de montaje personalizada', 'Seguimiento a 30 días', 'Atención preferente', 'Descuentos hasta 20%', 'Entrega en 21-25 días']
     }
   ];
@@ -85,9 +85,9 @@ const ServicesPage = () => {
         </div>
         
         <div className="mb-5">
-          <h2 className="text-center mb-4">Servicios de Asesoría Básica</h2>
+          <h2 className="text-center mb-4">Servicios de Asesoría Online</h2>
           <Row className="g-4 justify-content-center">
-            {services.filter(service => service.type === 'asesoria-basica').map((service) => (
+            {services.filter(service => service.type === 'asesoria-online').map((service) => (
               <Col key={service.id} md={6} lg={5}>
                 <Card className="h-100 border-0 shadow-sm transition-all">
                   <div className="position-relative">
@@ -154,9 +154,9 @@ const ServicesPage = () => {
         </div>
         
         <div className="mb-5">
-          <h2 className="text-center mb-4">Servicios de Asesoría Completa</h2>
+          <h2 className="text-center mb-4">Servicios de Asesoría Presencial</h2>
           <Row className="g-4">
-            {services.filter(service => service.type === 'asesoria-completa').map((service) => (
+            {services.filter(service => service.type === 'asesoria-presencial').map((service) => (
               <Col key={service.id} md={6} lg={4}>
                 <Card className="h-100 border-0 shadow-sm transition-all">
                   <div className="position-relative">
