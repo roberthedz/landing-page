@@ -1,0 +1,566 @@
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner, Badge, Table } from 'react-bootstrap';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import apiConfig from '../config/apiConfig';
+
+const AdminSection = styled.section`
+  padding: 2rem 0;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  margin-top: 70px;
+`;
+
+const AdminTitle = styled.h2`
+  text-align: center;
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  margin-bottom: 2rem;
+  font-weight: 700;
+`;
+
+const LoginCard = styled(Card)`
+  max-width: 400px;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+`;
+
+const AdminCard = styled(Card)`
+  margin-bottom: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+`;
+
+const QuickActionButton = styled(Button)`
+  margin: 0.25rem;
+  min-width: 120px;
+`;
+
+const TimeButton = styled(Button)`
+  margin: 0.25rem;
+  min-width: 80px;
+  font-size: 0.85rem;
+`;
+
+const StatusBadge = styled(Badge)`
+  font-size: 0.75rem;
+`;
+
+const AdminPanel = () => {
+  // Estados de autenticación
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginData, setLoginData] = useState({ username: '', password: '' });
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // Estados del panel admin
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [blockReason, setBlockReason] = useState('');
+  const [selectedTimes, setSelectedTimes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
+  
+  // Estados de datos
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [summary, setSummary] = useState({});
+
+  const availableTimes = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+
+  // Verificar si ya hay token guardado
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      setIsAuthenticated(true);
+      loadAdminData();
+    }
+  }, []);
+
+  // Formatear fecha para API
+  const formatDate = (date) => {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  // Login de admin
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+
+    try {
+      const response = await fetch(`${apiConfig.baseURL}/api/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem('adminToken', data.token);
+        setIsAuthenticated(true);
+        loadAdminData();
+      } else {
+        setLoginError(data.error || 'Error de login');
+      }
+    } catch (error) {
+      console.error('Error de login:', error);
+      setLoginError('Error de conexión');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // Cargar datos administrativos
+  const loadAdminData = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${apiConfig.baseURL}/api/admin/bookings`, {
+        headers: {
+          'Authorization': `Basic ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setBookings(data.bookings);
+        setBookedSlots(data.bookedSlots);
+        setSummary(data.summary);
+      }
+    } catch (error) {
+      console.error('Error cargando datos admin:', error);
+    }
+  };
+
+  // Bloquear fecha completa
+  const blockFullDate = async () => {
+    if (!blockReason.trim()) {
+      setMessage('Por favor ingresa una razón para el bloqueo');
+      setMessageType('danger');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${apiConfig.baseURL}/api/admin/block-date`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${token}`
+        },
+        body: JSON.stringify({
+          date: formatDate(selectedDate),
+          reason: blockReason
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setMessage(`✅ ${data.message} (${data.blockedSlots} horarios bloqueados)`);
+        setMessageType('success');
+        setBlockReason('');
+        loadAdminData();
+      } else {
+        setMessage(`❌ ${data.error}`);
+        setMessageType('danger');
+      }
+    } catch (error) {
+      setMessage(`❌ Error: ${error.message}`);
+      setMessageType('danger');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Bloquear horarios específicos
+  const blockSelectedTimes = async () => {
+    if (selectedTimes.length === 0) {
+      setMessage('Por favor selecciona al menos un horario');
+      setMessageType('danger');
+      return;
+    }
+
+    if (!blockReason.trim()) {
+      setMessage('Por favor ingresa una razón para el bloqueo');
+      setMessageType('danger');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${apiConfig.baseURL}/api/admin/block-times`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${token}`
+        },
+        body: JSON.stringify({
+          date: formatDate(selectedDate),
+          times: selectedTimes,
+          reason: blockReason
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setMessage(`✅ ${data.message}`);
+        setMessageType('success');
+        setSelectedTimes([]);
+        setBlockReason('');
+        loadAdminData();
+      } else {
+        setMessage(`❌ ${data.error}`);
+        setMessageType('danger');
+      }
+    } catch (error) {
+      setMessage(`❌ Error: ${error.message}`);
+      setMessageType('danger');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Desbloquear fecha
+  const unblockDate = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${apiConfig.baseURL}/api/admin/unblock-date/${formatDate(selectedDate)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Basic ${token}`
+        }
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setMessage(`✅ ${data.message} (${data.unblockedSlots} horarios liberados)`);
+        setMessageType('success');
+        loadAdminData();
+      } else {
+        setMessage(`❌ ${data.error}`);
+        setMessageType('danger');
+      }
+    } catch (error) {
+      setMessage(`❌ Error: ${error.message}`);
+      setMessageType('danger');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle selección de horario
+  const toggleTimeSelection = (time) => {
+    setSelectedTimes(prev => 
+      prev.includes(time) 
+        ? prev.filter(t => t !== time)
+        : [...prev, time]
+    );
+  };
+
+  // Logout
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    setIsAuthenticated(false);
+    setLoginData({ username: '', password: '' });
+  };
+
+  // Obtener horarios ocupados para la fecha seleccionada
+  const getOccupiedTimesForDate = () => {
+    const dateStr = formatDate(selectedDate);
+    return bookedSlots
+      .filter(slot => slot.date === dateStr)
+      .map(slot => ({
+        time: slot.time,
+        reason: slot.reason,
+        isAdmin: slot.reason.startsWith('ADMIN:')
+      }));
+  };
+
+  // Pantalla de login
+  if (!isAuthenticated) {
+    return (
+      <AdminSection>
+        <Container>
+          <AdminTitle>🔐 Panel Administrativo</AdminTitle>
+          <LoginCard>
+            <Card.Body>
+              <Form onSubmit={handleLogin}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Usuario</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={loginData.username}
+                    onChange={(e) => setLoginData({...loginData, username: e.target.value})}
+                    placeholder="admin"
+                    required
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Contraseña</Form.Label>
+                  <Form.Control
+                    type="password"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                    placeholder="dedecorAdmin"
+                    required
+                  />
+                </Form.Group>
+                {loginError && (
+                  <Alert variant="danger" className="mb-3">
+                    {loginError}
+                  </Alert>
+                )}
+                <Button 
+                  type="submit" 
+                  variant="primary" 
+                  className="w-100"
+                  disabled={loginLoading}
+                >
+                  {loginLoading ? (
+                    <>
+                      <Spinner size="sm" className="me-2" />
+                      Iniciando sesión...
+                    </>
+                  ) : (
+                    'Iniciar Sesión'
+                  )}
+                </Button>
+              </Form>
+            </Card.Body>
+          </LoginCard>
+        </Container>
+      </AdminSection>
+    );
+  }
+
+  const occupiedTimes = getOccupiedTimesForDate();
+
+  // Panel administrativo principal
+  return (
+    <AdminSection>
+      <Container>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <AdminTitle>🛠️ Panel Administrativo</AdminTitle>
+          <Button variant="outline-danger" onClick={handleLogout}>
+            Cerrar Sesión
+          </Button>
+        </div>
+
+        {/* Resumen */}
+        <Row className="mb-4">
+          <Col md={3}>
+            <AdminCard>
+              <Card.Body className="text-center">
+                <h4 className="text-primary">{summary.totalBookings || 0}</h4>
+                <p className="mb-0">Total Reservas</p>
+              </Card.Body>
+            </AdminCard>
+          </Col>
+          <Col md={3}>
+            <AdminCard>
+              <Card.Body className="text-center">
+                <h4 className="text-warning">{summary.pendingBookings || 0}</h4>
+                <p className="mb-0">Pendientes</p>
+              </Card.Body>
+            </AdminCard>
+          </Col>
+          <Col md={3}>
+            <AdminCard>
+              <Card.Body className="text-center">
+                <h4 className="text-success">{summary.confirmedBookings || 0}</h4>
+                <p className="mb-0">Confirmadas</p>
+              </Card.Body>
+            </AdminCard>
+          </Col>
+          <Col md={3}>
+            <AdminCard>
+              <Card.Body className="text-center">
+                <h4 className="text-info">{summary.totalSlots || 0}</h4>
+                <p className="mb-0">Horarios Bloqueados</p>
+              </Card.Body>
+            </AdminCard>
+          </Col>
+        </Row>
+
+        {/* Herramienta de bloqueo de fechas */}
+        <AdminCard>
+          <Card.Header>
+            <h5 className="mb-0">🗓️ Herramienta de Bloqueo de Fechas</h5>
+          </Card.Header>
+          <Card.Body>
+            {message && (
+              <Alert variant={messageType} className="mb-3">
+                {message}
+              </Alert>
+            )}
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Seleccionar Fecha</Form.Label>
+                  <div>
+                    <DatePicker
+                      selected={selectedDate}
+                      onChange={setSelectedDate}
+                      dateFormat="MM/dd/yyyy"
+                      minDate={new Date()}
+                      className="form-control"
+                      placeholderText="Seleccionar fecha"
+                    />
+                  </div>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Razón del Bloqueo</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={blockReason}
+                    onChange={(e) => setBlockReason(e.target.value)}
+                    placeholder="Ej: Vacaciones, Mantenimiento, etc."
+                  />
+                </Form.Group>
+
+                <div className="d-grid gap-2">
+                  <QuickActionButton 
+                    variant="danger" 
+                    onClick={blockFullDate}
+                    disabled={loading}
+                  >
+                    {loading ? <Spinner size="sm" /> : '🚫'} Bloquear Fecha Completa
+                  </QuickActionButton>
+                  
+                  <QuickActionButton 
+                    variant="warning" 
+                    onClick={blockSelectedTimes}
+                    disabled={loading || selectedTimes.length === 0}
+                  >
+                    {loading ? <Spinner size="sm" /> : '⚠️'} Bloquear Horarios Seleccionados ({selectedTimes.length})
+                  </QuickActionButton>
+                  
+                  <QuickActionButton 
+                    variant="success" 
+                    onClick={unblockDate}
+                    disabled={loading}
+                  >
+                    {loading ? <Spinner size="sm" /> : '✅'} Desbloquear Fecha
+                  </QuickActionButton>
+                </div>
+              </Col>
+
+              <Col md={6}>
+                <h6>Seleccionar Horarios Específicos:</h6>
+                <div className="mb-3">
+                  {availableTimes.map(time => {
+                    const occupied = occupiedTimes.find(ot => ot.time === time);
+                    const isSelected = selectedTimes.includes(time);
+                    
+                    return (
+                      <TimeButton
+                        key={time}
+                        variant={
+                          occupied ? (occupied.isAdmin ? 'secondary' : 'danger') :
+                          isSelected ? 'primary' : 'outline-primary'
+                        }
+                        onClick={() => !occupied && toggleTimeSelection(time)}
+                        disabled={!!occupied}
+                        title={occupied ? `Ocupado: ${occupied.reason}` : 'Clic para seleccionar'}
+                      >
+                        {time}
+                        {occupied && (occupied.isAdmin ? ' 🔒' : ' 👤')}
+                      </TimeButton>
+                    );
+                  })}
+                </div>
+
+                <h6>Estado para {formatDate(selectedDate)}:</h6>
+                {occupiedTimes.length > 0 ? (
+                  <div>
+                    {occupiedTimes.map((slot, index) => (
+                      <div key={index} className="mb-1">
+                        <StatusBadge variant={slot.isAdmin ? 'secondary' : 'danger'}>
+                          {slot.time}
+                        </StatusBadge>
+                        <small className="ms-2 text-muted">{slot.reason}</small>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Alert variant="success" className="py-2">
+                    ✅ Todos los horarios están disponibles
+                  </Alert>
+                )}
+              </Col>
+            </Row>
+          </Card.Body>
+        </AdminCard>
+
+        {/* Lista de reservas recientes */}
+        <AdminCard>
+          <Card.Header>
+            <h5 className="mb-0">📋 Reservas Recientes</h5>
+          </Card.Header>
+          <Card.Body>
+            {bookings.length > 0 ? (
+              <Table responsive striped>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Servicio</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Estado</th>
+                    <th>Creada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookings.slice(0, 10).map(booking => (
+                    <tr key={booking.id}>
+                      <td>
+                        <div>
+                          <strong>{booking.clientName}</strong>
+                          <br />
+                          <small className="text-muted">{booking.clientEmail}</small>
+                        </div>
+                      </td>
+                      <td>{booking.service}</td>
+                      <td>{booking.date}</td>
+                      <td>{booking.time}</td>
+                      <td>
+                        <StatusBadge variant={
+                          booking.status === 'confirmed' ? 'success' :
+                          booking.status === 'pending' ? 'warning' :
+                          booking.status === 'rejected' ? 'danger' : 'secondary'
+                        }>
+                          {booking.status}
+                        </StatusBadge>
+                      </td>
+                      <td>
+                        <small>{new Date(booking.createdAt).toLocaleDateString()}</small>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            ) : (
+              <Alert variant="info">No hay reservas disponibles</Alert>
+            )}
+          </Card.Body>
+        </AdminCard>
+      </Container>
+    </AdminSection>
+  );
+};
+
+export default AdminPanel;
