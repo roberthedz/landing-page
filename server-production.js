@@ -120,6 +120,37 @@ emailTransporter.verify((error, success) => {
   }
 });
 
+// Configuración de admin estático
+const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: 'dedecorAdmin'
+};
+
+// Middleware simple de autenticación admin
+const authenticateAdmin = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Autenticación requerida' 
+    });
+  }
+  
+  const base64Credentials = authHeader.split(' ')[1];
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+  const [username, password] = credentials.split(':');
+  
+  if (username !== ADMIN_CREDENTIALS.username || password !== ADMIN_CREDENTIALS.password) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Credenciales inválidas' 
+    });
+  }
+  
+  next();
+};
+
 // Middleware
 app.use(cors({
   origin: [
@@ -1155,6 +1186,263 @@ app.post('/api/send-contact-email', async (req, res) => {
   }
 });
 
+// ==================== APIS ADMINISTRATIVAS ====================
+
+// API para login de admin
+app.post('/api/admin/login', (req, res) => {
+  console.log('🔐 POST /api/admin/login - Intento de login admin');
+  const { username, password } = req.body;
+  
+  if (!username || !password) {
+    return res.status(400).json({
+      success: false,
+      error: 'Usuario y contraseña requeridos'
+    });
+  }
+  
+  if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+    console.log('✅ Login admin exitoso');
+    return res.json({
+      success: true,
+      message: 'Login exitoso',
+      token: Buffer.from(`${username}:${password}`).toString('base64')
+    });
+  } else {
+    console.log('❌ Credenciales admin incorrectas');
+    return res.status(401).json({
+      success: false,
+      error: 'Credenciales incorrectas'
+    });
+  }
+});
+
+// API para bloquear fechas completas (admin)
+app.post('/api/admin/block-date', authenticateAdmin, async (req, res) => {
+  console.log('🔒 POST /api/admin/block-date - Bloqueando fecha completa');
+  const { date, reason } = req.body;
+  
+  try {
+    if (!date || !reason) {
+      return res.status(400).json({
+        success: false,
+        error: 'Fecha y razón son requeridos'
+      });
+    }
+    
+    // Validar formato de fecha
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de fecha inválido. Use MM/DD/YYYY'
+      });
+    }
+    
+    // Verificar si ya hay bloqueos para esta fecha
+    const existingSlots = await BookedSlot.find({ date });
+    console.log(`📊 Encontrados ${existingSlots.length} slots existentes para ${date}`);
+    
+    // Todos los horarios disponibles
+    const allTimes = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+    const existingTimes = existingSlots.map(slot => slot.time);
+    const timesToBlock = allTimes.filter(time => !existingTimes.includes(time));
+    
+    if (timesToBlock.length === 0) {
+      return res.json({
+        success: true,
+        message: 'La fecha ya está completamente bloqueada',
+        blockedSlots: 0,
+        date: date
+      });
+    }
+    
+    // Crear slots bloqueados para todos los horarios disponibles
+    const blockingId = `admin-block-${Date.now()}`;
+    const newSlots = timesToBlock.map(time => ({
+      date: date,
+      time: time,
+      bookingId: blockingId,
+      reason: `ADMIN: ${reason}`
+    }));
+    
+    await BookedSlot.insertMany(newSlots);
+    
+    console.log(`✅ Fecha ${date} bloqueada completamente - ${newSlots.length} horarios`);
+    res.json({
+      success: true,
+      message: `Fecha ${date} bloqueada exitosamente`,
+      blockedSlots: newSlots.length,
+      blockingId: blockingId,
+      date: date,
+      reason: reason
+    });
+    
+  } catch (error) {
+    console.error('❌ Error al bloquear fecha:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno al bloquear fecha',
+      details: error.message
+    });
+  }
+});
+
+// API para bloquear horarios específicos (admin)
+app.post('/api/admin/block-times', authenticateAdmin, async (req, res) => {
+  console.log('🔒 POST /api/admin/block-times - Bloqueando horarios específicos');
+  const { date, times, reason } = req.body;
+  
+  try {
+    if (!date || !times || !Array.isArray(times) || times.length === 0 || !reason) {
+      return res.status(400).json({
+        success: false,
+        error: 'Fecha, horarios (array) y razón son requeridos'
+      });
+    }
+    
+    // Validar formato de fecha
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de fecha inválido. Use MM/DD/YYYY'
+      });
+    }
+    
+    // Verificar horarios válidos
+    const validTimes = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+    const invalidTimes = times.filter(time => !validTimes.includes(time));
+    
+    if (invalidTimes.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Horarios inválidos: ${invalidTimes.join(', ')}`,
+        validTimes: validTimes
+      });
+    }
+    
+    // Verificar si ya están ocupados
+    const existingSlots = await BookedSlot.find({ 
+      date: date, 
+      time: { $in: times } 
+    });
+    
+    const existingTimes = existingSlots.map(slot => slot.time);
+    const timesToBlock = times.filter(time => !existingTimes.includes(time));
+    
+    if (timesToBlock.length === 0) {
+      return res.json({
+        success: true,
+        message: 'Todos los horarios solicitados ya están ocupados',
+        blockedSlots: 0,
+        alreadyOccupied: existingTimes
+      });
+    }
+    
+    // Crear slots bloqueados
+    const blockingId = `admin-block-${Date.now()}`;
+    const newSlots = timesToBlock.map(time => ({
+      date: date,
+      time: time,
+      bookingId: blockingId,
+      reason: `ADMIN: ${reason}`
+    }));
+    
+    await BookedSlot.insertMany(newSlots);
+    
+    console.log(`✅ Horarios bloqueados para ${date}: ${timesToBlock.join(', ')}`);
+    res.json({
+      success: true,
+      message: `${timesToBlock.length} horarios bloqueados exitosamente`,
+      blockedSlots: timesToBlock.length,
+      blockedTimes: timesToBlock,
+      alreadyOccupied: existingTimes,
+      blockingId: blockingId,
+      date: date,
+      reason: reason
+    });
+    
+  } catch (error) {
+    console.error('❌ Error al bloquear horarios:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno al bloquear horarios',
+      details: error.message
+    });
+  }
+});
+
+// API para desbloquear fecha completa (admin)
+app.delete('/api/admin/unblock-date/:date', authenticateAdmin, async (req, res) => {
+  console.log('🔓 DELETE /api/admin/unblock-date - Desbloqueando fecha');
+  const { date } = req.params;
+  
+  try {
+    // Validar formato de fecha
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de fecha inválido. Use MM/DD/YYYY'
+      });
+    }
+    
+    // Eliminar solo bloqueos administrativos (no reservas de clientes)
+    const result = await BookedSlot.deleteMany({ 
+      date: date,
+      reason: { $regex: /^ADMIN:/ }
+    });
+    
+    console.log(`✅ Desbloqueados ${result.deletedCount} horarios administrativos para ${date}`);
+    res.json({
+      success: true,
+      message: `Fecha ${date} desbloqueada exitosamente`,
+      unblockedSlots: result.deletedCount,
+      date: date
+    });
+    
+  } catch (error) {
+    console.error('❌ Error al desbloquear fecha:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno al desbloquear fecha',
+      details: error.message
+    });
+  }
+});
+
+// API para obtener todas las reservas (admin)
+app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
+  console.log('📋 GET /api/admin/bookings - Obteniendo todas las reservas');
+  
+  try {
+    const bookings = await Booking.find({}).sort({ createdAt: -1 });
+    const bookedSlots = await BookedSlot.find({}).sort({ date: 1, time: 1 });
+    
+    console.log(`📊 Enviando ${bookings.length} reservas y ${bookedSlots.length} slots`);
+    res.json({
+      success: true,
+      bookings: bookings,
+      bookedSlots: bookedSlots,
+      summary: {
+        totalBookings: bookings.length,
+        totalSlots: bookedSlots.length,
+        pendingBookings: bookings.filter(b => b.status === 'pending').length,
+        confirmedBookings: bookings.filter(b => b.status === 'confirmed').length,
+        rejectedBookings: bookings.filter(b => b.status === 'rejected').length
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error al obtener reservas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno al obtener reservas',
+      details: error.message
+    });
+  }
+});
+
 // Manejar todas las demás rutas para servir la aplicación React
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -1169,7 +1457,9 @@ const startServer = async () => {
       console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
       console.log(`🔗 MongoDB Atlas: Conectado`);
       console.log(`📧 Email: Configurado`);
-      console.log('✨ ¡Sistema de reservas listo para producción!');
+      console.log(`🛠️ Panel Admin: Disponible en /admin`);
+      console.log(`🔐 APIs Admin: /api/admin/* activadas`);
+      console.log('✨ ¡Sistema de reservas con panel admin listo para producción!');
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);
