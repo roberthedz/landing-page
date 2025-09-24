@@ -385,7 +385,7 @@ const AdminPanel = () => {
                     type="text"
                     value={loginData.username}
                     onChange={(e) => setLoginData({...loginData, username: e.target.value})}
-                    placeholder="admin"
+                    placeholder="Ingresa tu usuario"
                     required
                   />
                 </Form.Group>
@@ -395,7 +395,7 @@ const AdminPanel = () => {
                     type="password"
                     value={loginData.password}
                     onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                    placeholder="dedecorAdmin"
+                    placeholder="Ingresa tu contraseña"
                     required
                   />
                 </Form.Group>

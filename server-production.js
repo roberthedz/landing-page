@@ -769,6 +769,10 @@ app.post('/api/bookings/:id/status', async (req, res) => {
               <p><strong>Hora:</strong> ${booking.time}</p>
             </div>
             
+            <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+              <p><strong>💳 IMPORTANTE:</strong> Tu cita se confirma definitivamente con el pago correspondiente. Te contactaremos para coordinar los detalles.</p>
+            </div>
+            
             <p>¡Esperamos verte pronto!</p>
             <p>Saludos,<br>El equipo de DeDecor</p>
           </div>
@@ -921,6 +925,11 @@ app.get('/confirm-booking', async (req, res) => {
                 <p><strong>✅ Tu horario está oficialmente reservado</strong></p>
                 <p>Ya no está disponible para otras personas.</p>
                 <p><strong>🔒 Horarios bloqueados:</strong> ${newSlots.length}</p>
+              </div>
+              
+              <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                <p><strong>💳 IMPORTANTE - Confirmación de Cita:</strong></p>
+                <p>Tu cita se confirma definitivamente con el pago correspondiente. Te contactaremos para coordinar los detalles de pago y cualquier información adicional necesaria.</p>
               </div>
               
               <p>Si necesitas hacer algún cambio, contáctanos lo antes posible.</p>
