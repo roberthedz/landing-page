@@ -92,7 +92,8 @@ const AdminPanel = () => {
     setLoginError('');
 
     try {
-      const response = await fetch(`${apiConfig.baseURL}/api/admin/login`, {
+      console.log('🔐 Intentando login admin a:', apiConfig.endpoints.adminLogin);
+      const response = await fetch(apiConfig.endpoints.adminLogin, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +101,14 @@ const AdminPanel = () => {
         body: JSON.stringify(loginData)
       });
 
+      console.log('📡 Respuesta login:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const data = await response.json();
+      console.log('📋 Datos login:', data);
 
       if (data.success) {
         localStorage.setItem('adminToken', data.token);
@@ -111,7 +119,7 @@ const AdminPanel = () => {
       }
     } catch (error) {
       console.error('Error de login:', error);
-      setLoginError('Error de conexión');
+      setLoginError(`Error de conexión: ${error.message}`);
     } finally {
       setLoginLoading(false);
     }
@@ -121,13 +129,20 @@ const AdminPanel = () => {
   const loadAdminData = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${apiConfig.baseURL}/api/admin/bookings`, {
+      console.log('📋 Cargando datos admin desde:', apiConfig.endpoints.adminBookings);
+      const response = await fetch(apiConfig.endpoints.adminBookings, {
         headers: {
           'Authorization': `Basic ${token}`
         }
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const data = await response.json();
+      console.log('📊 Datos admin cargados:', data);
+      
       if (data.success) {
         setBookings(data.bookings);
         setBookedSlots(data.bookedSlots);
@@ -135,6 +150,8 @@ const AdminPanel = () => {
       }
     } catch (error) {
       console.error('Error cargando datos admin:', error);
+      setMessage(`Error cargando datos: ${error.message}`);
+      setMessageType('danger');
     }
   };
 
@@ -149,7 +166,7 @@ const AdminPanel = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${apiConfig.baseURL}/api/admin/block-date`, {
+      const response = await fetch(apiConfig.endpoints.adminBlockDate, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,6 +177,10 @@ const AdminPanel = () => {
           reason: blockReason
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const data = await response.json();
       
@@ -197,7 +218,7 @@ const AdminPanel = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${apiConfig.baseURL}/api/admin/block-times`, {
+      const response = await fetch(apiConfig.endpoints.adminBlockTimes, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,6 +230,10 @@ const AdminPanel = () => {
           reason: blockReason
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const data = await response.json();
       
@@ -235,12 +260,17 @@ const AdminPanel = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${apiConfig.baseURL}/api/admin/unblock-date/${formatDate(selectedDate)}`, {
+      const unblockUrl = `${apiConfig.endpoints.adminUnblockDate}/${formatDate(selectedDate)}`;
+      const response = await fetch(unblockUrl, {
         method: 'DELETE',
         headers: {
           'Authorization': `Basic ${token}`
         }
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const data = await response.json();
       

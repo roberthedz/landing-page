@@ -3,7 +3,7 @@
  */
 import axios from 'axios';
 
-// CONFIGURACIÓN FORZADA: Siempre usar Render para APIs en producción
+// CONFIGURACIÓN PARA PRODUCCIÓN: Usar Render para todas las APIs
 const getBaseUrl = () => {
   // En desarrollo local, usar localhost
   if (window.location.hostname === 'localhost' || 
@@ -13,9 +13,7 @@ const getBaseUrl = () => {
     return 'http://localhost:3001/api';
   }
   
-  // EN CUALQUIER OTRO CASO (dedecorinfo.com, render, etc.)
-  // SIEMPRE usar la URL directa de Render porque es donde está el servidor Node.js
-  // dedecorinfo.com solo sirve HTML estático, las APIs están en Render
+  // EN PRODUCCIÓN: Siempre usar Render (incluye APIs admin después del deploy)
   return 'https://landing-page-534b.onrender.com/api';
 };
 
@@ -140,6 +138,7 @@ console.log(`  - Booked Slots: ${API_BASE_URL}/booked-slots`);
 console.log(`  - System Status: ${API_BASE_URL}/system-status`);
 
 export default {
+  baseURL: API_BASE_URL,
   API_BASE_URL,
   API_CONFIG,
   makeRequest,
@@ -153,6 +152,12 @@ export default {
     sendContactEmail: `${API_BASE_URL}/send-contact-email`,
     // Nuevos endpoints para debugging
     systemStatus: `${API_BASE_URL}/system-status`,
-    health: `${API_BASE_URL}/health`
+    health: `${API_BASE_URL}/health`,
+    // Endpoints administrativos
+    adminLogin: `${API_BASE_URL}/admin/login`,
+    adminBlockDate: `${API_BASE_URL}/admin/block-date`,
+    adminBlockTimes: `${API_BASE_URL}/admin/block-times`,
+    adminUnblockDate: `${API_BASE_URL}/admin/unblock-date`,
+    adminBookings: `${API_BASE_URL}/admin/bookings`
   }
 }; 
