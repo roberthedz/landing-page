@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Container, Row, Col, Form, Button, Card, Alert, Spinner, Badge, Table } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner, Badge, Table, Modal } from 'react-bootstrap';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import apiConfig from '../config/apiConfig';
@@ -29,6 +29,22 @@ const LoginCard = styled(Card)`
 const AdminCard = styled(Card)`
   margin-bottom: 2rem;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+`;
+
+const ClickableCard = styled(Card)`
+  margin-bottom: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
 const QuickActionButton = styled(Button)`
@@ -65,6 +81,11 @@ const AdminPanel = () => {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [summary, setSummary] = useState({});
+  
+  // Estados para modales de detalles
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState([]);
+  const [modalTitle, setModalTitle] = useState('');
 
   const availableTimes = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
 
@@ -306,6 +327,37 @@ const AdminPanel = () => {
     setLoginData({ username: '', password: '' });
   };
 
+  // Funciones para manejar clicks en cards del resumen
+  const handleCardClick = (type) => {
+    let data = [];
+    let title = '';
+    
+    switch (type) {
+      case 'total':
+        data = bookings;
+        title = `Todas las Reservas (${bookings.length})`;
+        break;
+      case 'pending':
+        data = bookings.filter(b => b.status === 'pending');
+        title = `Reservas Pendientes (${data.length})`;
+        break;
+      case 'confirmed':
+        data = bookings.filter(b => b.status === 'confirmed');
+        title = `Reservas Confirmadas (${data.length})`;
+        break;
+      case 'slots':
+        data = bookedSlots;
+        title = `Horarios Bloqueados (${bookedSlots.length})`;
+        break;
+      default:
+        return;
+    }
+    
+    setModalData(data);
+    setModalTitle(title);
+    setShowModal(true);
+  };
+
   // Obtener horarios ocupados para la fecha seleccionada
   const getOccupiedTimesForDate = () => {
     const dateStr = formatDate(selectedDate);
@@ -391,36 +443,40 @@ const AdminPanel = () => {
         {/* Resumen */}
         <Row className="mb-4">
           <Col md={3}>
-            <AdminCard>
+            <ClickableCard onClick={() => handleCardClick('total')} title="Ver todas las reservas">
               <Card.Body className="text-center">
                 <h4 className="text-primary">{summary.totalBookings || 0}</h4>
                 <p className="mb-0">Total Reservas</p>
+                <small className="text-muted">Click para ver detalles</small>
               </Card.Body>
-            </AdminCard>
+            </ClickableCard>
           </Col>
           <Col md={3}>
-            <AdminCard>
+            <ClickableCard onClick={() => handleCardClick('pending')} title="Ver reservas pendientes">
               <Card.Body className="text-center">
                 <h4 className="text-warning">{summary.pendingBookings || 0}</h4>
                 <p className="mb-0">Pendientes</p>
+                <small className="text-muted">Click para ver detalles</small>
               </Card.Body>
-            </AdminCard>
+            </ClickableCard>
           </Col>
           <Col md={3}>
-            <AdminCard>
+            <ClickableCard onClick={() => handleCardClick('confirmed')} title="Ver reservas confirmadas">
               <Card.Body className="text-center">
                 <h4 className="text-success">{summary.confirmedBookings || 0}</h4>
                 <p className="mb-0">Confirmadas</p>
+                <small className="text-muted">Click para ver detalles</small>
               </Card.Body>
-            </AdminCard>
+            </ClickableCard>
           </Col>
           <Col md={3}>
-            <AdminCard>
+            <ClickableCard onClick={() => handleCardClick('slots')} title="Ver horarios bloqueados">
               <Card.Body className="text-center">
                 <h4 className="text-info">{summary.totalSlots || 0}</h4>
                 <p className="mb-0">Horarios Bloqueados</p>
+                <small className="text-muted">Click para ver detalles</small>
               </Card.Body>
-            </AdminCard>
+            </ClickableCard>
           </Col>
         </Row>
 
@@ -588,6 +644,116 @@ const AdminPanel = () => {
             )}
           </Card.Body>
         </AdminCard>
+
+        {/* Modal para mostrar detalles */}
+        <Modal show={showModal} onHide={() => setShowModal(false)} size="xl">
+          <Modal.Header closeButton>
+            <Modal.Title>{modalTitle}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {modalData.length > 0 ? (
+              modalTitle.includes('Horarios Bloqueados') ? (
+                // Vista para horarios bloqueados
+                <Table responsive striped>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Motivo</th>
+                      <th>ID Bloqueo</th>
+                      <th>Creado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {modalData.map((slot, index) => (
+                      <tr key={index}>
+                        <td>{slot.date}</td>
+                        <td>
+                          <Badge variant="secondary">{slot.time}</Badge>
+                        </td>
+                        <td>
+                          <span className={slot.reason.startsWith('ADMIN:') ? 'text-danger' : 'text-info'}>
+                            {slot.reason}
+                          </span>
+                        </td>
+                        <td>
+                          <small className="text-muted">{slot.bookingId}</small>
+                        </td>
+                        <td>
+                          <small>{new Date(slot.createdAt).toLocaleString()}</small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              ) : (
+                // Vista para reservas
+                <Table responsive striped>
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Servicio</th>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Estado</th>
+                      <th>Tipo</th>
+                      <th>Creada</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {modalData.map(booking => (
+                      <tr key={booking.id}>
+                        <td>
+                          <div>
+                            <strong>{booking.clientName}</strong>
+                            <br />
+                            <small className="text-muted">{booking.clientEmail}</small>
+                            <br />
+                            <small className="text-muted">{booking.clientPhone}</small>
+                          </div>
+                        </td>
+                        <td>
+                          <div>
+                            {booking.service}
+                            {booking.servicePrice && (
+                              <div><small className="text-success">{booking.servicePrice}</small></div>
+                            )}
+                          </div>
+                        </td>
+                        <td>{booking.date}</td>
+                        <td>
+                          <Badge variant="primary">{booking.time}</Badge>
+                        </td>
+                        <td>
+                          <StatusBadge variant={
+                            booking.status === 'confirmed' ? 'success' :
+                            booking.status === 'pending' ? 'warning' :
+                            booking.status === 'rejected' ? 'danger' : 'secondary'
+                          }>
+                            {booking.status}
+                          </StatusBadge>
+                        </td>
+                        <td>
+                          <small className="text-muted">{booking.type}</small>
+                        </td>
+                        <td>
+                          <small>{new Date(booking.createdAt).toLocaleString()}</small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )
+            ) : (
+              <Alert variant="info">No hay datos para mostrar</Alert>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cerrar
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </Container>
     </AdminSection>
   );
