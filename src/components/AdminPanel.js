@@ -281,7 +281,9 @@ const AdminPanel = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const unblockUrl = `${apiConfig.endpoints.adminUnblockDate}/${formatDate(selectedDate)}`;
+      const formattedDate = formatDate(selectedDate);
+      const encodedDate = encodeURIComponent(formattedDate); // Codificar la fecha para URL
+      const unblockUrl = `${apiConfig.endpoints.adminUnblockDate}/${encodedDate}`;
       const response = await fetch(unblockUrl, {
         method: 'DELETE',
         headers: {
