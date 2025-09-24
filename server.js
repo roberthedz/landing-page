@@ -1437,7 +1437,9 @@ const startServer = async () => {
       console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
       console.log(`🔗 MongoDB Atlas: Conectado`);
       console.log(`📧 Email: Configurado`);
-      console.log('✨ ¡Sistema de reservas listo para producción!');
+      console.log(`🛠️ Panel Admin: Disponible en /admin`);
+      console.log(`🔐 APIs Admin: /api/admin/* activadas`);
+      console.log('✨ ¡Sistema de reservas con panel admin listo para producción!');
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);
