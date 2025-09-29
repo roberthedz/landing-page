@@ -107,7 +107,7 @@ const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'dedecorinfo@gmail.com',
-    pass: 'annubwytqgxjooyw'
+    pass: 'ihrvuveqsskjxyog'
   }
 });
 
@@ -151,23 +151,33 @@ const authenticateAdmin = (req, res, next) => {
   next();
 };
 
-// Middleware
+// Middleware CORS MEJORADO para permitir dedecorinfo.com
 app.use(cors({
   origin: [
     'http://localhost:3000', 
     'http://localhost:3001', 
     'https://landing-page-534b.onrender.com',
     'https://dedecorinfo.com',
-    'http://dedecorinfo.com'
+    'http://dedecorinfo.com',
+    'https://www.dedecorinfo.com',
+    'http://www.dedecorinfo.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ]
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Middleware adicional para CORS
+// Middleware adicional para CORS - ACTUALIZADO
 app.use((req, res, next) => {
   const origin = req.get('origin');
   const allowedOrigins = [
@@ -175,29 +185,29 @@ app.use((req, res, next) => {
     'http://localhost:3001', 
     'https://landing-page-534b.onrender.com',
     'https://dedecorinfo.com',
-    'http://dedecorinfo.com'
+    'http://dedecorinfo.com',
+    'https://www.dedecorinfo.com',
+    'http://www.dedecorinfo.com'
   ];
   
   if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    // Para debugging, mostrar orígenes no permitidos
+    console.log(`⚠️ Origen no permitido: ${origin}`);
   }
   
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
   res.header('Access-Control-Allow-Credentials', 'true');
   
-  console.log(`🌐 CORS: ${req.method} ${req.path} desde ${origin || 'unknown'}`);
+  console.log(`🌐 CORS: ${req.method} ${req.path} desde ${origin || 'unknown'} - ${allowedOrigins.includes(origin) ? '✅ PERMITIDO' : '❌ BLOQUEADO'}`);
   
   if (req.method === 'OPTIONS') {
+    console.log('🔧 Preflight OPTIONS request manejado');
     return res.sendStatus(200);
   }
   
-  next();
-});
-
-// Middleware para medir tiempo de respuesta
-app.use((req, res, next) => {
-  req.startTime = Date.now();
   next();
 });
 
@@ -244,7 +254,7 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// API para obtener horarios ocupados - ULTRA OPTIMIZADA
+// API para obtener horarios ocupados - MEJORADA CON VALIDACIÓN ESTRICTA
 app.get('/api/booked-slots', async (req, res) => {
   console.log('🔍 GET /api/booked-slots - Solicitud recibida desde:', req.get('origin'));
   
@@ -276,162 +286,53 @@ app.get('/api/booked-slots', async (req, res) => {
     
     console.log('📡 Consultando MongoDB Atlas para fecha:', date);
     
-    // 🚀 OPTIMIZACIÓN: Consulta ultra rápida con proyección específica
+    // Consulta estricta solo para la fecha especificada
     const query = { date: date };
-    const projection = { 
-      _id: 1, 
-      date: 1, 
-      time: 1, 
-      bookingId: 1, 
-      reason: 1 
-    };
+    const bookedSlots = await BookedSlot.find(query).sort({ time: 1 });
     
-    // Usar lean() para obtener objetos JavaScript planos (más rápido)
-    const bookedSlots = await BookedSlot.find(query, projection)
-      .lean()
-      .sort({ time: 1 })
-      .limit(20); // Límite de seguridad
+    console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados para ${date}:`, bookedSlots);
     
-    console.log(`📊 Enviando ${bookedSlots.length} horarios ocupados para ${date}`);
-    
-    // 🚀 OPTIMIZACIÓN: Procesamiento más eficiente
-    const slotsByDate = {
-      [date]: bookedSlots.map(slot => ({
+    // Agrupar por fecha (aunque solo debería haber una fecha)
+    const slotsByDate = {};
+    bookedSlots.forEach(slot => {
+      if (!slotsByDate[slot.date]) {
+        slotsByDate[slot.date] = [];
+      }
+      slotsByDate[slot.date].push({
         time: slot.time,
         bookingId: slot.bookingId,
         reason: slot.reason
-      }))
-    };
+      });
+    });
     
-    // Configurar headers de respuesta optimizados
+    // Configurar headers de respuesta
     res.set({
-      'Cache-Control': 'public, max-age=60', // Cache por 1 minuto
+      'Cache-Control': 'public, max-age=30',
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': req.get('origin') || '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'X-Response-Time': `${Date.now() - req.startTime || Date.now()}ms`
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     });
     
-    // Respuesta ultra optimizada
+    // Respuesta exitosa
     res.json({
       success: true,
       totalSlots: bookedSlots.length,
       date: date,
       bookedSlots: bookedSlots,
-      slotsByDate: slotsByDate,
-      cached: false,
-      timestamp: new Date().toISOString()
+      slotsByDate: slotsByDate
     });
     
   } catch (error) {
     console.error('❌ Error al obtener horarios ocupados:', error);
     
-    // Respuesta de error optimizada
+    // Respuesta de error con detalles
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor al obtener horarios ocupados',
       details: error.message,
       bookedSlots: [],
       slotsByDate: {}
-    });
-  }
-});
-
-// API para obtener múltiples fechas de horarios ocupados - OPTIMIZACIÓN EN LOTE
-app.get('/api/booked-slots-batch', async (req, res) => {
-  console.log('🔍 GET /api/booked-slots-batch - Solicitud recibida desde:', req.get('origin'));
-  
-  try {
-    const { dates } = req.query;
-    
-    if (!dates) {
-      return res.status(400).json({
-        success: false,
-        error: 'El parámetro "dates" es obligatorio (formato: dates=07/15/2025,07/16/2025)',
-        bookedSlots: {}
-      });
-    }
-    
-    const dateArray = dates.split(',');
-    const validDates = [];
-    
-    // Validar formato de fechas
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    for (const date of dateArray) {
-      if (dateRegex.test(date.trim())) {
-        validDates.push(date.trim());
-      }
-    }
-    
-    if (validDates.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'No se proporcionaron fechas válidas',
-        bookedSlots: {}
-      });
-    }
-    
-    console.log('📡 Consultando MongoDB Atlas para fechas:', validDates);
-    
-    // 🚀 OPTIMIZACIÓN: Consulta en lote para múltiples fechas
-    const query = { date: { $in: validDates } };
-    const projection = { 
-      _id: 1, 
-      date: 1, 
-      time: 1, 
-      bookingId: 1, 
-      reason: 1 
-    };
-    
-    const bookedSlots = await BookedSlot.find(query, projection)
-      .lean()
-      .sort({ date: 1, time: 1 })
-      .limit(100); // Límite de seguridad para múltiples fechas
-    
-    // Agrupar por fecha
-    const slotsByDate = {};
-    validDates.forEach(date => {
-      slotsByDate[date] = [];
-    });
-    
-    bookedSlots.forEach(slot => {
-      if (slotsByDate[slot.date]) {
-        slotsByDate[slot.date].push({
-          time: slot.time,
-          bookingId: slot.bookingId,
-          reason: slot.reason
-        });
-      }
-    });
-    
-    console.log(`📊 Enviando horarios para ${validDates.length} fechas`);
-    
-    res.set({
-      'Cache-Control': 'public, max-age=60',
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': req.get('origin') || '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'X-Response-Time': `${Date.now() - req.startTime}ms`
-    });
-    
-    res.json({
-      success: true,
-      totalDates: validDates.length,
-      totalSlots: bookedSlots.length,
-      bookedSlots: slotsByDate,
-      cached: false,
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('❌ Error al obtener horarios en lote:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error interno del servidor al obtener horarios en lote',
-      details: error.message,
-      bookedSlots: {}
     });
   }
 });
@@ -511,27 +412,15 @@ app.post('/api/bookings', async (req, res) => {
     // Los horarios se bloquearán solo cuando el admin confirme manualmente
     console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
     
-    // 8️⃣ RESPONDER INMEDIATAMENTE AL CLIENTE (NO ESPERAR EMAILS)
-    console.log(`🎉 Reserva creada exitosamente para ${clientName} - Enviando respuesta inmediata`);
-    res.status(201).json({ 
-      success: true, 
-      bookingId: booking.id,
-      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
-      status: 'pending',
-      emailsSent: true,
-      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
-    });
-    
-    // 9️⃣ ENVIAR EMAILS DE FORMA ASÍNCRONA (NO BLOQUEANTE)
-    console.log('📧 Enviando emails de nueva solicitud de forma asíncrona...');
-    setImmediate(async () => {
-      try {
-        const baseUrl = getBaseUrl(req);
-        const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
-        const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
-        
-        // Email al ADMIN - Nueva solicitud que requiere confirmación
-        await emailTransporter.sendMail({
+    // 8️⃣ ENVIAR EMAILS DE SOLICITUD (NO DE CONFIRMACIÓN)
+    console.log('📧 Enviando emails de nueva solicitud...');
+    try {
+      const baseUrl = getBaseUrl(req);
+      const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
+      const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
+      
+      // Email al ADMIN - Nueva solicitud que requiere confirmación
+      await emailTransporter.sendMail({
         from: '"Sistema de Reservas DeDecor" <dedecorinfo@gmail.com>',
         to: 'dedecorinfo@gmail.com',
         subject: `📋 NUEVA SOLICITUD DE RESERVA - ${clientName}`,
@@ -606,10 +495,20 @@ app.post('/api/bookings', async (req, res) => {
         `
       });
       
-        console.log('✅ Emails de solicitud enviados exitosamente en background');
-      } catch (emailError) {
-        console.error('⚠️ Error al enviar emails en background:', emailError);
-      }
+      console.log('✅ Emails de solicitud enviados exitosamente');
+    } catch (emailError) {
+      console.error('⚠️ Error al enviar emails (pero la reserva fue creada):', emailError);
+    }
+    
+    // 🔟 RESPUESTA EXITOSA
+    console.log(`🎉 Flujo completo exitoso para ${clientName} - Estado: PENDING`);
+    res.status(201).json({ 
+      success: true, 
+      bookingId: booking.id,
+      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
+      status: 'pending',
+      emailsSent: true,
+      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
     });
     
   } catch (error) {
@@ -755,73 +654,54 @@ app.post('/api/bookings/:id/status', async (req, res) => {
       
       await BookedSlot.insertMany(newSlots);
       
-      console.log('✅ Reserva confirmada, enviando respuesta inmediata');
-      res.json({ success: true, message: 'Reserva confirmada exitosamente' });
-      
-      // Enviar email de confirmación en background
-      setImmediate(async () => {
-        try {
-          await emailTransporter.sendMail({
-            from: '"DeDecor" <dedecorinfo@gmail.com>',
-            to: booking.clientEmail,
-            subject: 'Tu reserva ha sido confirmada',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
-                <p>Hola ${booking.clientName},</p>
-                <p>Tu reserva para ${booking.service} ha sido confirmada.</p>
-                
-                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p><strong>Fecha:</strong> ${booking.date}</p>
-                  <p><strong>Hora:</strong> ${booking.time}</p>
-                </div>
-                
-                <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                  <p><strong>💳 IMPORTANTE:</strong> Tu cita se confirma definitivamente con el pago correspondiente. Te contactaremos para coordinar los detalles.</p>
-                </div>
-                
-                <p>¡Esperamos verte pronto!</p>
-                <p>Saludos,<br>El equipo de DeDecor</p>
-              </div>
-            `
-          });
-          console.log('✅ Email de confirmación enviado en background');
-        } catch (emailError) {
-          console.error('⚠️ Error al enviar email de confirmación en background:', emailError);
-        }
+      // Enviar email de confirmación
+      await emailTransporter.sendMail({
+        from: '"DeDecor" <dedecorinfo@gmail.com>',
+        to: booking.clientEmail,
+        subject: 'Tu reserva ha sido confirmada',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
+            <p>Hola ${booking.clientName},</p>
+            <p>Tu reserva para ${booking.service} ha sido confirmada.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
+            </div>
+            
+            <p>¡Esperamos verte pronto!</p>
+            <p>Saludos,<br>El equipo de DeDecor</p>
+          </div>
+        `
       });
+      
+      console.log('✅ Reserva confirmada y email enviado');
+      return res.json({ success: true, message: 'Reserva confirmada exitosamente' });
       
     } else if (action === 'reject') {
       booking.status = 'rejected';
       await booking.save();
       
-      res.json({ success: true, message: 'Reserva rechazada exitosamente' });
-      
-      // Enviar email de rechazo en background
-      setImmediate(async () => {
-        try {
-          await emailTransporter.sendMail({
-            from: '"DeDecor" <dedecorinfo@gmail.com>',
-            to: booking.clientEmail,
-            subject: 'Información sobre tu solicitud de reserva',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
-                <p>Hola ${booking.clientName},</p>
-                <p>Lamentamos informarte que no podemos confirmar tu reserva en el horario solicitado.</p>
-                <p>Por favor, intenta con otro horario.</p>
-                <p>Gracias por tu comprensión,<br>El equipo de DeDecor</p>
-              </div>
-            `
-          });
-          console.log('✅ Email de rechazo enviado en background');
-        } catch (emailError) {
-          console.error('⚠️ Error al enviar email de rechazo en background:', emailError);
-        }
+      await emailTransporter.sendMail({
+        from: '"DeDecor" <dedecorinfo@gmail.com>',
+        to: booking.clientEmail,
+        subject: 'Información sobre tu solicitud de reserva',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
+            <p>Hola ${booking.clientName},</p>
+            <p>Lamentamos informarte que no podemos confirmar tu reserva en el horario solicitado.</p>
+            <p>Por favor, intenta con otro horario.</p>
+            <p>Gracias por tu comprensión,<br>El equipo de DeDecor</p>
+          </div>
+        `
       });
-    } else {
-      return res.status(400).json({ error: 'Acción desconocida' });
+      
+      return res.json({ success: true, message: 'Reserva rechazada exitosamente' });
     }
+    
+    return res.status(400).json({ error: 'Acción desconocida' });
   } catch (error) {
     console.error('❌ Error al procesar la reserva:', error);
     return res.status(500).json({ error: 'Error al procesar la reserva' });
@@ -942,11 +822,6 @@ app.get('/confirm-booking', async (req, res) => {
                 <p><strong>✅ Tu horario está oficialmente reservado</strong></p>
                 <p>Ya no está disponible para otras personas.</p>
                 <p><strong>🔒 Horarios bloqueados:</strong> ${newSlots.length}</p>
-              </div>
-              
-              <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                <p><strong>💳 IMPORTANTE - Confirmación de Cita:</strong></p>
-                <p>Tu cita se confirma definitivamente con el pago correspondiente. Te contactaremos para coordinar los detalles de pago y cualquier información adicional necesaria.</p>
               </div>
               
               <p>Si necesitas hacer algún cambio, contáctanos lo antes posible.</p>
@@ -1111,6 +986,55 @@ app.get('/api/system-status', async (req, res) => {
   }
 });
 
+// API para eliminar una reserva específica por ID
+app.delete('/api/bookings/:bookingId', async (req, res) => {
+  const { bookingId } = req.params;
+  console.log(`🗑️ DELETE /api/bookings/${bookingId} - Eliminando reserva específica...`);
+  
+  try {
+    // Buscar la reserva
+    const booking = await Booking.findOne({ id: bookingId });
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: `No se encontró la reserva con ID: ${bookingId}`
+      });
+    }
+    
+    console.log(`📋 Encontrada reserva: ${booking.clientName} - ${booking.date} ${booking.time}`);
+    
+    // Eliminar la reserva
+    await Booking.deleteOne({ id: bookingId });
+    console.log(`✅ Reserva eliminada: ${bookingId}`);
+    
+    // Eliminar todos los horarios ocupados asociados a esta reserva
+    const deletedSlots = await BookedSlot.deleteMany({ bookingId: bookingId });
+    console.log(`✅ Eliminados ${deletedSlots.deletedCount} horarios ocupados asociados`);
+    
+    res.json({
+      success: true,
+      message: `Reserva ${bookingId} eliminada exitosamente`,
+      deletedBooking: {
+        id: bookingId,
+        clientName: booking.clientName,
+        date: booking.date,
+        time: booking.time,
+        service: booking.service
+      },
+      deletedSlots: deletedSlots.deletedCount
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error al eliminar reserva ${bookingId}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar la reserva',
+      details: error.message
+    });
+  }
+});
+
 // API para limpiar reservas de prueba - SOLO PARA DESARROLLO
 app.delete('/api/cleanup-test-data', async (req, res) => {
   console.log('🧹 DELETE /api/cleanup-test-data - Limpiando datos de prueba...');
@@ -1157,58 +1081,33 @@ app.delete('/api/cleanup-test-data', async (req, res) => {
   }
 });
 
-// API para enviar email de contacto
-app.post('/api/send-contact-email', async (req, res) => {
-  const { clientEmail, clientName, contactDetails } = req.body;
+// API para eliminar TODAS las reservas (CUIDADO - SOLO PARA DESARROLLO)
+app.delete('/api/cleanup-all-data', async (req, res) => {
+  console.log('🚨 DELETE /api/cleanup-all-data - ELIMINANDO TODAS LAS RESERVAS...');
   
   try {
-    const messageId = `message-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const newMessage = new ContactMessage({
-      id: messageId,
-      clientName,
-      clientEmail,
-      phone: contactDetails.phone || 'No proporcionado',
-      message: contactDetails.message,
-      date: contactDetails.date
+    // Eliminar todas las reservas
+    const deletedBookings = await Booking.deleteMany({});
+    console.log(`🗑️ Eliminadas ${deletedBookings.deletedCount} reservas`);
+    
+    // Eliminar todos los horarios ocupados
+    const deletedSlots = await BookedSlot.deleteMany({});
+    console.log(`🗑️ Eliminados ${deletedSlots.deletedCount} horarios ocupados`);
+    
+    res.json({
+      success: true,
+      message: 'Todas las reservas y horarios han sido eliminados',
+      deletedBookings: deletedBookings.deletedCount,
+      deletedSlots: deletedSlots.deletedCount
     });
     
-    await newMessage.save();
-    
-    await emailTransporter.sendMail({
-      from: '"Formulario de Contacto DeDecor" <dedecorinfo@gmail.com>',
-      to: 'dedecorinfo@gmail.com',
-      subject: `Nuevo mensaje de contacto - ${clientName}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Nuevo Mensaje de Contacto</h2>
-          <p><strong>Nombre:</strong> ${clientName}</p>
-          <p><strong>Email:</strong> ${clientEmail}</p>
-          <p><strong>Teléfono:</strong> ${contactDetails.phone || 'No proporcionado'}</p>
-          <p><strong>Mensaje:</strong></p>
-          <p>${contactDetails.message}</p>
-        </div>
-      `
-    });
-    
-    await emailTransporter.sendMail({
-      from: '"DeDecor" <dedecorinfo@gmail.com>',
-      to: clientEmail,
-      subject: 'Hemos recibido tu mensaje',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Mensaje Recibido</h2>
-          <p>Hola ${clientName},</p>
-          <p>Hemos recibido tu mensaje y te responderemos pronto.</p>
-          <p>Saludos,<br>El equipo de DeDecor</p>
-        </div>
-      `
-    });
-    
-    console.log('✅ Emails de contacto enviados');
-    res.json({ success: true });
   } catch (error) {
-    console.error('❌ Error al enviar emails de contacto:', error);
-    res.status(500).json({ error: 'Error al enviar emails de contacto' });
+    console.error('❌ Error al eliminar todos los datos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar todos los datos',
+      details: error.message
+    });
   }
 });
 
@@ -1466,6 +1365,61 @@ app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
       error: 'Error interno al obtener reservas',
       details: error.message
     });
+  }
+});
+
+// API para enviar email de contacto
+app.post('/api/send-contact-email', async (req, res) => {
+  const { clientEmail, clientName, contactDetails } = req.body;
+  
+  try {
+    const messageId = `message-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const newMessage = new ContactMessage({
+      id: messageId,
+      clientName,
+      clientEmail,
+      phone: contactDetails.phone || 'No proporcionado',
+      message: contactDetails.message,
+      date: contactDetails.date
+    });
+    
+    await newMessage.save();
+    
+    await emailTransporter.sendMail({
+      from: '"Formulario de Contacto DeDecor" <dedecorinfo@gmail.com>',
+      to: 'dedecorinfo@gmail.com',
+      subject: `Nuevo mensaje de contacto - ${clientName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Nuevo Mensaje de Contacto</h2>
+          <p><strong>Nombre:</strong> ${clientName}</p>
+          <p><strong>Email:</strong> ${clientEmail}</p>
+          <p><strong>Teléfono:</strong> ${contactDetails.phone || 'No proporcionado'}</p>
+          <p><strong>Mensaje:</strong></p>
+          <p>${contactDetails.message}</p>
+        </div>
+      `
+    });
+    
+    await emailTransporter.sendMail({
+      from: '"DeDecor" <dedecorinfo@gmail.com>',
+      to: clientEmail,
+      subject: 'Hemos recibido tu mensaje',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Mensaje Recibido</h2>
+          <p>Hola ${clientName},</p>
+          <p>Hemos recibido tu mensaje y te responderemos pronto.</p>
+          <p>Saludos,<br>El equipo de DeDecor</p>
+        </div>
+      `
+    });
+    
+    console.log('✅ Emails de contacto enviados');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Error al enviar emails de contacto:', error);
+    res.status(500).json({ error: 'Error al enviar emails de contacto' });
   }
 });
 
