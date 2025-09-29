@@ -510,36 +510,26 @@ app.post('/api/bookings', async (req, res) => {
     // 7️⃣ NO BLOQUEAR HORARIOS - Los horarios se bloquearán cuando el admin confirme
     console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
     
-    // 8️⃣ RESPONDER INMEDIATAMENTE AL CLIENTE
-    console.log(`🎉 Reserva creada exitosamente como PENDING para ${clientName}`);
-    res.status(201).json({ 
-      success: true, 
-      bookingId: booking.id,
-      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
-      status: 'pending',
-      emailsSent: true,
-      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
-    });
+    // 8️⃣ ENVIAR EMAILS DE SOLICITUD DE FORMA SÍNCRONA (ANTES DE RESPONDER)
+    console.log('📧 Intentando enviar emails de nueva solicitud...');
+    const baseUrl = getBaseUrl(req);
+    const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
+    const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
     
-    // 9️⃣ ENVIAR EMAILS DE SOLICITUD DE FORMA ASÍNCRONA (NO BLOQUEANTE)
-    console.log('📧 Enviando emails de nueva solicitud de forma asíncrona...');
-    setImmediate(async () => {
-      try {
-        const baseUrl = getBaseUrl(req);
-        const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
-        const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
-        
-        console.log('📤 Enviando email al admin con enlaces de confirmación...');
-        // Email al ADMIN - Nueva solicitud que requiere confirmación
-        await emailTransporter.sendMail({
-        from: '"DeDecor Reservas" <dedecorinfo@gmail.com>',
+    let emailsSentSuccessfully = false;
+    let emailError = null;
+    
+    try {
+      console.log('📤 Enviando email al admin con enlaces de confirmación...');
+      console.log('   Admin email: dedecorinfo@gmail.com');
+      console.log('   Confirm URL:', confirmUrl);
+      
+      // Email al ADMIN - Nueva solicitud que requiere confirmación
+      const adminResult = await emailTransporter.sendMail({
+        from: 'dedecorinfo@gmail.com',
+        replyTo: clientEmail,
         to: 'dedecorinfo@gmail.com',
-        subject: `Nueva Solicitud de Reserva - ${clientName}`,
-        headers: {
-          'X-Priority': '1',
-          'X-MSMail-Priority': 'High',
-          'Importance': 'high'
-        },
+        subject: `Nueva Solicitud - ${clientName} - ${date}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">📋 Nueva Solicitud de Reserva</h2>
@@ -576,13 +566,17 @@ app.post('/api/bookings', async (req, res) => {
           </div>
         `
       });
+      console.log('✅ Email al admin enviado. MessageID:', adminResult.messageId);
+      console.log('   Response:', adminResult.response);
       
       console.log('📤 Enviando email al cliente...');
+      console.log('   Cliente email:', clientEmail);
+      
       // Email al CLIENTE - Solicitud recibida (no confirmada)
-      await emailTransporter.sendMail({
-        from: '"DeDecor" <dedecorinfo@gmail.com>',
+      const clientResult = await emailTransporter.sendMail({
+        from: 'dedecorinfo@gmail.com',
         to: clientEmail,
-        subject: 'Confirmación de Solicitud de Reserva - DeDecor',
+        subject: `Tu solicitud de reserva para ${date}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">📋 Solicitud de Reserva Recibida</h2>
@@ -611,16 +605,37 @@ app.post('/api/bookings', async (req, res) => {
           </div>
         `
       });
+      console.log('✅ Email al cliente enviado. MessageID:', clientResult.messageId);
+      console.log('   Response:', clientResult.response);
       
-      console.log('✅ Emails de solicitud enviados exitosamente en background');
-      } catch (emailError) {
-        console.error('⚠️ Error al enviar emails en background:', emailError);
-        console.error('⚠️ Detalles del error:', {
-          message: emailError.message,
-          code: emailError.code,
-          command: emailError.command
-        });
-      }
+      emailsSentSuccessfully = true;
+      console.log('✅✅ AMBOS emails enviados exitosamente');
+      console.log('   Admin MessageID:', adminResult.messageId);
+      console.log('   Cliente MessageID:', clientResult.messageId);
+      
+    } catch (error) {
+      emailsSentSuccessfully = false;
+      emailError = error;
+      console.error('❌ Error al enviar emails:', error.message);
+      console.error('❌ Detalles completos del error:', {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response,
+        responseCode: error.responseCode
+      });
+    }
+    
+    // 9️⃣ RESPONDER AL CLIENTE CON EL ESTADO REAL
+    console.log(`🎉 Reserva creada como PENDING para ${clientName}`);
+    res.status(201).json({ 
+      success: true, 
+      bookingId: booking.id,
+      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
+      status: 'pending',
+      emailsSent: emailsSentSuccessfully,
+      emailError: emailError ? emailError.message : null,
+      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
     });
     
   } catch (error) {
