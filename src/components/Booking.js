@@ -878,15 +878,15 @@ const Booking = ({ preloadedData = {} }) => {
         throw new Error('Error al crear la reserva en el servidor');
       }
       
-      // ✅ Los emails de confirmación se envían automáticamente en el servidor
-      console.log('✅ Reserva confirmada exitosamente. Emails de confirmación enviados automáticamente por el servidor.');
+      // ✅ Los emails se envían automáticamente en el servidor
+      console.log('✅ Reserva creada exitosamente. Emails enviados automáticamente por el servidor.');
       
       // ✅ Guardar la solicitud en localStorage como referencia
       // El estado real se mantiene en el servidor (MongoDB)
       const pendingBookings = JSON.parse(localStorage.getItem('pendingBookings') || '[]');
       pendingBookings.push({
         id: bookingId,
-        status: 'confirmed', // ✅ Estado: Confirmada automáticamente
+        status: 'pending', // ⏳ Estado: Esperando confirmación del admin
         clientName: values.name,
         clientEmail: values.email,
         clientPhone: values.phone,
@@ -897,12 +897,12 @@ const Booking = ({ preloadedData = {} }) => {
         type: values.appointmentType,
         notes: values.notes,
         createdAt: new Date().toISOString(),
-        note: 'Reserva confirmada automáticamente'
+        note: 'Esperando confirmación por email del administrador'
       });
       localStorage.setItem('pendingBookings', JSON.stringify(pendingBookings));
       
-      console.log('✅ Reserva confirmada exitosamente:', bookingId);
-      console.log('✅ Estado: CONFIRMED - Reserva confirmada automáticamente');
+      console.log('✅ Solicitud de reserva enviada exitosamente:', bookingId);
+      console.log('⏳ Estado: PENDING - Esperando confirmación del admin por email');
       setIsSubmitted(true);
     } catch (err) {
       console.error('Error al procesar la reserva:', err);
