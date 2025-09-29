@@ -755,58 +755,73 @@ app.post('/api/bookings/:id/status', async (req, res) => {
       
       await BookedSlot.insertMany(newSlots);
       
-      // Enviar email de confirmación
-      await emailTransporter.sendMail({
-        from: '"DeDecor" <dedecorinfo@gmail.com>',
-        to: booking.clientEmail,
-        subject: 'Tu reserva ha sido confirmada',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
-            <p>Hola ${booking.clientName},</p>
-            <p>Tu reserva para ${booking.service} ha sido confirmada.</p>
-            
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Fecha:</strong> ${booking.date}</p>
-              <p><strong>Hora:</strong> ${booking.time}</p>
-            </div>
-            
-            <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-              <p><strong>💳 IMPORTANTE:</strong> Tu cita se confirma definitivamente con el pago correspondiente. Te contactaremos para coordinar los detalles.</p>
-            </div>
-            
-            <p>¡Esperamos verte pronto!</p>
-            <p>Saludos,<br>El equipo de DeDecor</p>
-          </div>
-        `
-      });
+      console.log('✅ Reserva confirmada, enviando respuesta inmediata');
+      res.json({ success: true, message: 'Reserva confirmada exitosamente' });
       
-      console.log('✅ Reserva confirmada y email enviado');
-      return res.json({ success: true, message: 'Reserva confirmada exitosamente' });
+      // Enviar email de confirmación en background
+      setImmediate(async () => {
+        try {
+          await emailTransporter.sendMail({
+            from: '"DeDecor" <dedecorinfo@gmail.com>',
+            to: booking.clientEmail,
+            subject: 'Tu reserva ha sido confirmada',
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
+                <p>Hola ${booking.clientName},</p>
+                <p>Tu reserva para ${booking.service} ha sido confirmada.</p>
+                
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <p><strong>Fecha:</strong> ${booking.date}</p>
+                  <p><strong>Hora:</strong> ${booking.time}</p>
+                </div>
+                
+                <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                  <p><strong>💳 IMPORTANTE:</strong> Tu cita se confirma definitivamente con el pago correspondiente. Te contactaremos para coordinar los detalles.</p>
+                </div>
+                
+                <p>¡Esperamos verte pronto!</p>
+                <p>Saludos,<br>El equipo de DeDecor</p>
+              </div>
+            `
+          });
+          console.log('✅ Email de confirmación enviado en background');
+        } catch (emailError) {
+          console.error('⚠️ Error al enviar email de confirmación en background:', emailError);
+        }
+      });
       
     } else if (action === 'reject') {
       booking.status = 'rejected';
       await booking.save();
       
-      await emailTransporter.sendMail({
-        from: '"DeDecor" <dedecorinfo@gmail.com>',
-        to: booking.clientEmail,
-        subject: 'Información sobre tu solicitud de reserva',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
-            <p>Hola ${booking.clientName},</p>
-            <p>Lamentamos informarte que no podemos confirmar tu reserva en el horario solicitado.</p>
-            <p>Por favor, intenta con otro horario.</p>
-            <p>Gracias por tu comprensión,<br>El equipo de DeDecor</p>
-          </div>
-        `
-      });
+      res.json({ success: true, message: 'Reserva rechazada exitosamente' });
       
-      return res.json({ success: true, message: 'Reserva rechazada exitosamente' });
+      // Enviar email de rechazo en background
+      setImmediate(async () => {
+        try {
+          await emailTransporter.sendMail({
+            from: '"DeDecor" <dedecorinfo@gmail.com>',
+            to: booking.clientEmail,
+            subject: 'Información sobre tu solicitud de reserva',
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
+                <p>Hola ${booking.clientName},</p>
+                <p>Lamentamos informarte que no podemos confirmar tu reserva en el horario solicitado.</p>
+                <p>Por favor, intenta con otro horario.</p>
+                <p>Gracias por tu comprensión,<br>El equipo de DeDecor</p>
+              </div>
+            `
+          });
+          console.log('✅ Email de rechazo enviado en background');
+        } catch (emailError) {
+          console.error('⚠️ Error al enviar email de rechazo en background:', emailError);
+        }
+      });
+    } else {
+      return res.status(400).json({ error: 'Acción desconocida' });
     }
-    
-    return res.status(400).json({ error: 'Acción desconocida' });
   } catch (error) {
     console.error('❌ Error al procesar la reserva:', error);
     return res.status(500).json({ error: 'Error al procesar la reserva' });
