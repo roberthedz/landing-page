@@ -106,19 +106,39 @@ const getBaseUrl = (req) => {
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'dedecorinfo@gmail.com',
-    pass: 'vsblbhiyccryicmr'
-  }
+    user: process.env.EMAIL_USER || 'dedecorinfo@gmail.com',
+    pass: process.env.EMAIL_PASS || 'vsblbhiyccryicmr'
+  },
+  // Configuración adicional para mejorar la conexión
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 3,
+  rateDelta: 20000,
+  rateLimit: 5
 });
 
 // Verificar la configuración de email
 emailTransporter.verify((error, success) => {
   if (error) {
     console.error('❌ Error en la configuración de email:', error);
+    console.log('⚠️ El servidor continuará sin envío de emails');
   } else {
     console.log('✅ Servidor de email configurado correctamente');
   }
 });
+
+// Función auxiliar para enviar emails con manejo de errores
+const sendEmailSafely = async (emailOptions) => {
+  try {
+    const result = await emailTransporter.sendMail(emailOptions);
+    console.log('✅ Email enviado exitosamente:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('❌ Error al enviar email:', error.message);
+    console.log('⚠️ Continuando sin enviar email...');
+    return { success: false, error: error.message };
+  }
+};
 
 // Middleware
 app.use(cors({
@@ -482,13 +502,14 @@ app.post('/api/bookings', async (req, res) => {
     
     // 8️⃣ ENVIAR EMAILS DE SOLICITUD (NO DE CONFIRMACIÓN)
     console.log('📧 Enviando emails de nueva solicitud...');
+    let emailsSent = false;
     try {
       const baseUrl = getBaseUrl(req);
       const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
       const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
       
       // Email al ADMIN - Nueva solicitud que requiere confirmación
-      await emailTransporter.sendMail({
+      const adminEmailResult = await sendEmailSafely({
         from: '"Sistema de Reservas DeDecor" <dedecorinfo@gmail.com>',
         to: 'dedecorinfo@gmail.com',
         subject: `📋 NUEVA SOLICITUD DE RESERVA - ${clientName}`,
@@ -530,7 +551,7 @@ app.post('/api/bookings', async (req, res) => {
       });
       
       // Email al CLIENTE - Solicitud recibida (no confirmada)
-      await emailTransporter.sendMail({
+      const clientEmailResult = await sendEmailSafely({
         from: '"DeDecor" <dedecorinfo@gmail.com>',
         to: clientEmail,
         subject: '📋 Hemos recibido tu solicitud de reserva',
@@ -563,9 +584,12 @@ app.post('/api/bookings', async (req, res) => {
         `
       });
       
+      // Verificar si al menos un email se envió
+      emailsSent = adminEmailResult.success || clientEmailResult.success;
       console.log('✅ Emails de solicitud enviados exitosamente');
     } catch (emailError) {
       console.error('⚠️ Error al enviar emails (pero la reserva fue creada):', emailError);
+      // No lanzar el error, continuar con la respuesta exitosa
     }
     
     // 9️⃣ RESPUESTA EXITOSA
@@ -575,8 +599,8 @@ app.post('/api/bookings', async (req, res) => {
       bookingId: booking.id,
       message: 'Solicitud de reserva creada - Esperando confirmación del admin',
       status: 'pending',
-      emailsSent: true,
-      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
+      emailsSent: emailsSent,
+      note: emailsSent ? 'Los horarios se bloquearán cuando el admin confirme la reserva' : 'Reserva creada pero emails no enviados - contactar manualmente'
     });
     
   } catch (error) {
