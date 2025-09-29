@@ -501,14 +501,14 @@ app.post('/api/bookings', async (req, res) => {
     }
     
     // 🔟 RESPUESTA EXITOSA
-    console.log(`🎉 Flujo completo exitoso para ${clientName} - Estado: PENDING`);
+    console.log(`🎉 Flujo completo exitoso para ${clientName}`);
     res.status(201).json({ 
       success: true, 
       bookingId: booking.id,
-      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
-      status: 'pending',
-      emailsSent: true,
-      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
+      message: 'Reserva creada y horarios bloqueados exitosamente',
+      horariosBloquados: newSlots.length,
+      status: 'confirmed',
+      emailsSent: true
     });
     
   } catch (error) {

@@ -511,34 +511,111 @@ app.post('/api/bookings', async (req, res) => {
     // Los horarios se bloquearán solo cuando el admin confirme manualmente
     console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
     
-    // 8️⃣ RESPONDER INMEDIATAMENTE AL CLIENTE (NO ESPERAR EMAILS)
-    console.log(`🎉 Reserva creada exitosamente para ${clientName} - Enviando respuesta inmediata`);
+    // 8️⃣ CONFIRMAR AUTOMÁTICAMENTE LA RESERVA
+    console.log(`🔄 Confirmando reserva automáticamente para ${clientName}...`);
+    booking.status = 'confirmed';
+    await booking.save();
+    console.log('✅ Reserva confirmada automáticamente');
+    
+    // 9️⃣ BLOQUEAR HORARIOS AHORA
+    console.log('🔒 Bloqueando horarios...');
+    const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
+    const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+    
+    const newSlots = [];
+    
+    if (type === 'asesoria-presencial') {
+      // Bloquear todo el turno
+      const isMorning = morningTimes.includes(time);
+      const timesToBlock = isMorning ? morningTimes : afternoonTimes;
+      
+      timesToBlock.forEach(timeSlot => {
+        newSlots.push({
+          date: date,
+          time: timeSlot,
+          bookingId: booking.id,
+          reason: `Asesoría completa - turno ${isMorning ? 'mañana' : 'tarde'}`
+        });
+      });
+      console.log(`🔒 Bloqueando turno completo (${isMorning ? 'mañana' : 'tarde'}):`, timesToBlock);
+      
+    } else if (req.body.serviceDuration === '120 min') {
+      // Bloquear 2 slots consecutivos
+      const allTimes = [...morningTimes, ...afternoonTimes];
+      const currentIndex = allTimes.indexOf(time);
+      
+      newSlots.push({
+        date: date,
+        time: time,
+        bookingId: booking.id,
+        reason: 'Consulta 120 min - hora 1'
+      });
+      
+      if (currentIndex !== -1 && currentIndex < allTimes.length - 1) {
+        const nextTime = allTimes[currentIndex + 1];
+        const isMorningTime = morningTimes.includes(time);
+        const isNextMorningTime = morningTimes.includes(nextTime);
+        
+        if (isMorningTime === isNextMorningTime) {
+          newSlots.push({
+            date: date,
+            time: nextTime,
+            bookingId: booking.id,
+            reason: 'Consulta 120 min - hora 2'
+          });
+        }
+      }
+      console.log(`🔒 Bloqueando 2 horas consecutivas desde: ${time}`);
+      
+    } else {
+      // Bloquear solo el horario seleccionado
+      newSlots.push({
+        date: date,
+        time: time,
+        bookingId: booking.id,
+        reason: 'Consulta individual'
+      });
+      console.log(`🔒 Bloqueando 1 hora: ${time}`);
+    }
+    
+    // Guardar horarios bloqueados
+    if (newSlots.length > 0) {
+      await BookedSlot.insertMany(newSlots);
+      console.log(`✅ ${newSlots.length} horarios bloqueados exitosamente`);
+    }
+    
+    // 🔟 RESPONDER AL CLIENTE
+    console.log(`🎉 Reserva confirmada exitosamente para ${clientName} - Enviando respuesta`);
     res.status(201).json({ 
       success: true, 
       bookingId: booking.id,
-      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
-      status: 'pending',
+      message: 'Reserva confirmada exitosamente',
+      status: 'confirmed',
       emailsSent: true,
-      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
+      note: 'Los horarios han sido bloqueados automáticamente'
     });
     
-    // 9️⃣ ENVIAR EMAILS DE FORMA ASÍNCRONA (NO BLOQUEANTE)
-    console.log('📧 Enviando emails de nueva solicitud de forma asíncrona...');
+    // 🔟 ENVIAR EMAILS DE CONFIRMACIÓN DE FORMA ASÍNCRONA (NO BLOQUEANTE)
+    console.log('📧 Enviando emails de confirmación de forma asíncrona...');
+    console.log('📧 Email admin:', 'dedecorinfo@gmail.com');
+    console.log('📧 Email cliente:', clientEmail);
     setImmediate(async () => {
       try {
-        const baseUrl = getBaseUrl(req);
-        const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
-        const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
-        
-        // Email al ADMIN - Nueva solicitud que requiere confirmación
-        await emailTransporter.sendMail({
-        from: '"Sistema de Reservas DeDecor" <dedecorinfo@gmail.com>',
+        console.log('📤 Enviando email al admin...');
+        // Email al ADMIN - Reserva confirmada
+        const adminEmailResult = await emailTransporter.sendMail({
+        from: '"DeDecor Reservas" <dedecorinfo@gmail.com>',
         to: 'dedecorinfo@gmail.com',
-        subject: `📋 NUEVA SOLICITUD DE RESERVA - ${clientName}`,
+        subject: `Reserva Confirmada - ${clientName}`,
+        headers: {
+          'X-Priority': '1',
+          'X-MSMail-Priority': 'High',
+          'Importance': 'high'
+        },
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #4a6163;">📋 Nueva Solicitud de Reserva</h2>
-            <p>Has recibido una nueva solicitud de reserva que <strong>requiere tu confirmación</strong>:</p>
+            <h2 style="color: #4a6163;">✅ Reserva Confirmada Automáticamente</h2>
+            <p>Se ha confirmado automáticamente una nueva reserva:</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Cliente:</strong> ${clientName}</p>
@@ -551,37 +628,30 @@ app.post('/api/bookings', async (req, res) => {
               ${req.body.notes ? `<p><strong>Notas:</strong> ${req.body.notes}</p>` : ''}
             </div>
             
-            <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>⚠️ IMPORTANTE:</strong> Los horarios NO están bloqueados hasta que confirmes esta reserva.</p>
-            </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${confirmUrl}" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; margin-right: 15px; font-weight: bold;">
-                ✅ CONFIRMAR RESERVA
-              </a>
-              <a href="${rejectUrl}" style="background-color: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                ❌ RECHAZAR RESERVA
-              </a>
+            <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>✅ CONFIRMADA:</strong> La reserva ha sido confirmada automáticamente y los horarios han sido bloqueados.</p>
             </div>
             
             <p style="font-size: 14px; color: #666;">
               ID de reserva: ${bookingId}<br>
-              Estado: PENDIENTE
+              Estado: CONFIRMADA
             </p>
           </div>
         `
       });
+      console.log('✅ Email al admin enviado. MessageID:', adminEmailResult.messageId);
       
-      // Email al CLIENTE - Solicitud recibida (no confirmada)
-      await emailTransporter.sendMail({
+      console.log('📤 Enviando email al cliente...');
+      // Email al CLIENTE - Reserva confirmada
+      const clientEmailResult = await emailTransporter.sendMail({
         from: '"DeDecor" <dedecorinfo@gmail.com>',
         to: clientEmail,
-        subject: '📋 Hemos recibido tu solicitud de reserva',
+        subject: '🎉 ¡Tu reserva ha sido confirmada!',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #4a6163;">📋 Solicitud de Reserva Recibida</h2>
+            <h2 style="color: #4a6163;">🎉 ¡Reserva Confirmada Exitosamente!</h2>
             <p>Hola ${clientName},</p>
-            <p>Hemos recibido tu solicitud de reserva y <strong>la revisaremos pronto</strong>.</p>
+            <p>¡Excelente noticia! Tu reserva ha sido <strong>confirmada oficialmente</strong>.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Servicio:</strong> ${service}</p>
@@ -590,13 +660,13 @@ app.post('/api/bookings', async (req, res) => {
               <p><strong>Tipo:</strong> ${type}</p>
             </div>
             
-            <div style="background-color: #d1ecf1; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>📝 Estado:</strong> Tu solicitud está siendo revisada</p>
-              <p><strong>⏳ Tiempo estimado:</strong> Te contactaremos dentro de las próximas 24 horas</p>
-              <p><strong>📧 Confirmación:</strong> Recibirás un email cuando tu reserva sea confirmada</p>
+            <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>✅ Estado:</strong> Tu reserva está confirmada</p>
+              <p><strong>🔒 Horarios:</strong> Los horarios han sido bloqueados automáticamente</p>
+              <p><strong>📧 Próximos pasos:</strong> Te contactaremos para coordinar los detalles</p>
             </div>
             
-            <p>Te contactaremos pronto para confirmar tu reserva.</p>
+            <p>¡Esperamos verte pronto!</p>
             <p>Saludos,<br>El equipo de DeDecor</p>
             
             <p style="font-size: 14px; color: #666;">
@@ -605,10 +675,19 @@ app.post('/api/bookings', async (req, res) => {
           </div>
         `
       });
+      console.log('✅ Email al cliente enviado. MessageID:', clientEmailResult.messageId);
       
-        console.log('✅ Emails de solicitud enviados exitosamente en background');
+        console.log('✅ Emails de confirmación enviados exitosamente en background');
+        console.log('📧 Admin MessageID:', adminEmailResult.messageId);
+        console.log('📧 Cliente MessageID:', clientEmailResult.messageId);
       } catch (emailError) {
         console.error('⚠️ Error al enviar emails en background:', emailError);
+        console.error('⚠️ Error completo:', {
+          message: emailError.message,
+          code: emailError.code,
+          response: emailError.response,
+          responseCode: emailError.responseCode
+        });
       }
     });
     
