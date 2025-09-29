@@ -27,3 +27,9 @@ yarn-error.log*
 
 # Datos de reservas (no subir al repositorio)
 /data
+
+# Archivos de servidor obsoletos/backup
+*.backup
+server-*.js.backup
+server-admin.js.backup
+server-mongodb.js.backup
