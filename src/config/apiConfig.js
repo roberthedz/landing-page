@@ -3,7 +3,7 @@
  */
 import axios from 'axios';
 
-// CONFIGURACIÓN PARA PRODUCCIÓN: Usar Render para todas las APIs
+// CONFIGURACIÓN FORZADA: Siempre usar Render para APIs en producción
 const getBaseUrl = () => {
   // En desarrollo local, usar localhost
   if (window.location.hostname === 'localhost' || 
@@ -13,7 +13,9 @@ const getBaseUrl = () => {
     return 'http://localhost:3001/api';
   }
   
-  // EN PRODUCCIÓN: Siempre usar Render (incluye APIs admin después del deploy)
+  // EN CUALQUIER OTRO CASO (dedecorinfo.com, render, etc.)
+  // SIEMPRE usar la URL directa de Render porque es donde está el servidor Node.js
+  // dedecorinfo.com solo sirve HTML estático, las APIs están en Render
   return 'https://landing-page-534b.onrender.com/api';
 };
 
@@ -28,9 +30,9 @@ console.log('  - Full origin:', window.location.origin);
 
 // Configuración de timeout y reintentos
 const API_CONFIG = {
-  timeout: 120000, // 2 minutos timeout para reservas
-  maxRetries: 2, // Reducir reintentos para evitar duplicados
-  retryDelay: 2000, // 2 segundos entre reintentos
+  timeout: 15000, // 15 segundos timeout
+  maxRetries: 3,
+  retryDelay: 1000, // 1 segundo entre reintentos
   // Configurar headers por defecto (solo los esenciales)
   headers: {
     'Content-Type': 'application/json',
@@ -138,7 +140,6 @@ console.log(`  - Booked Slots: ${API_BASE_URL}/booked-slots`);
 console.log(`  - System Status: ${API_BASE_URL}/system-status`);
 
 export default {
-  baseURL: API_BASE_URL,
   API_BASE_URL,
   API_CONFIG,
   makeRequest,
@@ -152,12 +153,6 @@ export default {
     sendContactEmail: `${API_BASE_URL}/send-contact-email`,
     // Nuevos endpoints para debugging
     systemStatus: `${API_BASE_URL}/system-status`,
-    health: `${API_BASE_URL}/health`,
-    // Endpoints administrativos
-    adminLogin: `${API_BASE_URL}/admin/login`,
-    adminBlockDate: `${API_BASE_URL}/admin/block-date`,
-    adminBlockTimes: `${API_BASE_URL}/admin/block-times`,
-    adminUnblockDate: `${API_BASE_URL}/admin/unblock-date`,
-    adminBookings: `${API_BASE_URL}/admin/bookings`
+    health: `${API_BASE_URL}/health`
   }
 }; 

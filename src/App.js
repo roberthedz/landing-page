@@ -11,7 +11,6 @@ import ContactPage from './pages/ContactPage';
 import BookingPage from './pages/BookingPage';
 import BookingConfirmation from './pages/BookingConfirmation';
 import SocialMediaPage from './pages/SocialMediaPage';
-import AdminPage from './pages/AdminPage';
 import NotFound from './pages/NotFound';
 import ApiDebugger from './components/ApiDebugger';
 import { PreloadProvider } from './context/PreloadContext';
@@ -49,7 +48,6 @@ function App() {
             <Route path="/agendar" element={<BookingPage />} />
             <Route path="/confirm-booking" element={<BookingConfirmation />} />
             <Route path="/redes-sociales" element={<SocialMediaPage />} />
-            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
