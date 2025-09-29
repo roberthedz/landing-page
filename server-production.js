@@ -102,21 +102,13 @@ const getBaseUrl = (req) => {
   return `${protocol}://${host}`;
 };
 
-// Configurar el transportador de email con timeouts más largos
+// Configurar el transportador de email
 const emailTransporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  service: 'gmail',
   auth: {
     user: 'dedecorinfo@gmail.com',
-    pass: 'annubwytqgxjooyw'
-  },
-  tls: {
-    rejectUnauthorized: false
-  },
-  connectionTimeout: 60000, // 60 segundos
-  greetingTimeout: 30000,
-  socketTimeout: 60000
+    pass: 'ihrvuveqsskjxyog'
+  }
 });
 
 // Verificar la configuración de email
@@ -127,37 +119,6 @@ emailTransporter.verify((error, success) => {
     console.log('✅ Servidor de email configurado correctamente');
   }
 });
-
-// Configuración de admin estático
-const ADMIN_CREDENTIALS = {
-  username: 'admin',
-  password: 'dedecorAdmin'
-};
-
-// Middleware simple de autenticación admin
-const authenticateAdmin = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    return res.status(401).json({ 
-      success: false, 
-      error: 'Autenticación requerida' 
-    });
-  }
-  
-  const base64Credentials = authHeader.split(' ')[1];
-  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
-  const [username, password] = credentials.split(':');
-  
-  if (username !== ADMIN_CREDENTIALS.username || password !== ADMIN_CREDENTIALS.password) {
-    return res.status(401).json({ 
-      success: false, 
-      error: 'Credenciales inválidas' 
-    });
-  }
-  
-  next();
-};
 
 // Middleware
 app.use(cors({
@@ -495,11 +456,11 @@ app.post('/api/bookings', async (req, res) => {
       });
     }
     
-    // 6️⃣ CREAR LA RESERVA (COMO PENDING - REQUIERE CONFIRMACIÓN MANUAL)
+    // 6️⃣ CREAR LA RESERVA (COMO PENDING - NO AUTO-CONFIRMAR)
     console.log('💾 Creando reserva en MongoDB como PENDING...');
     const booking = new Booking({
       id: bookingId,
-      status: 'pending', // ⏳ PENDING - Requiere confirmación manual del admin
+      status: 'pending', // ⏳ PENDING - Requiere confirmación manual
       clientName,
       clientEmail,
       clientPhone,
@@ -515,38 +476,22 @@ app.post('/api/bookings', async (req, res) => {
     await booking.save();
     console.log(`✅ Reserva guardada como PENDING: ${bookingId} para ${clientName}`);
     
-    // 7️⃣ NO BLOQUEAR HORARIOS - Los horarios se bloquearán cuando el admin confirme
+    // 7️⃣ NO BLOQUEAR HORARIOS TODAVÍA
+    // Los horarios se bloquearán solo cuando el admin confirme manualmente
     console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
     
-    // 8️⃣ RESPONDER INMEDIATAMENTE AL CLIENTE
-    console.log(`🎉 Reserva creada como PENDING para ${clientName}`);
-    res.status(201).json({ 
-      success: true, 
-      bookingId: booking.id,
-      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
-      status: 'pending',
-      emailsSent: true, // Asumimos que se enviarán
-      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
-    });
-    
-    // 9️⃣ ENVIAR EMAILS DE SOLICITUD DE FORMA ASÍNCRONA (NO BLOQUEANTE)
-    console.log('📧 Intentando enviar emails de nueva solicitud de forma asíncrona...');
-    const baseUrl = getBaseUrl(req);
-    const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
-    const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
-    
-    setImmediate(async () => {
-      try {
-        console.log('📤 Enviando email al admin con enlaces de confirmación...');
-        console.log('   Admin email: dedecorinfo@gmail.com');
-        console.log('   Confirm URL:', confirmUrl);
-        
-        // Email al ADMIN - Nueva solicitud que requiere confirmación
-        const adminResult = await emailTransporter.sendMail({
-        from: 'dedecorinfo@gmail.com',
-        replyTo: clientEmail,
+    // 8️⃣ ENVIAR EMAILS DE SOLICITUD (NO DE CONFIRMACIÓN)
+    console.log('📧 Enviando emails de nueva solicitud...');
+    try {
+      const baseUrl = getBaseUrl(req);
+      const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
+      const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
+      
+      // Email al ADMIN - Nueva solicitud que requiere confirmación
+      await emailTransporter.sendMail({
+        from: '"Sistema de Reservas DeDecor" <dedecorinfo@gmail.com>',
         to: 'dedecorinfo@gmail.com',
-        subject: `Nueva Solicitud - ${clientName} - ${date}`,
+        subject: `📋 NUEVA SOLICITUD DE RESERVA - ${clientName}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">📋 Nueva Solicitud de Reserva</h2>
@@ -583,17 +528,12 @@ app.post('/api/bookings', async (req, res) => {
           </div>
         `
       });
-      console.log('✅ Email al admin enviado. MessageID:', adminResult.messageId);
-      console.log('   Response:', adminResult.response);
-      
-      console.log('📤 Enviando email al cliente...');
-      console.log('   Cliente email:', clientEmail);
       
       // Email al CLIENTE - Solicitud recibida (no confirmada)
-      const clientResult = await emailTransporter.sendMail({
-        from: 'dedecorinfo@gmail.com',
+      await emailTransporter.sendMail({
+        from: '"DeDecor" <dedecorinfo@gmail.com>',
         to: clientEmail,
-        subject: `Tu solicitud de reserva para ${date}`,
+        subject: '📋 Hemos recibido tu solicitud de reserva',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #4a6163;">📋 Solicitud de Reserva Recibida</h2>
@@ -622,23 +562,21 @@ app.post('/api/bookings', async (req, res) => {
           </div>
         `
       });
-      console.log('✅ Email al cliente enviado. MessageID:', clientResult.messageId);
-      console.log('   Response:', clientResult.response);
       
-      console.log('✅✅ AMBOS emails enviados exitosamente en background');
-      console.log('   Admin MessageID:', adminResult.messageId);
-      console.log('   Cliente MessageID:', clientResult.messageId);
-      
-    } catch (error) {
-      console.error('❌ Error al enviar emails en background:', error.message);
-      console.error('❌ Detalles completos del error:', {
-        message: error.message,
-        code: error.code,
-        command: error.command,
-        response: error.response,
-        responseCode: error.responseCode
-      });
+      console.log('✅ Emails de solicitud enviados exitosamente');
+    } catch (emailError) {
+      console.error('⚠️ Error al enviar emails (pero la reserva fue creada):', emailError);
     }
+    
+    // 9️⃣ RESPUESTA EXITOSA
+    console.log(`🎉 Flujo completo exitoso para ${clientName} - Estado: PENDING`);
+    res.status(201).json({ 
+      success: true, 
+      bookingId: booking.id,
+      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
+      status: 'pending',
+      emailsSent: true,
+      note: 'Los horarios se bloquearán cuando el admin confirme la reserva'
     });
     
   } catch (error) {
@@ -784,73 +722,54 @@ app.post('/api/bookings/:id/status', async (req, res) => {
       
       await BookedSlot.insertMany(newSlots);
       
-      console.log('✅ Reserva confirmada, enviando respuesta inmediata');
-      res.json({ success: true, message: 'Reserva confirmada exitosamente' });
-      
-      // Enviar email de confirmación en background
-      setImmediate(async () => {
-        try {
-          await emailTransporter.sendMail({
-            from: '"DeDecor" <dedecorinfo@gmail.com>',
-            to: booking.clientEmail,
-            subject: 'Tu reserva ha sido confirmada',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
-                <p>Hola ${booking.clientName},</p>
-                <p>Tu reserva para ${booking.service} ha sido confirmada.</p>
-                
-                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p><strong>Fecha:</strong> ${booking.date}</p>
-                  <p><strong>Hora:</strong> ${booking.time}</p>
-                </div>
-                
-                <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                  <p><strong>💳 IMPORTANTE:</strong> Tu cita se confirma definitivamente con el pago correspondiente. Te contactaremos para coordinar los detalles.</p>
-                </div>
-                
-                <p>¡Esperamos verte pronto!</p>
-                <p>Saludos,<br>El equipo de DeDecor</p>
-              </div>
-            `
-          });
-          console.log('✅ Email de confirmación enviado en background');
-        } catch (emailError) {
-          console.error('⚠️ Error al enviar email de confirmación en background:', emailError);
-        }
+      // Enviar email de confirmación
+      await emailTransporter.sendMail({
+        from: '"DeDecor" <dedecorinfo@gmail.com>',
+        to: booking.clientEmail,
+        subject: 'Tu reserva ha sido confirmada',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4a6163;">¡Reserva Confirmada!</h2>
+            <p>Hola ${booking.clientName},</p>
+            <p>Tu reserva para ${booking.service} ha sido confirmada.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>Fecha:</strong> ${booking.date}</p>
+              <p><strong>Hora:</strong> ${booking.time}</p>
+            </div>
+            
+            <p>¡Esperamos verte pronto!</p>
+            <p>Saludos,<br>El equipo de DeDecor</p>
+          </div>
+        `
       });
+      
+      console.log('✅ Reserva confirmada y email enviado');
+      return res.json({ success: true, message: 'Reserva confirmada exitosamente' });
       
     } else if (action === 'reject') {
       booking.status = 'rejected';
       await booking.save();
       
-      res.json({ success: true, message: 'Reserva rechazada exitosamente' });
-      
-      // Enviar email de rechazo en background
-      setImmediate(async () => {
-        try {
-          await emailTransporter.sendMail({
-            from: '"DeDecor" <dedecorinfo@gmail.com>',
-            to: booking.clientEmail,
-            subject: 'Información sobre tu solicitud de reserva',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
-                <p>Hola ${booking.clientName},</p>
-                <p>Lamentamos informarte que no podemos confirmar tu reserva en el horario solicitado.</p>
-                <p>Por favor, intenta con otro horario.</p>
-                <p>Gracias por tu comprensión,<br>El equipo de DeDecor</p>
-              </div>
-            `
-          });
-          console.log('✅ Email de rechazo enviado en background');
-        } catch (emailError) {
-          console.error('⚠️ Error al enviar email de rechazo en background:', emailError);
-        }
+      await emailTransporter.sendMail({
+        from: '"DeDecor" <dedecorinfo@gmail.com>',
+        to: booking.clientEmail,
+        subject: 'Información sobre tu solicitud de reserva',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4a6163;">Actualización de tu Reserva</h2>
+            <p>Hola ${booking.clientName},</p>
+            <p>Lamentamos informarte que no podemos confirmar tu reserva en el horario solicitado.</p>
+            <p>Por favor, intenta con otro horario.</p>
+            <p>Gracias por tu comprensión,<br>El equipo de DeDecor</p>
+          </div>
+        `
       });
-    } else {
-      return res.status(400).json({ error: 'Acción desconocida' });
+      
+      return res.json({ success: true, message: 'Reserva rechazada exitosamente' });
     }
+    
+    return res.status(400).json({ error: 'Acción desconocida' });
   } catch (error) {
     console.error('❌ Error al procesar la reserva:', error);
     return res.status(500).json({ error: 'Error al procesar la reserva' });
@@ -971,11 +890,6 @@ app.get('/confirm-booking', async (req, res) => {
                 <p><strong>✅ Tu horario está oficialmente reservado</strong></p>
                 <p>Ya no está disponible para otras personas.</p>
                 <p><strong>🔒 Horarios bloqueados:</strong> ${newSlots.length}</p>
-              </div>
-              
-              <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                <p><strong>💳 IMPORTANTE - Confirmación de Cita:</strong></p>
-                <p>Tu cita se confirma definitivamente con el pago correspondiente. Te contactaremos para coordinar los detalles de pago y cualquier información adicional necesaria.</p>
               </div>
               
               <p>Si necesitas hacer algún cambio, contáctanos lo antes posible.</p>
@@ -1241,263 +1155,6 @@ app.post('/api/send-contact-email', async (req, res) => {
   }
 });
 
-// ==================== APIS ADMINISTRATIVAS ====================
-
-// API para login de admin
-app.post('/api/admin/login', (req, res) => {
-  console.log('🔐 POST /api/admin/login - Intento de login admin');
-  const { username, password } = req.body;
-  
-  if (!username || !password) {
-    return res.status(400).json({
-      success: false,
-      error: 'Usuario y contraseña requeridos'
-    });
-  }
-  
-  if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-    console.log('✅ Login admin exitoso');
-    return res.json({
-      success: true,
-      message: 'Login exitoso',
-      token: Buffer.from(`${username}:${password}`).toString('base64')
-    });
-  } else {
-    console.log('❌ Credenciales admin incorrectas');
-    return res.status(401).json({
-      success: false,
-      error: 'Credenciales incorrectas'
-    });
-  }
-});
-
-// API para bloquear fechas completas (admin)
-app.post('/api/admin/block-date', authenticateAdmin, async (req, res) => {
-  console.log('🔒 POST /api/admin/block-date - Bloqueando fecha completa');
-  const { date, reason } = req.body;
-  
-  try {
-    if (!date || !reason) {
-      return res.status(400).json({
-        success: false,
-        error: 'Fecha y razón son requeridos'
-      });
-    }
-    
-    // Validar formato de fecha
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!dateRegex.test(date)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Formato de fecha inválido. Use MM/DD/YYYY'
-      });
-    }
-    
-    // Verificar si ya hay bloqueos para esta fecha
-    const existingSlots = await BookedSlot.find({ date });
-    console.log(`📊 Encontrados ${existingSlots.length} slots existentes para ${date}`);
-    
-    // Todos los horarios disponibles
-    const allTimes = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
-    const existingTimes = existingSlots.map(slot => slot.time);
-    const timesToBlock = allTimes.filter(time => !existingTimes.includes(time));
-    
-    if (timesToBlock.length === 0) {
-      return res.json({
-        success: true,
-        message: 'La fecha ya está completamente bloqueada',
-        blockedSlots: 0,
-        date: date
-      });
-    }
-    
-    // Crear slots bloqueados para todos los horarios disponibles
-    const blockingId = `admin-block-${Date.now()}`;
-    const newSlots = timesToBlock.map(time => ({
-      date: date,
-      time: time,
-      bookingId: blockingId,
-      reason: `ADMIN: ${reason}`
-    }));
-    
-    await BookedSlot.insertMany(newSlots);
-    
-    console.log(`✅ Fecha ${date} bloqueada completamente - ${newSlots.length} horarios`);
-    res.json({
-      success: true,
-      message: `Fecha ${date} bloqueada exitosamente`,
-      blockedSlots: newSlots.length,
-      blockingId: blockingId,
-      date: date,
-      reason: reason
-    });
-    
-  } catch (error) {
-    console.error('❌ Error al bloquear fecha:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error interno al bloquear fecha',
-      details: error.message
-    });
-  }
-});
-
-// API para bloquear horarios específicos (admin)
-app.post('/api/admin/block-times', authenticateAdmin, async (req, res) => {
-  console.log('🔒 POST /api/admin/block-times - Bloqueando horarios específicos');
-  const { date, times, reason } = req.body;
-  
-  try {
-    if (!date || !times || !Array.isArray(times) || times.length === 0 || !reason) {
-      return res.status(400).json({
-        success: false,
-        error: 'Fecha, horarios (array) y razón son requeridos'
-      });
-    }
-    
-    // Validar formato de fecha
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!dateRegex.test(date)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Formato de fecha inválido. Use MM/DD/YYYY'
-      });
-    }
-    
-    // Verificar horarios válidos
-    const validTimes = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
-    const invalidTimes = times.filter(time => !validTimes.includes(time));
-    
-    if (invalidTimes.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: `Horarios inválidos: ${invalidTimes.join(', ')}`,
-        validTimes: validTimes
-      });
-    }
-    
-    // Verificar si ya están ocupados
-    const existingSlots = await BookedSlot.find({ 
-      date: date, 
-      time: { $in: times } 
-    });
-    
-    const existingTimes = existingSlots.map(slot => slot.time);
-    const timesToBlock = times.filter(time => !existingTimes.includes(time));
-    
-    if (timesToBlock.length === 0) {
-      return res.json({
-        success: true,
-        message: 'Todos los horarios solicitados ya están ocupados',
-        blockedSlots: 0,
-        alreadyOccupied: existingTimes
-      });
-    }
-    
-    // Crear slots bloqueados
-    const blockingId = `admin-block-${Date.now()}`;
-    const newSlots = timesToBlock.map(time => ({
-      date: date,
-      time: time,
-      bookingId: blockingId,
-      reason: `ADMIN: ${reason}`
-    }));
-    
-    await BookedSlot.insertMany(newSlots);
-    
-    console.log(`✅ Horarios bloqueados para ${date}: ${timesToBlock.join(', ')}`);
-    res.json({
-      success: true,
-      message: `${timesToBlock.length} horarios bloqueados exitosamente`,
-      blockedSlots: timesToBlock.length,
-      blockedTimes: timesToBlock,
-      alreadyOccupied: existingTimes,
-      blockingId: blockingId,
-      date: date,
-      reason: reason
-    });
-    
-  } catch (error) {
-    console.error('❌ Error al bloquear horarios:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error interno al bloquear horarios',
-      details: error.message
-    });
-  }
-});
-
-// API para desbloquear fecha completa (admin)
-app.delete('/api/admin/unblock-date/:date', authenticateAdmin, async (req, res) => {
-  console.log('🔓 DELETE /api/admin/unblock-date - Desbloqueando fecha');
-  const { date } = req.params;
-  
-  try {
-    // Validar formato de fecha
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!dateRegex.test(date)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Formato de fecha inválido. Use MM/DD/YYYY'
-      });
-    }
-    
-    // Eliminar solo bloqueos administrativos (no reservas de clientes)
-    const result = await BookedSlot.deleteMany({ 
-      date: date,
-      reason: { $regex: /^ADMIN:/ }
-    });
-    
-    console.log(`✅ Desbloqueados ${result.deletedCount} horarios administrativos para ${date}`);
-    res.json({
-      success: true,
-      message: `Fecha ${date} desbloqueada exitosamente`,
-      unblockedSlots: result.deletedCount,
-      date: date
-    });
-    
-  } catch (error) {
-    console.error('❌ Error al desbloquear fecha:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error interno al desbloquear fecha',
-      details: error.message
-    });
-  }
-});
-
-// API para obtener todas las reservas (admin)
-app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
-  console.log('📋 GET /api/admin/bookings - Obteniendo todas las reservas');
-  
-  try {
-    const bookings = await Booking.find({}).sort({ createdAt: -1 });
-    const bookedSlots = await BookedSlot.find({}).sort({ date: 1, time: 1 });
-    
-    console.log(`📊 Enviando ${bookings.length} reservas y ${bookedSlots.length} slots`);
-    res.json({
-      success: true,
-      bookings: bookings,
-      bookedSlots: bookedSlots,
-      summary: {
-        totalBookings: bookings.length,
-        totalSlots: bookedSlots.length,
-        pendingBookings: bookings.filter(b => b.status === 'pending').length,
-        confirmedBookings: bookings.filter(b => b.status === 'confirmed').length,
-        rejectedBookings: bookings.filter(b => b.status === 'rejected').length
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ Error al obtener reservas:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error interno al obtener reservas',
-      details: error.message
-    });
-  }
-});
-
 // Manejar todas las demás rutas para servir la aplicación React
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -1512,9 +1169,7 @@ const startServer = async () => {
       console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
       console.log(`🔗 MongoDB Atlas: Conectado`);
       console.log(`📧 Email: Configurado`);
-      console.log(`🛠️ Panel Admin: Disponible en /admin`);
-      console.log(`🔐 APIs Admin: /api/admin/* activadas`);
-      console.log('✨ ¡Sistema de reservas con panel admin listo para producción!');
+      console.log('✨ ¡Sistema de reservas listo para producción!');
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);
