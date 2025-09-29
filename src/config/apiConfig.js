@@ -28,9 +28,9 @@ console.log('  - Full origin:', window.location.origin);
 
 // Configuración de timeout y reintentos
 const API_CONFIG = {
-  timeout: 15000, // 15 segundos timeout
-  maxRetries: 3,
-  retryDelay: 1000, // 1 segundo entre reintentos
+  timeout: 120000, // 2 minutos timeout para reservas
+  maxRetries: 2, // Reducir reintentos para evitar duplicados
+  retryDelay: 2000, // 2 segundos entre reintentos
   // Configurar headers por defecto (solo los esenciales)
   headers: {
     'Content-Type': 'application/json',

@@ -380,6 +380,7 @@ const Booking = ({ preloadedData = {} }) => {
   const [appointmentType, setAppointmentType] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Protección contra múltiples clics
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [error, setError] = useState(null);
   const [bookedSlots, setBookedSlots] = useState([]);
@@ -825,7 +826,15 @@ const Booking = ({ preloadedData = {} }) => {
       return;
     }
 
+    // Protección contra múltiples envíos
+    if (isSubmitting) {
+      console.log('⚠️ Ya hay una reserva en proceso, ignorando clic adicional');
+      setSubmitting(false);
+      return;
+    }
+    
     setIsLoading(true);
+    setIsSubmitting(true);
     setError(null);
     
     try {
@@ -837,8 +846,11 @@ const Booking = ({ preloadedData = {} }) => {
       // Encontrar el objeto de servicio completo
       const serviceObj = services.find(s => s.id === values.service);
       
-      // Generar un ID único para la reserva
-      const bookingId = `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      // Generar un ID único para la reserva (más robusto para evitar duplicados)
+      const timestamp = Date.now();
+      const randomPart = Math.floor(Math.random() * 10000);
+      const userPart = values.email.substring(0, 3).toLowerCase();
+      const bookingId = `booking-${timestamp}-${randomPart}-${userPart}`;
       
       console.log('Enviando solicitud a:', apiConfig.endpoints.bookings);
       
