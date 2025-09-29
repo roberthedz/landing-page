@@ -487,11 +487,11 @@ app.post('/api/bookings', async (req, res) => {
       });
     }
     
-    // 6️⃣ CREAR LA RESERVA (COMO PENDING - NO AUTO-CONFIRMAR)
-    console.log('💾 Creando reserva en MongoDB como PENDING...');
+    // 6️⃣ CREAR LA RESERVA (COMO CONFIRMED - AUTO-CONFIRMAR)
+    console.log('💾 Creando reserva en MongoDB como CONFIRMED...');
     const booking = new Booking({
       id: bookingId,
-      status: 'pending', // ⏳ PENDING - Requiere confirmación manual
+      status: 'confirmed', // ✅ CONFIRMED - Confirmación automática
       clientName,
       clientEmail,
       clientPhone,
@@ -505,17 +505,7 @@ app.post('/api/bookings', async (req, res) => {
     });
     
     await booking.save();
-    console.log(`✅ Reserva guardada como PENDING: ${bookingId} para ${clientName}`);
-    
-    // 7️⃣ NO BLOQUEAR HORARIOS TODAVÍA
-    // Los horarios se bloquearán solo cuando el admin confirme manualmente
-    console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
-    
-    // 8️⃣ CONFIRMAR AUTOMÁTICAMENTE LA RESERVA
-    console.log(`🔄 Confirmando reserva automáticamente para ${clientName}...`);
-    booking.status = 'confirmed';
-    await booking.save();
-    console.log('✅ Reserva confirmada automáticamente');
+    console.log(`✅ Reserva guardada como CONFIRMED: ${bookingId} para ${clientName}`);
     
     // 9️⃣ BLOQUEAR HORARIOS AHORA
     console.log('🔒 Bloqueando horarios...');
@@ -584,26 +574,16 @@ app.post('/api/bookings', async (req, res) => {
       console.log(`✅ ${newSlots.length} horarios bloqueados exitosamente`);
     }
     
-    // 🔟 RESPONDER AL CLIENTE
-    console.log(`🎉 Reserva confirmada exitosamente para ${clientName} - Enviando respuesta`);
-    res.status(201).json({ 
-      success: true, 
-      bookingId: booking.id,
-      message: 'Reserva confirmada exitosamente',
-      status: 'confirmed',
-      emailsSent: true,
-      note: 'Los horarios han sido bloqueados automáticamente'
-    });
-    
-    // 🔟 ENVIAR EMAILS DE CONFIRMACIÓN DE FORMA ASÍNCRONA (NO BLOQUEANTE)
-    console.log('📧 Enviando emails de confirmación de forma asíncrona...');
+    // 🔟 ENVIAR EMAILS DE CONFIRMACIÓN DE FORMA SÍNCRONA (ANTES DE RESPONDER)
+    console.log('📧 Enviando emails de confirmación...');
     console.log('📧 Email admin:', 'dedecorinfo@gmail.com');
     console.log('📧 Email cliente:', clientEmail);
-    setImmediate(async () => {
-      try {
-        console.log('📤 Enviando email al admin...');
-        // Email al ADMIN - Reserva confirmada
-        const adminEmailResult = await emailTransporter.sendMail({
+    
+    let emailsSentSuccessfully = false;
+    try {
+      console.log('📤 Enviando email al admin...');
+      // Email al ADMIN - Reserva confirmada
+      const adminEmailResult = await emailTransporter.sendMail({
         from: '"DeDecor Reservas" <dedecorinfo@gmail.com>',
         to: 'dedecorinfo@gmail.com',
         subject: `Reserva Confirmada - ${clientName}`,
@@ -677,18 +657,30 @@ app.post('/api/bookings', async (req, res) => {
       });
       console.log('✅ Email al cliente enviado. MessageID:', clientEmailResult.messageId);
       
-        console.log('✅ Emails de confirmación enviados exitosamente en background');
-        console.log('📧 Admin MessageID:', adminEmailResult.messageId);
-        console.log('📧 Cliente MessageID:', clientEmailResult.messageId);
-      } catch (emailError) {
-        console.error('⚠️ Error al enviar emails en background:', emailError);
-        console.error('⚠️ Error completo:', {
-          message: emailError.message,
-          code: emailError.code,
-          response: emailError.response,
-          responseCode: emailError.responseCode
-        });
-      }
+      console.log('✅ Emails de confirmación enviados exitosamente');
+      console.log('📧 Admin MessageID:', adminEmailResult.messageId);
+      console.log('📧 Cliente MessageID:', clientEmailResult.messageId);
+      emailsSentSuccessfully = true;
+    } catch (emailError) {
+      console.error('⚠️ Error al enviar emails:', emailError);
+      console.error('⚠️ Error completo:', {
+        message: emailError.message,
+        code: emailError.code,
+        response: emailError.response,
+        responseCode: emailError.responseCode
+      });
+      emailsSentSuccessfully = false;
+    }
+    
+    // 🔟 RESPONDER AL CLIENTE
+    console.log(`🎉 Reserva confirmada exitosamente para ${clientName} - Enviando respuesta`);
+    res.status(201).json({ 
+      success: true, 
+      bookingId: booking.id,
+      message: 'Reserva confirmada exitosamente',
+      status: 'confirmed',
+      emailsSent: emailsSentSuccessfully,
+      note: 'Los horarios han sido bloqueados automáticamente'
     });
     
   } catch (error) {
