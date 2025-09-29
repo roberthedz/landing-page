@@ -107,7 +107,7 @@ const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'dedecorinfo@gmail.com',
-    pass: 'ihrvuveqsskjxyog'
+    pass: 'vsblbhiyccryicmr'
   }
 });
 
