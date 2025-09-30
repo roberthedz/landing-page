@@ -674,6 +674,7 @@ app.post('/api/admin/block-day', async (req, res) => {
       isBlocked: true,
       reason: 'admin-blocked',
       blockedAt: new Date()
+      // bookingId no es requerido para bloqueos administrativos
     }));
 
     // Eliminar slots existentes para esta fecha
@@ -763,6 +764,7 @@ app.post('/api/admin/block-slot', async (req, res) => {
         isBlocked: true,
         reason: 'admin-blocked',
         blockedAt: new Date()
+        // bookingId no es requerido para bloqueos administrativos
       });
       await blockedSlot.save();
     }

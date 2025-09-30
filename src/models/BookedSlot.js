@@ -12,11 +12,19 @@ const bookedSlotSchema = new mongoose.Schema({
   },
   bookingId: {
     type: String,
-    required: true
+    required: false // Opcional para bloqueos administrativos
   },
   reason: {
     type: String,
     required: true
+  },
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
+  blockedAt: {
+    type: Date,
+    default: Date.now
   },
   createdAt: {
     type: Date,
