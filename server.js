@@ -130,7 +130,7 @@ app.get('/api/health', async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5)
       .select('date time bookingId reason createdAt');
-
+    
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -158,8 +158,8 @@ app.get('/api/booked-slots', async (req, res) => {
     const { date } = req.query;
     
     if (!date) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         error: 'Parámetro date es requerido' 
       });
     }
@@ -180,7 +180,7 @@ app.get('/api/booked-slots', async (req, res) => {
         reason: slot.reason
       });
     });
-
+    
     res.json({
       success: true,
       totalSlots: bookedSlots.length,
@@ -192,8 +192,8 @@ app.get('/api/booked-slots', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error consultando horarios ocupados:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: 'Error consultando horarios ocupados' 
     });
   }
@@ -203,7 +203,7 @@ app.get('/api/booked-slots', async (req, res) => {
 app.post('/api/bookings', async (req, res) => {
   console.log('🔍 POST /api/bookings - Solicitud recibida desde:', req.get('origin'));
   console.log('📝 Datos recibidos:', req.body);
-
+  
   try {
     const {
       id: bookingId,
@@ -221,7 +221,7 @@ app.post('/api/bookings', async (req, res) => {
 
     // Validaciones básicas
     if (!bookingId || !clientName || !clientEmail || !date || !time) {
-      return res.status(400).json({
+      return res.status(400).json({ 
         success: false,
         error: 'Faltan campos requeridos'
       });
@@ -229,27 +229,27 @@ app.post('/api/bookings', async (req, res) => {
 
     // 1️⃣ VERIFICAR ID NO DUPLICADO (si MongoDB está disponible)
     try {
-      const existingBooking = await Booking.findOne({ id: bookingId });
-      if (existingBooking) {
+    const existingBooking = await Booking.findOne({ id: bookingId });
+    if (existingBooking) {
         console.log('⚠️ ID de reserva duplicado:', bookingId);
-        return res.status(409).json({
+      return res.status(409).json({ 
           success: false,
           error: 'ID de reserva duplicado',
           bookingId: bookingId
-        });
+      });
       }
     } catch (dbError) {
       console.warn('⚠️ No se pudo verificar ID duplicado (MongoDB no disponible)');
       // Continuar - el ID es único por timestamp
     }
-
+    
     // 2️⃣ VERIFICAR QUE EL HORARIO ESTÉ DISPONIBLE (si MongoDB está disponible)
     try {
-      console.log('🔍 Verificando disponibilidad del horario:', date, time);
-      const existingSlot = await BookedSlot.findOne({ date, time });
-      if (existingSlot) {
+    console.log('🔍 Verificando disponibilidad del horario:', date, time);
+    const existingSlot = await BookedSlot.findOne({ date, time });
+    if (existingSlot) {
         console.log('⚠️ Horario ya ocupado:', date, time);
-        return res.status(409).json({
+      return res.status(409).json({ 
           success: false,
           error: 'Horario no disponible',
           date: date,
@@ -306,28 +306,28 @@ app.post('/api/bookings', async (req, res) => {
     let bookingSaved = false;
     try {
       console.log('💾 Intentando guardar reserva en MongoDB como PENDING...');
-      const booking = new Booking({
-        id: bookingId,
-        clientName,
-        clientEmail,
-        clientPhone,
-        service,
+    const booking = new Booking({
+      id: bookingId,
+      clientName,
+      clientEmail,
+      clientPhone,
+      service,
         serviceDuration,
         servicePrice,
-        date,
-        time,
-        type,
+      date,
+      time,
+      type,
         notes,
         status: 'pending'
-      });
-      
-      await booking.save();
-      console.log(`✅ Reserva guardada como PENDING: ${bookingId} para ${clientName}`);
+    });
+    
+    await booking.save();
+    console.log(`✅ Reserva guardada como PENDING: ${bookingId} para ${clientName}`);
       bookingSaved = true;
-      
+    
       // 5️⃣ NO BLOQUEAR HORARIOS TODAVÍA
-      // Los horarios se bloquearán solo cuando el admin confirme manualmente
-      console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
+    // Los horarios se bloquearán solo cuando el admin confirme manualmente
+    console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
     } catch (dbError) {
       console.error('⚠️ Error al guardar en MongoDB (pero los emails ya se enviaron):', dbError);
       // No hacer throw - los emails ya se enviaron, que es lo más importante
@@ -336,8 +336,8 @@ app.post('/api/bookings', async (req, res) => {
     // 6️⃣ RESPUESTA EXITOSA (siempre que los emails se hayan enviado)
     if (emailsSent) {
       console.log(`🎉 Flujo completo exitoso para ${clientName} - Emails enviados`);
-      res.status(201).json({ 
-        success: true, 
+    res.status(201).json({ 
+      success: true, 
         bookingId: bookingId,
         message: 'Solicitud de reserva enviada - Emails notificados',
         status: 'pending',
@@ -350,8 +350,8 @@ app.post('/api/bookings', async (req, res) => {
     } else {
       // Si los emails no se enviaron, es un error crítico
       console.error('❌ Error crítico: No se pudieron enviar los emails');
-      res.status(500).json({ 
-        success: false, 
+    res.status(500).json({ 
+      success: false,
         error: 'No se pudieron enviar las notificaciones por email',
         bookingId: bookingId
       });
@@ -373,14 +373,14 @@ app.get('/confirm-booking', async (req, res) => {
   if (!id || !action) {
     return res.status(400).send('Parámetros requeridos: id y action');
   }
-
+  
   try {
     const booking = await Booking.findOne({ id });
     
     if (!booking) {
       return res.status(404).send('Reserva no encontrada');
     }
-
+    
     if (action === 'confirm') {
       // Confirmar la reserva
       booking.status = 'confirmed';
@@ -389,9 +389,9 @@ app.get('/confirm-booking', async (req, res) => {
       
       // Bloquear los horarios
       const newSlot = new BookedSlot({
-        date: booking.date,
-        time: booking.time,
-        bookingId: booking.id,
+          date: booking.date,
+          time: booking.time,
+          bookingId: booking.id,
         reason: booking.service
       });
       await newSlot.save();
@@ -403,7 +403,7 @@ app.get('/confirm-booking', async (req, res) => {
             clientName: booking.clientName,
             clientEmail: booking.clientEmail,
             service: booking.service,
-            date: booking.date,
+              date: booking.date,
             time: booking.time
           });
         } catch (emailError) {
@@ -444,6 +444,51 @@ app.get('/confirm-booking', async (req, res) => {
   }
 });
 
+// Endpoint para obtener datos de una reserva específica
+app.get('/api/bookings/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  console.log(`📋 GET /api/bookings/${id} - Obteniendo datos de reserva`);
+  
+  try {
+    const booking = await Booking.findOne({ id });
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Reserva no encontrada'
+      });
+    }
+    
+    res.json({
+      success: true,
+      booking: {
+        id: booking.id,
+        clientName: booking.clientName,
+        clientEmail: booking.clientEmail,
+        clientPhone: booking.clientPhone,
+        service: booking.service,
+        serviceDuration: booking.serviceDuration,
+        servicePrice: booking.servicePrice,
+        date: booking.date,
+        time: booking.time,
+        type: booking.type,
+        notes: booking.notes,
+        status: booking.status,
+        createdAt: booking.createdAt,
+        confirmedAt: booking.confirmedAt
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo reserva:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error obteniendo reserva'
+    });
+  }
+});
+
 // Endpoint para actualizar estado de reserva
 app.post('/api/bookings/:id/status', async (req, res) => {
   const { id } = req.params;
@@ -456,7 +501,7 @@ app.post('/api/bookings/:id/status', async (req, res) => {
     
     if (!booking) {
       return res.status(404).json({
-        success: false,
+      success: false,
         error: 'Reserva no encontrada'
       });
     }
@@ -593,10 +638,10 @@ app.get('*', (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+      console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
   console.log(`🔗 MongoDB Atlas: ${mongoose.connection.readyState === 1 ? 'Conectado' : 'Desconectado'}`);
   console.log(`📧 Email: ${emailConfigured ? 'Configurado' : 'No configurado'}`);
-  console.log('✨ ¡Sistema de reservas listo para producción!');
-});
+      console.log('✨ ¡Sistema de reservas listo para producción!');
+    });
 
 module.exports = app;

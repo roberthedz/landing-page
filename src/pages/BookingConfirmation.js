@@ -58,7 +58,9 @@ const BookingConfirmation = () => {
         console.log(`📝 Procesando acción: ${action} para reserva: ${bookingId}`);
         const response = await apiConfig.makeRequest(`${apiConfig.API_BASE_URL}/bookings/${bookingId}/status`, {
           method: 'POST',
-          data: { action }
+          data: { 
+            status: action === 'confirm' ? 'confirmed' : 'rejected'
+          }
         });
         
         if (!response.data.success) {
