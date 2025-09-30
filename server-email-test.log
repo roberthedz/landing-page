@@ -1,0 +1,22 @@
+🔧 DNS configurado: [ '8.8.8.8', '8.8.4.4' ]
+🔍 Puerto configurado: 3000
+🌐 Environment: development
+🔗 Conectando a MongoDB Atlas...
+🔗 URI: mongodb+srv://rhzamora144:***@cluster0.4vwcokw.mongodb.net/reservas?retryWrites=true&w=majority&appName=Cluster0
+/Users/roberthernandez/Documents/landing page/landing-page/node_modules/nodemailer/lib/smtp-transport/index.js:364
+                return callback(null, true);
+                       ^
+
+TypeError: callback is not a function
+    at finalize (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/nodemailer/lib/smtp-transport/index.js:364:24)
+    at /Users/roberthernandez/Documents/landing page/landing-page/node_modules/nodemailer/lib/smtp-transport/index.js:386:25
+    at SMTPConnection._actionAUTHComplete (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/nodemailer/lib/smtp-connection/index.js:1602:9)
+    at SMTPConnection.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/nodemailer/lib/smtp-connection/index.js:556:26)
+    at SMTPConnection._processResponse (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/nodemailer/lib/smtp-connection/index.js:993:20)
+    at SMTPConnection._onData (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/nodemailer/lib/smtp-connection/index.js:774:14)
+    at SMTPConnection._onSocketData (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/nodemailer/lib/smtp-connection/index.js:195:44)
+    at TLSSocket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+
+Node.js v24.9.0

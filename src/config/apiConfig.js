@@ -16,7 +16,7 @@ const getBaseUrl = () => {
   // EN CUALQUIER OTRO CASO (dedecorinfo.com, render, etc.)
   // SIEMPRE usar la URL directa de Render porque es donde está el servidor Node.js
   // dedecorinfo.com solo sirve HTML estático, las APIs están en Render
-  return 'https://landing-page-534b.onrender.com/api';
+  return 'https://landing-page-1-77xa.onrender.com/api';
 };
 
 const API_BASE_URL = getBaseUrl();

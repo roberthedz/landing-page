@@ -1,0 +1,11 @@
+🔧 DNS configurado: [ '8.8.8.8', '8.8.4.4' ]
+🔍 Puerto configurado: 3000
+🌐 Environment: development
+🔗 Conectando a MongoDB Atlas...
+🔗 URI: mongodb+srv://rhzamora144:***@cluster0.4vwcokw.mongodb.net/reservas?retryWrites=true&w=majority&appName=Cluster0
+✅ Servidor de email configurado correctamente
+✅ Conectado a MongoDB Atlas exitosamente
+🚀 Servidor corriendo en el puerto 3000
+🔗 MongoDB Atlas: Conectado
+📧 Email: Configurado
+✨ ¡Sistema de reservas listo para producción!

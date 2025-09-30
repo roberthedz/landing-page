@@ -107,19 +107,28 @@ const getBaseUrl = (req) => {
   return `${protocol}://${host}`;
 };
 
-// Configurar el transportador de email
+// Configurar el transportador de email con configuración explícita para Render
 const emailTransporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // true para 465, false para otros puertos
   auth: {
     user: 'dedecorinfo@gmail.com',
     pass: 'vsblbhiyccryicmr'
-  }
+  },
+  tls: {
+    rejectUnauthorized: false // Para evitar problemas con certificados en Render
+  },
+  connectionTimeout: 30000, // 30 segundos timeout
+  greetingTimeout: 30000,
+  socketTimeout: 60000
 });
 
 // Verificar la configuración de email
 emailTransporter.verify((error, success) => {
   if (error) {
     console.error('❌ Error en la configuración de email:', error);
+    console.log('⚠️ El servidor continuará sin envío de emails');
   } else {
     console.log('✅ Servidor de email configurado correctamente');
   }
