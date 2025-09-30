@@ -166,7 +166,11 @@ app.get('/api/booked-slots', async (req, res) => {
 
     console.log('🔍 Consultando horarios ocupados para:', date);
     
-    const bookedSlots = await BookedSlot.find({ date });
+    // Solo obtener slots que están realmente ocupados (no bloqueos administrativos)
+    const bookedSlots = await BookedSlot.find({ 
+      date,
+      bookingId: { $ne: null } // Solo slots con bookingId (reservas confirmadas)
+    });
     
     // Agrupar por fecha
     const slotsByDate = {};
@@ -574,9 +578,13 @@ app.get('/api/booked-slots-batch', async (req, res) => {
     }
     
     const dateArray = dates.split(',');
+    // Solo obtener slots que están realmente ocupados (no bloqueos administrativos)
     const bookedSlots = await BookedSlot.find({ 
-      date: { $in: dateArray } 
+      date: { $in: dateArray },
+      bookingId: { $ne: null } // Solo slots con bookingId (reservas confirmadas)
     });
+    
+    console.log(`🔍 Encontrados ${bookedSlots.length} slots ocupados por reservas confirmadas`);
     
     // Agrupar por fecha
     const slotsByDate = {};
