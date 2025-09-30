@@ -1,0 +1,137 @@
+🎯 PRUEBA DE ENDPOINTS DEL FRONTEND - RESERVAS
+================================================
+
+Simulando el flujo exacto que hace el usuario en la app...
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;34mFLUJO 1: Usuario abre página de reservas[0m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.1: PreloadContext - Cargar horarios para 14 días (batch)
+--------------------------------------------------------
+Simulando: apiConfig.endpoints.bookedSlotsBatch
+Endpoint: GET http://localhost:3000/api/booked-slots-batch?dates=09/30/2025,10/01/2025,10/02/2025,10/03/2025,10/04/2025
+{"success":false,"error":"Error interno del servidor al obtener horarios en lote","details":"Operation `bookedslots.find()` buffering timed out after 10000ms","bookedSlots":{}}
+HTTP: 500 | Tiempo: 10.003863s
+[0;31m❌ FAIL - Batch no funciona[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;34mFLUJO 2: Usuario selecciona una fecha[0m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2.1: Booking.loadBookedSlots() - Consultar horarios específicos
+---------------------------------------------------------------
+Fecha: 09/30/2025
+Simulando: apiConfig.endpoints.bookedSlots + fecha
+Endpoint: GET http://localhost:3000/api/booked-slots?date=09/30/2025
+{"success":false,"error":"Error interno del servidor al obtener horarios ocupados","details":"Operation `bookedslots.find()` buffering timed out after 10000ms","bookedSlots":[],"slotsByDate":{}}
+HTTP: 500 | Tiempo: 10.003473s
+[0;31m❌ FAIL - No puede leer horarios[0m
+
+2.2: Simulando reintentos automáticos del frontend
+---------------------------------------------------
+El frontend hace hasta 3 intentos si falla...
+Intento 1/3...
+   Esperando 1 segundo...
+Intento 2/3...
+   Esperando 1 segundo...
+Intento 3/3...
+[0;31m❌ FAIL - Todos los reintentos fallaron[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;34mFLUJO 3: Usuario completa y envía formulario[0m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3.1: Validación - Enviar datos incompletos
+-------------------------------------------
+Simulando: handleSubmit() con datos faltantes
+Endpoint: POST http://localhost:3000/api/bookings (sin todos los campos)
+{"error":"Faltan campos requeridos","success":false}
+HTTP: 400 | Tiempo: 0.001788s
+[0;32m✅ PASS - Validación funciona correctamente[0m
+
+3.2: Crear reserva completa (flujo principal)
+---------------------------------------------
+ID: frontend-test-1759234841
+Simulando: handleSubmit() con todos los datos
+Endpoint: POST http://localhost:3000/api/bookings
+{"success":true,"bookingId":"frontend-test-1759234841","message":"Solicitud de reserva enviada - Emails notificados","status":"pending","emailsSent":true,"bookingSaved":false,"note":"Emails enviados correctamente. MongoDB no disponible temporalmente."}
+HTTP: 201 | Tiempo: 31.234932s
+
+Analizando respuesta...
+[0;32m✅ PASS - Reserva creada[0m
+   [0;32m✅ Emails enviados[0m
+   [1;33m⚠️ NO guardado en MongoDB (pero emails enviados)[0m
+   [1;33m   Esto es esperado si MongoDB no está conectado[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;34mFLUJO 4: Verificar persistencia[0m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4.1: Consultar horarios para verificar la nueva reserva
+--------------------------------------------------------
+Esperando 2 segundos...
+{"success":false,"error":"Error interno del servidor al obtener horarios ocupados","details":"Operation `bookedslots.find()` buffering timed out after 10000ms","bookedSlots":[],"slotsByDate":{}}
+HTTP: 500 | Tiempo: 10.002914s
+[0;31m❌ FAIL - No se puede consultar horarios[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;34mFLUJO 5: Usuario hace refresh (forceRefresh=true)[0m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5.1: Simular refresh forzado (sin cache)
+-----------------------------------------
+En el frontend: loadBookedSlots(true)
+Esto IGNORA cache y va directo a MongoDB
+{"success":false,"error":"Error interno del servidor al obtener horarios ocupados","details":"Operation `bookedslots.find()` buffering timed out after 10000ms","bookedSlots":[],"slotsByDate":{}}
+HTTP: 500 | Tiempo: 10.002659s
+[0;31m❌ FAIL - Refresh no funciona (MongoDB timeout)[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;34mFLUJO 6: Admin confirma reserva (desde email)[0m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+6.1: Endpoint de confirmación (GET desde email)
+------------------------------------------------
+Simulando: Admin hace click en botón CONFIRMAR
+URL del email: http://localhost:3000/confirm-booking?id=frontend-test-1759234841&action=confirm
+
+NOTA: Este test puede fallar si MongoDB no está conectado
+porque necesita encontrar la reserva primero
+Error al procesar la reserva
+HTTP: 500 | Tiempo: 10.003419s
+[0;31m❌ FAIL - Error en confirmación[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 RESUMEN DE PRUEBAS FRONTEND
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tests ejecutados: 10
+[0;32mPasaron: 4[0m
+[0;31mFallaron: 6[0m
+Porcentaje de éxito: 40%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Análisis por componente:
+
+1. Carga inicial (PreloadContext):
+   [0;31m❌ Batch loading NO funciona[0m
+
+2. Consulta de horarios (Booking.loadBookedSlots):
+   [0;31m❌ NO puede consultar horarios[0m
+
+3. Creación de reservas (Booking.handleSubmit):
+   [0;32m✅ Puede crear reservas[0m
+   [0;32m✅ Emails se envían correctamente[0m
+   [1;33m⚠️ MongoDB NO guarda (pero emails sí)[0m
+
+4. Persistencia:
+   [1;33m⚠️ Las reservas NO persisten[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;31m❌ SISTEMA CON PROBLEMAS[0m
+Muchas funcionalidades no están operativas
+
+📋 Archivos de test guardados en /tmp/frontend-test-*.txt
+🔍 Revisa los logs: tail -f server-diagnostic.log

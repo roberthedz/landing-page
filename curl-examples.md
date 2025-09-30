@@ -1,150 +1,88 @@
-# Ejemplos de comandos curl para la API de DeDecor
+# Comandos cURL para probar la API de emails
 
-## 1. Crear una nueva reserva
+## 1. Probar creación de reserva completa (envía emails automáticamente)
 
 ```bash
-curl -X POST http://localhost:3000/api/bookings \
+curl -X POST "http://localhost:3000/api/bookings" \
   -H "Content-Type: application/json" \
+  -H "Origin: http://localhost:3000" \
   -d '{
-    "clientName": "Nombre Cliente",
-    "clientEmail": "cliente@ejemplo.com",
-    "clientPhone": "123456789",
-    "service": "ChairCraft Revive",
-    "servicePrice": "$99",
-    "date": "15/08/2023",
-    "time": "10:00",
-    "type": "presencial",
-    "notes": "Notas adicionales"
-  }'
+    "clientName": "Test User",
+    "clientEmail": "test@example.com",
+    "clientPhone": "3051234567",
+    "service": "Consulta de Decoración",
+    "date": "09/30/2025",
+    "time": "3:00 PM",
+    "type": "consulta-individual",
+    "notes": "Prueba de API con curl"
+  }' \
+  -v
 ```
 
-Respuesta:
-```json
-{
-  "success": true,
-  "bookingId": "booking-1234567890-123"
-}
-```
-
-## 2. Confirmar una reserva
+## 2. Probar envío de email de reserva específico
 
 ```bash
-curl -X POST http://localhost:3000/api/bookings/booking-1234567890-123/status \
+curl -X POST "http://localhost:3000/api/send-booking-email" \
   -H "Content-Type: application/json" \
+  -H "Origin: http://localhost:3000" \
   -d '{
-    "action": "confirm"
-  }'
+    "clientEmail": "test@example.com",
+    "clientName": "Test User",
+    "bookingDetails": {
+      "id": "test-booking-123",
+      "phone": "3051234567",
+      "service": "Consulta de Decoración",
+      "date": "09/30/2025",
+      "time": "3:00 PM",
+      "type": "consulta-individual"
+    }
+  }' \
+  -v
 ```
 
-Respuesta:
-```json
-{
-  "success": true,
-  "message": "Reserva confirmada exitosamente"
-}
-```
-
-## 3. Rechazar una reserva
+## 3. Probar envío de email de contacto
 
 ```bash
-curl -X POST http://localhost:3000/api/bookings/booking-1234567890-123/status \
+curl -X POST "http://localhost:3000/api/send-contact-email" \
   -H "Content-Type: application/json" \
+  -H "Origin: http://localhost:3000" \
   -d '{
-    "action": "reject"
-  }'
+    "clientEmail": "test@example.com",
+    "clientName": "Test User",
+    "contactDetails": {
+      "phone": "3051234567",
+      "message": "Mensaje de prueba desde curl",
+      "date": "09/30/2025"
+    }
+  }' \
+  -v
 ```
 
-Respuesta:
-```json
-{
-  "success": true,
-  "message": "Reserva rechazada exitosamente"
-}
-```
-
-## 4. Cancelar una reserva confirmada
+## 4. Verificar estado del sistema
 
 ```bash
-curl -X POST http://localhost:3000/api/bookings/booking-1234567890-123/cancel
+curl -X GET "http://localhost:3000/api/system-status" \
+  -H "Origin: http://localhost:3000" \
+  -v
 ```
 
-Respuesta:
-```json
-{
-  "success": true,
-  "message": "Reserva cancelada exitosamente"
-}
-```
-
-## 5. Obtener horarios ocupados
+## 5. Verificar salud del sistema
 
 ```bash
-curl -X GET http://localhost:3000/api/booked-slots
-```
-
-Respuesta:
-```json
-[
-  {
-    "date": "15/08/2023",
-    "time": "10:00",
-    "bookingId": "booking-1234567890-123"
-  }
-]
-```
-
-## 6. Listar todas las reservas
-
-```bash
-curl -X GET http://localhost:3000/api/bookings
-```
-
-Respuesta:
-```json
-[
-  {
-    "id": "booking-1234567890-123",
-    "clientName": "Nombre Cliente",
-    "service": "ChairCraft Revive",
-    "date": "15/08/2023",
-    "time": "10:00",
-    "status": "confirmed"
-  },
-  {
-    "id": "booking-1234567891-456",
-    "clientName": "Otro Cliente",
-    "service": "Vase Visionaries",
-    "date": "16/08/2023",
-    "time": "11:00",
-    "status": "pending"
-  }
-]
-```
-
-## 7. Listar reservas por estado
-
-```bash
-curl -X GET http://localhost:3000/api/bookings?status=confirmed
-```
-
-Respuesta:
-```json
-[
-  {
-    "id": "booking-1234567890-123",
-    "clientName": "Nombre Cliente",
-    "service": "ChairCraft Revive",
-    "date": "15/08/2023",
-    "time": "10:00",
-    "status": "confirmed"
-  }
-]
+curl -X GET "http://localhost:3000/api/health" \
+  -H "Origin: http://localhost:3000" \
+  -v
 ```
 
 ## Notas importantes:
 
-1. Reemplaza `booking-1234567890-123` con el ID real de la reserva que obtengas al crearla.
-2. Para cancelar una reserva, esta debe estar previamente confirmada.
-3. Al cancelar una reserva, el horario se libera automáticamente y puede ser reservado nuevamente.
-4. Todos los endpoints devuelven respuestas en formato JSON.
-5. Puedes filtrar las reservas por estado usando los valores: `pending`, `confirmed`, `rejected` o `cancelled`. 
+1. **Asegúrate de que el servidor esté corriendo** en el puerto 3000
+2. **Revisa los logs del servidor** para ver si hay errores
+3. **Verifica la bandeja de entrada** de `dedecorinfo@gmail.com`
+4. **Los emails se envían a dos direcciones:**
+   - Al admin: `dedecorinfo@gmail.com`
+   - Al cliente: el email proporcionado en la petición
+
+## Para probar en producción:
+
+Cambia `http://localhost:3000` por la URL de tu servidor en producción (ej: `https://landing-page-534b.onrender.com`)

@@ -1,0 +1,52 @@
+🔧 DNS configurado: [ '8.8.8.8', '8.8.4.4' ]
+🔍 Puerto configurado: 3000
+🌐 Environment: development
+🔗 Conectando a MongoDB Atlas...
+🔗 URI: mongodb+srv://rhzamora144:***@cluster0.4vwcokw.mongodb.net/reservas?retryWrites=true&w=majority&appName=Cluster0
+✅ Servidor de email configurado correctamente
+✅ Conectado a MongoDB Atlas exitosamente
+🚀 Servidor corriendo en el puerto 3000
+🔗 MongoDB Atlas: Conectado
+📧 Email: Configurado
+✨ ¡Sistema de reservas listo para producción!
+🌐 CORS: GET /api/health desde unknown
+🔍 GET /api/health - Solicitud recibida desde: undefined
+🌐 CORS: GET /api/booked-slots desde unknown
+🔍 GET /api/booked-slots - Solicitud recibida desde: undefined
+📡 Consultando MongoDB Atlas para fecha: 09/30/2025
+📊 Enviando 3 horarios ocupados para 09/30/2025
+🌐 CORS: POST /api/bookings desde http://localhost:3000
+🔍 POST /api/bookings - Solicitud recibida desde: http://localhost:3000
+📝 Datos recibidos: {
+  id: 'test-mongodb-fixed-001',
+  clientName: 'Test MongoDB FIXED',
+  clientEmail: 'testfixed@example.com',
+  clientPhone: '1234567890',
+  service: 'Test Service POST-FIX',
+  serviceDuration: '60 min',
+  servicePrice: '$100',
+  date: '12/25/2025',
+  time: '2:00 PM',
+  type: 'consulta-individual',
+  notes: 'Prueba después de arreglar MongoDB'
+}
+🔍 Verificando disponibilidad del horario: 12/25/2025 2:00 PM
+📧 Enviando emails de nueva solicitud...
+✅ Emails enviados exitosamente a ADMIN y CLIENTE simultáneamente
+💾 Intentando guardar reserva en MongoDB como PENDING...
+✅ Reserva guardada como PENDING: test-mongodb-fixed-001 para Test MongoDB FIXED
+⏸️ Horarios NO bloqueados - esperando confirmación manual del admin
+🎉 Flujo completo exitoso para Test MongoDB FIXED - Emails enviados
+🌐 CORS: GET /api/booked-slots desde unknown
+🔍 GET /api/booked-slots - Solicitud recibida desde: undefined
+📡 Consultando MongoDB Atlas para fecha: 12/25/2025
+📊 Enviando 0 horarios ocupados para 12/25/2025
+🌐 CORS: GET /confirm-booking desde unknown
+✅ CONFIRMANDO RESERVA: test-mongodb-fixed-001 - Test MongoDB FIXED
+✅ Status cambiado a confirmed
+🔒 Bloqueando horarios...
+🔒 Bloqueando 1 hora: 2:00 PM
+✅ 1 horarios bloqueados exitosamente
+📧 Enviando email de confirmación final...
+✅ Email de confirmación enviado al cliente
+🌐 CORS: GET /favicon.ico desde unknown

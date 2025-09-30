@@ -842,28 +842,23 @@ const Booking = ({ preloadedData = {} }) => {
       
       console.log('Enviando solicitud a:', apiConfig.endpoints.bookings);
       
-      // Crear la reserva en el servidor con timeout
-      const bookingResponse = await Promise.race([
-        apiConfig.makeRequest(apiConfig.endpoints.bookings, {
-          method: 'POST',
-          data: {
-            id: bookingId,
-            clientName: values.name,
-            clientEmail: values.email,
-            clientPhone: values.phone,
-            service: serviceObj.title,
-            serviceDuration: serviceObj.duration,
-            servicePrice: serviceObj.price,
-            date: formatDate(values.date),
-            time: values.time,
-            type: values.appointmentType,
-            notes: values.notes || ''
-          }
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado tiempo')), 30000)
-        )
-      ]);
+      // Crear la reserva en el servidor con reintentos automáticos
+      const bookingResponse = await apiConfig.makeRequest(apiConfig.endpoints.bookings, {
+        method: 'POST',
+        data: {
+          id: bookingId,
+          clientName: values.name,
+          clientEmail: values.email,
+          clientPhone: values.phone,
+          service: serviceObj.title,
+          serviceDuration: serviceObj.duration,
+          servicePrice: serviceObj.price,
+          date: formatDate(values.date),
+          time: values.time,
+          type: values.appointmentType,
+          notes: values.notes || ''
+        }
+      });
       
       console.log('Respuesta de creación de reserva:', bookingResponse.data);
       
@@ -874,12 +869,6 @@ const Booking = ({ preloadedData = {} }) => {
       // ✅ Los emails ya se envían automáticamente en el servidor
       // No necesitamos hacer una segunda llamada a /api/send-booking-email
       console.log('✅ Reserva creada exitosamente. Emails enviados automáticamente por el servidor.');
-      
-      // Verificar si los emails se enviaron correctamente
-      if (bookingResponse.data.emailsSent === false) {
-        console.warn('⚠️ Los emails no se pudieron enviar, pero la reserva fue creada exitosamente');
-        setError('Reserva creada exitosamente, pero hubo un problema con el envío de emails. Te contactaremos manualmente.');
-      }
       
       // ✅ Guardar la solicitud en localStorage como referencia
       // El estado real se mantiene en el servidor (MongoDB)

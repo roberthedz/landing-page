@@ -4,6 +4,11 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// 🔧 FIX: Forzar uso de DNS de Google para resolver MongoDB Atlas
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+console.log('🔧 DNS configurado:', dns.getServers());
 
 const app = express();
 const PORT = process.env.PORT || 3000;

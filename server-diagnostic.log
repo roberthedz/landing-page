@@ -1,0 +1,171 @@
+🔍 Puerto configurado: 3000
+🌐 Environment: development
+🔗 Conectando a MongoDB Atlas...
+🔗 URI: mongodb+srv://rhzamora144:***@cluster0.4vwcokw.mongodb.net/reservas?retryWrites=true&w=majority&appName=Cluster0
+❌ Error al conectar a MongoDB Atlas: querySrv ECONNREFUSED _mongodb._tcp.cluster0.4vwcokw.mongodb.net
+🔧 Verifica:
+   1. IP whitelist en MongoDB Atlas (0.0.0.0/0)
+   2. Usuario y contraseña correctos
+   3. Cluster activo
+⚠️ Servidor continuará sin MongoDB...
+🚀 Servidor corriendo en el puerto 3000
+🔗 MongoDB Atlas: Conectado
+📧 Email: Configurado
+✨ ¡Sistema de reservas listo para producción!
+✅ Servidor de email configurado correctamente
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 09/30/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 12/01/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/booked-slots-batch desde http://localhost:3000
+🔍 GET /api/booked-slots-batch - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fechas: [ '10/01/2025', '10/02/2025', '10/03/2025' ]
+❌ Error al obtener horarios en lote: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/system-status desde http://localhost:3000
+🔍 GET /api/system-status - Verificando estado del sistema...
+❌ Error al verificar estado del sistema: MongooseError: Operation `bookings.countDocuments()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: POST /api/bookings desde http://localhost:3000
+🔍 POST /api/bookings - Solicitud recibida desde: http://localhost:3000
+📝 Datos recibidos: {
+  id: 'diagnostic-test-1759234593',
+  clientName: 'Diagnostic Test',
+  clientEmail: 'diagnostic@test.com',
+  clientPhone: '0000000000',
+  service: 'Test Service',
+  serviceDuration: '60 min',
+  servicePrice: './test-mongodb-exhaustivo.sh',
+  date: '12/31/2025',
+  time: '11:00 AM',
+  type: 'consulta-individual',
+  notes: 'Prueba diagnóstica'
+}
+⚠️ No se pudo verificar ID duplicado (MongoDB no disponible)
+🔍 Verificando disponibilidad del horario: 12/31/2025 11:00 AM
+⚠️ No se pudo verificar disponibilidad de horario (MongoDB no disponible)
+📧 Enviando emails de nueva solicitud...
+✅ Emails enviados exitosamente a ADMIN y CLIENTE simultáneamente
+💾 Intentando guardar reserva en MongoDB como PENDING...
+⚠️ Error al guardar en MongoDB (pero los emails ya se enviaron): MongooseError: Operation `bookings.insertOne()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🎉 Flujo completo exitoso para Diagnostic Test - Emails enviados
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 12/31/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/health desde http://localhost:3000
+🔍 GET /api/health - Solicitud recibida desde: http://localhost:3000
+❌ Error en health check: MongooseError: Operation `bookings.countDocuments()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/booked-slots-batch desde http://localhost:3000
+🔍 GET /api/booked-slots-batch - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fechas: [
+  '09/30/2025',
+  '10/01/2025',
+  '10/02/2025',
+  '10/03/2025',
+  '10/04/2025'
+]
+❌ Error al obtener horarios en lote: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 09/30/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 10/15/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 10/15/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 10/15/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: POST /api/bookings desde http://localhost:3000
+🔍 POST /api/bookings - Solicitud recibida desde: http://localhost:3000
+📝 Datos recibidos: { clientName: 'Test', clientEmail: 'test@test.com' }
+❌ Faltan campos requeridos
+🌐 CORS: POST /api/bookings desde http://localhost:3000
+🔍 POST /api/bookings - Solicitud recibida desde: http://localhost:3000
+📝 Datos recibidos: {
+  id: 'frontend-test-1759234841',
+  clientName: 'Usuario Frontend Test',
+  clientEmail: 'frontend@test.com',
+  clientPhone: '1234567890',
+  service: 'Consulta Frontend',
+  serviceDuration: '60 min',
+  servicePrice: '00',
+  date: '12/20/2025',
+  time: '3:00 PM',
+  type: 'consulta-individual',
+  notes: 'Prueba desde curl simulando frontend'
+}
+⚠️ No se pudo verificar ID duplicado (MongoDB no disponible)
+🔍 Verificando disponibilidad del horario: 12/20/2025 3:00 PM
+⚠️ No se pudo verificar disponibilidad de horario (MongoDB no disponible)
+📧 Enviando emails de nueva solicitud...
+✅ Emails enviados exitosamente a ADMIN y CLIENTE simultáneamente
+💾 Intentando guardar reserva en MongoDB como PENDING...
+⚠️ Error al guardar en MongoDB (pero los emails ya se enviaron): MongooseError: Operation `bookings.insertOne()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🎉 Flujo completo exitoso para Usuario Frontend Test - Emails enviados
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 12/20/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /api/booked-slots desde http://localhost:3000
+🔍 GET /api/booked-slots - Solicitud recibida desde: http://localhost:3000
+📡 Consultando MongoDB Atlas para fecha: 09/30/2025
+❌ Error al obtener horarios ocupados: MongooseError: Operation `bookedslots.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
+🌐 CORS: GET /confirm-booking desde http://localhost:3000
+❌ Error al procesar la confirmación: MongooseError: Operation `bookings.findOne()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/Users/roberthernandez/Documents/landing page/landing-page/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)

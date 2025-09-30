@@ -30,7 +30,7 @@ console.log('  - Full origin:', window.location.origin);
 
 // Configuración de timeout y reintentos
 const API_CONFIG = {
-  timeout: 15000, // 15 segundos timeout
+  timeout: 45000, // 45 segundos timeout (aumentado para Render en cold start)
   maxRetries: 3,
   retryDelay: 1000, // 1 segundo entre reintentos
   // Configurar headers por defecto (solo los esenciales)
@@ -76,15 +76,21 @@ const makeRequest = async (url, options = {}, retries = API_CONFIG.maxRetries) =
       origin: window.location.origin
     });
     
-    // Reintentar en casos específicos
+    // Reintentar en casos específicos (pero NO en 409 - Conflict)
     if (retries > 0 && (
       error.code === 'ECONNABORTED' || 
-      error.response?.status >= 500 ||
-      error.message.includes('Network Error')
+      (error.response?.status >= 500 && error.response?.status !== 409) ||
+      error.message.includes('Network Error') ||
+      error.message.includes('timeout')
     )) {
       console.log(`🔄 Reintentando petición a ${url}. Intentos restantes: ${retries - 1}`);
       await new Promise(resolve => setTimeout(resolve, API_CONFIG.retryDelay));
       return makeRequest(url, options, retries - 1);
+    }
+    
+    // NO reintentar si es 409 (Conflict) - significa que la primera petición sí llegó
+    if (error.response?.status === 409) {
+      console.log(`⚠️ Conflicto 409: La primera petición probablemente fue exitosa`);
     }
     
     throw error;
