@@ -77,15 +77,6 @@ const sendAdminNotification = async (bookingData) => {
         },
         footer: {
           enable: false
-        },
-        bypassListManagement: {
-          enable: false
-        },
-        bypassSpamManagement: {
-          enable: false
-        },
-        bypassUnsubscribeManagement: {
-          enable: false
         }
       },
       // HTML ULTRA-OPTIMIZADO para evitar spam
@@ -260,15 +251,6 @@ const sendClientConfirmation = async (bookingData) => {
         },
         footer: {
           enable: false
-        },
-        bypassListManagement: {
-          enable: false
-        },
-        bypassSpamManagement: {
-          enable: false
-        },
-        bypassUnsubscribeManagement: {
-          enable: false
         }
       },
       // HTML ULTRA-OPTIMIZADO para evitar spam
@@ -433,15 +415,6 @@ const sendFinalConfirmation = async (bookingData) => {
           enable: false
         },
         footer: {
-          enable: false
-        },
-        bypassListManagement: {
-          enable: false
-        },
-        bypassSpamManagement: {
-          enable: false
-        },
-        bypassUnsubscribeManagement: {
           enable: false
         }
       },
