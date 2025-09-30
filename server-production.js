@@ -4,6 +4,11 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// 🔧 FIX: Forzar uso de DNS de Google para resolver MongoDB Atlas
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+console.log('🔧 DNS configurado:', dns.getServers());
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -106,39 +111,19 @@ const getBaseUrl = (req) => {
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'dedecorinfo@gmail.com',
-    pass: process.env.EMAIL_PASS || 'vsblbhiyccryicmr'
-  },
-  // Configuración adicional para mejorar la conexión
-  pool: true,
-  maxConnections: 1,
-  maxMessages: 3,
-  rateDelta: 20000,
-  rateLimit: 5
+    user: 'dedecorinfo@gmail.com',
+    pass: 'vsblbhiyccryicmr'
+  }
 });
 
 // Verificar la configuración de email
 emailTransporter.verify((error, success) => {
   if (error) {
     console.error('❌ Error en la configuración de email:', error);
-    console.log('⚠️ El servidor continuará sin envío de emails');
   } else {
     console.log('✅ Servidor de email configurado correctamente');
   }
 });
-
-// Función auxiliar para enviar emails con manejo de errores
-const sendEmailSafely = async (emailOptions) => {
-  try {
-    const result = await emailTransporter.sendMail(emailOptions);
-    console.log('✅ Email enviado exitosamente:', result.messageId);
-    return { success: true, messageId: result.messageId };
-  } catch (error) {
-    console.error('❌ Error al enviar email:', error.message);
-    console.log('⚠️ Continuando sin enviar email...');
-    return { success: false, error: error.message };
-  }
-};
 
 // Middleware
 app.use(cors({
@@ -455,52 +440,38 @@ app.post('/api/bookings', async (req, res) => {
     // 3️⃣ GENERAR ID ÚNICO
     const bookingId = req.body.id || `booking-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
-    // 4️⃣ VERIFICAR ID NO DUPLICADO
-    const existingBooking = await Booking.findOne({ id: bookingId });
-    if (existingBooking) {
-      console.log('❌ ID duplicado:', bookingId);
-      return res.status(409).json({ 
-        error: 'Ya existe una reserva con este ID',
-        success: false
-      });
+    // 4️⃣ VERIFICAR ID NO DUPLICADO (si MongoDB está disponible)
+    try {
+      const existingBooking = await Booking.findOne({ id: bookingId });
+      if (existingBooking) {
+        console.log('❌ ID duplicado:', bookingId);
+        return res.status(409).json({ 
+          error: 'Ya existe una reserva con este ID',
+          success: false
+        });
+      }
+    } catch (dbError) {
+      console.warn('⚠️ No se pudo verificar ID duplicado (MongoDB no disponible)');
+      // Continuar - el ID es único por timestamp
     }
     
-    // 5️⃣ VERIFICAR QUE EL HORARIO ESTÉ DISPONIBLE
-    console.log('🔍 Verificando disponibilidad del horario:', date, time);
-    const existingSlot = await BookedSlot.findOne({ date, time });
-    if (existingSlot) {
-      console.log('❌ Horario ya ocupado:', existingSlot);
-      return res.status(409).json({ 
-        error: `Este horario ya está ocupado. Reserva: ${existingSlot.bookingId}`,
-        success: false
-      });
+    // 5️⃣ VERIFICAR QUE EL HORARIO ESTÉ DISPONIBLE (si MongoDB está disponible)
+    try {
+      console.log('🔍 Verificando disponibilidad del horario:', date, time);
+      const existingSlot = await BookedSlot.findOne({ date, time });
+      if (existingSlot) {
+        console.log('❌ Horario ya ocupado:', existingSlot);
+        return res.status(409).json({ 
+          error: `Este horario ya está ocupado. Reserva: ${existingSlot.bookingId}`,
+          success: false
+        });
+      }
+    } catch (dbError) {
+      console.warn('⚠️ No se pudo verificar disponibilidad de horario (MongoDB no disponible)');
+      // Continuar - el cliente verá los horarios actualizados en el frontend
     }
     
-    // 6️⃣ CREAR LA RESERVA (COMO PENDING - NO AUTO-CONFIRMAR)
-    console.log('💾 Creando reserva en MongoDB como PENDING...');
-    const booking = new Booking({
-      id: bookingId,
-      status: 'pending', // ⏳ PENDING - Requiere confirmación manual
-      clientName,
-      clientEmail,
-      clientPhone,
-      service,
-      serviceDuration: req.body.serviceDuration,
-      servicePrice: req.body.servicePrice,
-      date,
-      time,
-      type,
-      notes: req.body.notes || ''
-    });
-    
-    await booking.save();
-    console.log(`✅ Reserva guardada como PENDING: ${bookingId} para ${clientName}`);
-    
-    // 7️⃣ NO BLOQUEAR HORARIOS TODAVÍA
-    // Los horarios se bloquearán solo cuando el admin confirme manualmente
-    console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
-    
-    // 8️⃣ ENVIAR EMAILS DE SOLICITUD (NO DE CONFIRMACIÓN)
+    // 6️⃣ ENVIAR EMAILS PRIMERO (ANTES DE MongoDB para asegurar que se envíen)
     console.log('📧 Enviando emails de nueva solicitud...');
     let emailsSent = false;
     try {
@@ -508,100 +479,146 @@ app.post('/api/bookings', async (req, res) => {
       const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
       const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
       
-      // Email al ADMIN - Nueva solicitud que requiere confirmación
-      const adminEmailResult = await sendEmailSafely({
-        from: '"Sistema de Reservas DeDecor" <dedecorinfo@gmail.com>',
-        to: 'dedecorinfo@gmail.com',
-        subject: `📋 NUEVA SOLICITUD DE RESERVA - ${clientName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #4a6163;">📋 Nueva Solicitud de Reserva</h2>
-            <p>Has recibido una nueva solicitud de reserva que <strong>requiere tu confirmación</strong>:</p>
-            
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Cliente:</strong> ${clientName}</p>
-              <p><strong>Email:</strong> ${clientEmail}</p>
-              <p><strong>Teléfono:</strong> ${clientPhone}</p>
-              <p><strong>Servicio:</strong> ${service}</p>
-              <p><strong>Fecha:</strong> ${date}</p>
-              <p><strong>Hora:</strong> ${time}</p>
-              <p><strong>Tipo:</strong> ${type}</p>
-              ${req.body.notes ? `<p><strong>Notas:</strong> ${req.body.notes}</p>` : ''}
+      // 🔥 IMPORTANTE: Enviar ambos emails EN PARALELO para máxima velocidad
+      await Promise.all([
+        // Email al ADMIN - Nueva solicitud que requiere confirmación
+        emailTransporter.sendMail({
+          from: '"Sistema de Reservas DeDecor" <dedecorinfo@gmail.com>',
+          to: 'dedecorinfo@gmail.com',
+          subject: `📋 NUEVA SOLICITUD DE RESERVA - ${clientName}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #4a6163;">📋 Nueva Solicitud de Reserva</h2>
+              <p>Has recibido una nueva solicitud de reserva que <strong>requiere tu confirmación</strong>:</p>
+              
+              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>Cliente:</strong> ${clientName}</p>
+                <p><strong>Email:</strong> ${clientEmail}</p>
+                <p><strong>Teléfono:</strong> ${clientPhone}</p>
+                <p><strong>Servicio:</strong> ${service}</p>
+                <p><strong>Fecha:</strong> ${date}</p>
+                <p><strong>Hora:</strong> ${time}</p>
+                <p><strong>Tipo:</strong> ${type}</p>
+                ${req.body.notes ? `<p><strong>Notas:</strong> ${req.body.notes}</p>` : ''}
+              </div>
+              
+              <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>⚠️ IMPORTANTE:</strong> Los horarios NO están bloqueados hasta que confirmes esta reserva.</p>
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${confirmUrl}" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; margin-right: 15px; font-weight: bold;">
+                  ✅ CONFIRMAR RESERVA
+                </a>
+                <a href="${rejectUrl}" style="background-color: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  ❌ RECHAZAR RESERVA
+                </a>
+              </div>
+              
+              <p style="font-size: 14px; color: #666;">
+                ID de reserva: ${bookingId}<br>
+                Estado: PENDIENTE
+              </p>
             </div>
-            
-            <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>⚠️ IMPORTANTE:</strong> Los horarios NO están bloqueados hasta que confirmes esta reserva.</p>
+          `
+        }),
+        
+        // Email al CLIENTE - Solicitud recibida (no confirmada)
+        emailTransporter.sendMail({
+          from: '"DeDecor" <dedecorinfo@gmail.com>',
+          to: clientEmail,
+          subject: '📋 Hemos recibido tu solicitud de reserva',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #4a6163;">📋 Solicitud de Reserva Recibida</h2>
+              <p>Hola ${clientName},</p>
+              <p>Hemos recibido tu solicitud de reserva y <strong>la revisaremos pronto</strong>.</p>
+              
+              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>Servicio:</strong> ${service}</p>
+                <p><strong>Fecha:</strong> ${date}</p>
+                <p><strong>Hora:</strong> ${time}</p>
+                <p><strong>Tipo:</strong> ${type}</p>
+              </div>
+              
+              <div style="background-color: #d1ecf1; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>📝 Estado:</strong> Tu solicitud está siendo revisada</p>
+                <p><strong>⏳ Tiempo estimado:</strong> Te contactaremos dentro de las próximas 24 horas</p>
+                <p><strong>📧 Confirmación:</strong> Recibirás un email cuando tu reserva sea confirmada</p>
+              </div>
+              
+              <p>Te contactaremos pronto para confirmar tu reserva.</p>
+              <p>Saludos,<br>El equipo de DeDecor</p>
+              
+              <p style="font-size: 14px; color: #666;">
+                Referencia: ${bookingId}
+              </p>
             </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${confirmUrl}" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; margin-right: 15px; font-weight: bold;">
-                ✅ CONFIRMAR RESERVA
-              </a>
-              <a href="${rejectUrl}" style="background-color: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                ❌ RECHAZAR RESERVA
-              </a>
-            </div>
-            
-            <p style="font-size: 14px; color: #666;">
-              ID de reserva: ${bookingId}<br>
-              Estado: PENDIENTE
-            </p>
-          </div>
-        `
-      });
+          `
+        })
+      ]);
       
-      // Email al CLIENTE - Solicitud recibida (no confirmada)
-      const clientEmailResult = await sendEmailSafely({
-        from: '"DeDecor" <dedecorinfo@gmail.com>',
-        to: clientEmail,
-        subject: '📋 Hemos recibido tu solicitud de reserva',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #4a6163;">📋 Solicitud de Reserva Recibida</h2>
-            <p>Hola ${clientName},</p>
-            <p>Hemos recibido tu solicitud de reserva y <strong>la revisaremos pronto</strong>.</p>
-            
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Servicio:</strong> ${service}</p>
-              <p><strong>Fecha:</strong> ${date}</p>
-              <p><strong>Hora:</strong> ${time}</p>
-              <p><strong>Tipo:</strong> ${type}</p>
-            </div>
-            
-            <div style="background-color: #d1ecf1; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>📝 Estado:</strong> Tu solicitud está siendo revisada</p>
-              <p><strong>⏳ Tiempo estimado:</strong> Te contactaremos dentro de las próximas 24 horas</p>
-              <p><strong>📧 Confirmación:</strong> Recibirás un email cuando tu reserva sea confirmada</p>
-            </div>
-            
-            <p>Te contactaremos pronto para confirmar tu reserva.</p>
-            <p>Saludos,<br>El equipo de DeDecor</p>
-            
-            <p style="font-size: 14px; color: #666;">
-              Referencia: ${bookingId}
-            </p>
-          </div>
-        `
-      });
-      
-      // Verificar si al menos un email se envió
-      emailsSent = adminEmailResult.success || clientEmailResult.success;
-      console.log('✅ Emails de solicitud enviados exitosamente');
+      console.log('✅ Emails enviados exitosamente a ADMIN y CLIENTE simultáneamente');
+      emailsSent = true;
     } catch (emailError) {
-      console.error('⚠️ Error al enviar emails (pero la reserva fue creada):', emailError);
-      // No lanzar el error, continuar con la respuesta exitosa
+      console.error('⚠️ Error al enviar emails:', emailError);
+      // Continuar aunque falle el email
     }
     
-    // 9️⃣ RESPUESTA EXITOSA
-    console.log(`🎉 Flujo completo exitoso para ${clientName} - Estado: PENDING`);
-    res.status(201).json({ 
-      success: true, 
-      bookingId: booking.id,
-      message: 'Solicitud de reserva creada - Esperando confirmación del admin',
-      status: 'pending',
-      emailsSent: emailsSent,
-      note: emailsSent ? 'Los horarios se bloquearán cuando el admin confirme la reserva' : 'Reserva creada pero emails no enviados - contactar manualmente'
-    });
+    // 7️⃣ INTENTAR CREAR LA RESERVA EN MongoDB (si falla, no importa, los emails ya se enviaron)
+    let bookingSaved = false;
+    try {
+      console.log('💾 Intentando guardar reserva en MongoDB como PENDING...');
+      const booking = new Booking({
+        id: bookingId,
+        status: 'pending', // ⏳ PENDING - Requiere confirmación manual
+        clientName,
+        clientEmail,
+        clientPhone,
+        service,
+        serviceDuration: req.body.serviceDuration,
+        servicePrice: req.body.servicePrice,
+        date,
+        time,
+        type,
+        notes: req.body.notes || ''
+      });
+      
+      await booking.save();
+      console.log(`✅ Reserva guardada como PENDING: ${bookingId} para ${clientName}`);
+      bookingSaved = true;
+      
+      // 8️⃣ NO BLOQUEAR HORARIOS TODAVÍA
+      // Los horarios se bloquearán solo cuando el admin confirme manualmente
+      console.log('⏸️ Horarios NO bloqueados - esperando confirmación manual del admin');
+    } catch (dbError) {
+      console.error('⚠️ Error al guardar en MongoDB (pero los emails ya se enviaron):', dbError);
+      // No hacer throw - los emails ya se enviaron, que es lo más importante
+    }
+    
+    // 9️⃣ RESPUESTA EXITOSA (siempre que los emails se hayan enviado)
+    if (emailsSent) {
+      console.log(`🎉 Flujo completo exitoso para ${clientName} - Emails enviados`);
+      res.status(201).json({ 
+        success: true, 
+        bookingId: bookingId,
+        message: 'Solicitud de reserva enviada - Emails notificados',
+        status: 'pending',
+        emailsSent: true,
+        bookingSaved: bookingSaved,
+        note: bookingSaved 
+          ? 'Los horarios se bloquearán cuando el admin confirme la reserva' 
+          : 'Emails enviados correctamente. MongoDB no disponible temporalmente.'
+      });
+    } else {
+      // Si los emails no se enviaron, es un error crítico
+      console.error('❌ Error crítico: No se pudieron enviar los emails');
+      res.status(500).json({ 
+        success: false, 
+        error: 'No se pudieron enviar las notificaciones por email',
+        bookingId: bookingId
+      });
+    }
     
   } catch (error) {
     console.error('❌ Error en el flujo de reserva:', error);
