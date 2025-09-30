@@ -135,6 +135,21 @@ const BookingConfirmation = () => {
               <p className="text-muted">
                 Se ha enviado un correo electrónico de confirmación al cliente.
               </p>
+              <Alert variant="info" className="mt-3">
+                <Alert.Heading>
+                  <i className="bi bi-info-circle me-2"></i>
+                  Importante: Revisar Email
+                </Alert.Heading>
+                <p className="mb-2">
+                  <strong>Si el cliente no encuentra el email de confirmación en su bandeja de entrada:</strong>
+                </p>
+                <ul className="mb-0">
+                  <li>Revisar la <strong>carpeta de spam/correo no deseado</strong></li>
+                  <li>Buscar emails de <strong>dedecorinfo@gmail.com</strong></li>
+                  <li>Agregar <strong>dedecorinfo@gmail.com</strong> a contactos</li>
+                  <li>Marcar como "No es spam" si aparece en spam</li>
+                </ul>
+              </Alert>
             </div>
             
             {bookingData && (
@@ -183,6 +198,21 @@ const BookingConfirmation = () => {
               <p className="text-muted">
                 Se ha enviado un correo electrónico al cliente informando que la reserva no pudo ser confirmada.
               </p>
+              <Alert variant="info" className="mt-3">
+                <Alert.Heading>
+                  <i className="bi bi-info-circle me-2"></i>
+                  Importante: Revisar Email
+                </Alert.Heading>
+                <p className="mb-2">
+                  <strong>Si el cliente no encuentra el email de notificación en su bandeja de entrada:</strong>
+                </p>
+                <ul className="mb-0">
+                  <li>Revisar la <strong>carpeta de spam/correo no deseado</strong></li>
+                  <li>Buscar emails de <strong>dedecorinfo@gmail.com</strong></li>
+                  <li>Agregar <strong>dedecorinfo@gmail.com</strong> a contactos</li>
+                  <li>Marcar como "No es spam" si aparece en spam</li>
+                </ul>
+              </Alert>
             </div>
             
             {bookingData && (
