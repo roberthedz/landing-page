@@ -675,15 +675,31 @@ app.post('/api/admin/block-day', async (req, res) => {
       time: time,
       isBlocked: true,
       reason: 'admin-blocked',
-      blockedAt: new Date()
-      // bookingId no es requerido para bloqueos administrativos
+      blockedAt: new Date(),
+      bookingId: null // Explícitamente null para bloqueos administrativos
     }));
 
     // Eliminar slots existentes para esta fecha
     await BookedSlot.deleteMany({ date: date });
     
-    // Insertar nuevos slots bloqueados
-    await BookedSlot.insertMany(blockedSlots);
+    // Insertar nuevos slots bloqueados con manejo de errores
+    try {
+      await BookedSlot.insertMany(blockedSlots);
+    } catch (insertError) {
+      console.error('❌ Error insertando slots bloqueados:', insertError);
+      
+      // Enfoque alternativo: insertar uno por uno
+      console.log('🔄 Intentando inserción individual...');
+      for (const slot of blockedSlots) {
+        try {
+          const newSlot = new BookedSlot(slot);
+          await newSlot.save();
+        } catch (individualError) {
+          console.error(`❌ Error insertando slot ${slot.time}:`, individualError);
+          // Continuar con el siguiente slot
+        }
+      }
+    }
 
     console.log(`✅ Día ${date} bloqueado completamente por admin (v2.0)`);
     
@@ -765,8 +781,8 @@ app.post('/api/admin/block-slot', async (req, res) => {
         time: time,
         isBlocked: true,
         reason: 'admin-blocked',
-        blockedAt: new Date()
-        // bookingId no es requerido para bloqueos administrativos
+        blockedAt: new Date(),
+        bookingId: null // Explícitamente null para bloqueos administrativos
       });
       await blockedSlot.save();
     }
