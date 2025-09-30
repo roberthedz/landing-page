@@ -693,7 +693,35 @@ app.post('/api/admin/block-day', async (req, res) => {
       bookingId: null // Explícitamente null para bloqueos administrativos
     }));
 
-    // Eliminar slots existentes para esta fecha
+    // Verificar si ya hay slots bloqueados para esta fecha
+    const existingBlockedSlots = await BookedSlot.find({ 
+      date: date, 
+      isBlocked: true, 
+      reason: 'admin-blocked' 
+    });
+    
+    if (existingBlockedSlots.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `El día ${date} ya está bloqueado administrativamente`
+      });
+    }
+    
+    // Verificar si hay reservas confirmadas para esta fecha
+    const existingBookings = await BookedSlot.find({ 
+      date: date, 
+      bookingId: { $ne: null } 
+    });
+    
+    if (existingBookings.length > 0) {
+      const occupiedTimes = existingBookings.map(slot => slot.time).join(', ');
+      return res.status(400).json({
+        success: false,
+        error: `No se puede bloquear el día ${date} porque tiene reservas confirmadas en los horarios: ${occupiedTimes}`
+      });
+    }
+
+    // Eliminar slots existentes para esta fecha (solo si no hay conflictos)
     await BookedSlot.deleteMany({ date: date });
     
     // Insertar nuevos slots bloqueados con manejo de errores
@@ -744,6 +772,20 @@ app.post('/api/admin/unblock-day', async (req, res) => {
       });
     }
 
+    // Verificar si hay slots bloqueados para esta fecha
+    const existingBlockedSlots = await BookedSlot.find({ 
+      date: date, 
+      isBlocked: true, 
+      reason: 'admin-blocked' 
+    });
+    
+    if (existingBlockedSlots.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: `El día ${date} no está bloqueado administrativamente`
+      });
+    }
+
     // Eliminar todos los slots bloqueados para esta fecha
     const result = await BookedSlot.deleteMany({ 
       date: date,
@@ -779,10 +821,26 @@ app.post('/api/admin/block-slot', async (req, res) => {
       });
     }
 
-    // Verificar si ya existe
+    // Verificar si ya existe y está bloqueado
     const existingSlot = await BookedSlot.findOne({ date, time });
     
     if (existingSlot) {
+      // Verificar si ya está bloqueado administrativamente
+      if (existingSlot.isBlocked && existingSlot.reason === 'admin-blocked') {
+        return res.status(400).json({
+          success: false,
+          error: `El horario ${time} del ${date} ya está bloqueado administrativamente`
+        });
+      }
+      
+      // Verificar si está ocupado por una reserva confirmada
+      if (existingSlot.bookingId && existingSlot.bookingId !== null) {
+        return res.status(400).json({
+          success: false,
+          error: `El horario ${time} del ${date} está ocupado por una reserva confirmada`
+        });
+      }
+      
       // Actualizar slot existente como bloqueado
       existingSlot.isBlocked = true;
       existingSlot.reason = 'admin-blocked';
@@ -837,9 +895,9 @@ app.post('/api/admin/unblock-slot', async (req, res) => {
     });
 
     if (result.deletedCount === 0) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        error: 'Horario no encontrado o no estaba bloqueado'
+        error: `El horario ${time} del ${date} no está bloqueado administrativamente`
       });
     }
 

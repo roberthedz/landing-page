@@ -224,11 +224,15 @@ const AdminDashboard = () => {
         setShowBlockModal(false);
         loadBookings();
       } else {
-        alert('Error al bloquear el horario');
+        alert(response.data.error || 'Error al bloquear el horario');
       }
     } catch (error) {
       console.error('Error bloqueando horario:', error);
-      alert('Error al bloquear el horario');
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('Error al bloquear el horario');
+      }
     } finally {
       setActionLoading(false);
     }
@@ -249,11 +253,15 @@ const AdminDashboard = () => {
         setShowUnblockModal(false);
         loadBookings();
       } else {
-        alert('Error al desbloquear el horario');
+        alert(response.data.error || 'Error al desbloquear el horario');
       }
     } catch (error) {
       console.error('Error desbloqueando horario:', error);
-      alert('Error al desbloquear el horario');
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('Error al desbloquear el horario');
+      }
     } finally {
       setActionLoading(false);
     }
