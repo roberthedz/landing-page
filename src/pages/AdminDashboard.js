@@ -371,35 +371,31 @@ const AdminDashboard = () => {
                 <i className="bi bi-gear me-2"></i>
                 Gestión de Horarios
               </h5>
-              <div className="d-flex flex-wrap">
+              <div className="d-flex flex-wrap justify-content-center">
                 <ActionButton 
                   variant="warning" 
+                  size="lg"
                   onClick={() => setShowBlockModal(true)}
+                  className="me-3 mb-2"
                 >
                   <i className="bi bi-calendar-x me-2"></i>
-                  Bloquear Día Completo
+                  Bloquear Horarios
                 </ActionButton>
                 <ActionButton 
                   variant="success" 
+                  size="lg"
                   onClick={() => setShowUnblockModal(true)}
+                  className="mb-2"
                 >
                   <i className="bi bi-calendar-check me-2"></i>
-                  Desbloquear Día Completo
+                  Desbloquear Horarios
                 </ActionButton>
-                <ActionButton 
-                  variant="info" 
-                  onClick={() => setShowBlockModal(true)}
-                >
-                  <i className="bi bi-clock me-2"></i>
-                  Bloquear Horario Específico
-                </ActionButton>
-                <ActionButton 
-                  variant="primary" 
-                  onClick={() => setShowUnblockModal(true)}
-                >
-                  <i className="bi bi-clock-history me-2"></i>
-                  Desbloquear Horario Específico
-                </ActionButton>
+              </div>
+              <div className="text-center mt-3">
+                <small className="text-muted">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Selecciona una fecha y elige si bloquear/desbloquear el día completo o un horario específico
+                </small>
               </div>
             </Card>
           </Col>
@@ -458,7 +454,10 @@ const AdminDashboard = () => {
         {/* Modal para Bloquear */}
         <Modal show={showBlockModal} onHide={() => setShowBlockModal(false)}>
           <Modal.Header closeButton>
-            <Modal.Title>Bloquear Horarios</Modal.Title>
+            <Modal.Title>
+              <i className="bi bi-calendar-x me-2"></i>
+              Bloquear Horarios
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
@@ -477,11 +476,15 @@ const AdminDashboard = () => {
                   value={selectedSlot} 
                   onChange={(e) => setSelectedSlot(e.target.value)}
                 >
-                  <option value="">Seleccionar horario específico</option>
+                  <option value="">Bloquear día completo</option>
                   {timeSlots.map(slot => (
-                    <option key={slot} value={slot}>{slot}</option>
+                    <option key={slot} value={slot}>Bloquear solo {slot}</option>
                   ))}
                 </Form.Select>
+                <Form.Text className="text-muted">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Deja vacío para bloquear todo el día, o selecciona un horario específico
+                </Form.Text>
               </Form.Group>
             </Form>
           </Modal.Body>
@@ -502,7 +505,10 @@ const AdminDashboard = () => {
         {/* Modal para Desbloquear */}
         <Modal show={showUnblockModal} onHide={() => setShowUnblockModal(false)}>
           <Modal.Header closeButton>
-            <Modal.Title>Desbloquear Horarios</Modal.Title>
+            <Modal.Title>
+              <i className="bi bi-calendar-check me-2"></i>
+              Desbloquear Horarios
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
@@ -521,11 +527,15 @@ const AdminDashboard = () => {
                   value={selectedSlot} 
                   onChange={(e) => setSelectedSlot(e.target.value)}
                 >
-                  <option value="">Seleccionar horario específico</option>
+                  <option value="">Desbloquear día completo</option>
                   {timeSlots.map(slot => (
-                    <option key={slot} value={slot}>{slot}</option>
+                    <option key={slot} value={slot}>Desbloquear solo {slot}</option>
                   ))}
                 </Form.Select>
+                <Form.Text className="text-muted">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Deja vacío para desbloquear todo el día, o selecciona un horario específico
+                </Form.Text>
               </Form.Group>
             </Form>
           </Modal.Body>
