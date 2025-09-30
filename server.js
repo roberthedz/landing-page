@@ -917,6 +917,58 @@ app.post('/api/admin/unblock-slot', async (req, res) => {
   }
 });
 
+// Endpoint para consultar el estado de una fecha específica
+app.get('/api/admin/date-status', async (req, res) => {
+  try {
+    const { date } = req.query;
+    
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        error: 'Parámetro date es requerido'
+      });
+    }
+
+    // Consultar slots bloqueados administrativamente
+    const blockedSlots = await BookedSlot.find({ 
+      date: date, 
+      isBlocked: true, 
+      reason: 'admin-blocked' 
+    });
+
+    // Consultar slots con reservas confirmadas
+    const bookedSlots = await BookedSlot.find({ 
+      date: date, 
+      bookingId: { $ne: null } 
+    });
+
+    const isFullyBlocked = blockedSlots.length === 6; // 6 horarios disponibles
+    const hasBookings = bookedSlots.length > 0;
+    const blockedTimes = blockedSlots.map(slot => slot.time);
+    const bookedTimes = bookedSlots.map(slot => slot.time);
+
+    res.json({
+      success: true,
+      date: date,
+      isFullyBlocked: isFullyBlocked,
+      hasBookings: hasBookings,
+      blockedSlots: blockedSlots.length,
+      bookedSlots: bookedSlots.length,
+      blockedTimes: blockedTimes,
+      bookedTimes: bookedTimes,
+      canBlock: !isFullyBlocked && !hasBookings,
+      canUnblock: isFullyBlocked
+    });
+    
+  } catch (error) {
+    console.error('Error consultando estado de fecha:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error consultando estado de fecha'
+    });
+  }
+});
+
 // Endpoint para obtener estadísticas de admin
 app.get('/api/admin/stats', async (req, res) => {
   try {

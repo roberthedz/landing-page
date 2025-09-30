@@ -122,6 +122,8 @@ const AdminDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [dateStatus, setDateStatus] = useState(null);
+  const [checkingStatus, setCheckingStatus] = useState(false);
   const navigate = useNavigate();
 
   // Verificar autenticación
@@ -136,6 +138,13 @@ const AdminDashboard = () => {
   useEffect(() => {
     loadBookings();
   }, []);
+
+  // Consultar estado cuando cambia la fecha seleccionada
+  useEffect(() => {
+    if (selectedDate) {
+      checkDateStatus(selectedDate);
+    }
+  }, [selectedDate]);
 
   const loadBookings = async () => {
     try {
@@ -155,6 +164,27 @@ const AdminDashboard = () => {
     }
   };
 
+  const checkDateStatus = async (date) => {
+    try {
+      setCheckingStatus(true);
+      const formattedDate = date.toLocaleDateString('en-US');
+      const response = await axios.get(`${apiConfig.endpoints.adminDateStatus}?date=${formattedDate}`);
+      
+      if (response.data.success) {
+        setDateStatus(response.data);
+        return response.data;
+      } else {
+        console.error('Error consultando estado de fecha:', response.data.error);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error consultando estado de fecha:', error);
+      return null;
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
     localStorage.removeItem('adminUser');
@@ -164,8 +194,24 @@ const AdminDashboard = () => {
   const handleBlockDay = async () => {
     try {
       setActionLoading(true);
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
       
+      // Consultar estado de la fecha primero
+      const status = await checkDateStatus(selectedDate);
+      if (!status) {
+        alert('Error al consultar el estado de la fecha');
+        return;
+      }
+      
+      if (!status.canBlock) {
+        if (status.isFullyBlocked) {
+          alert('Este día ya está completamente bloqueado');
+        } else if (status.hasBookings) {
+          alert(`No se puede bloquear este día porque tiene reservas confirmadas en los horarios: ${status.bookedTimes.join(', ')}`);
+        }
+        return;
+      }
+      
+      const formattedDate = selectedDate.toLocaleDateString('en-US');
       const response = await axios.post(apiConfig.endpoints.adminBlockDay, {
         date: formattedDate
       });
@@ -175,11 +221,15 @@ const AdminDashboard = () => {
         setShowBlockModal(false);
         loadBookings();
       } else {
-        alert('Error al bloquear el día');
+        alert(response.data.error || 'Error al bloquear el día');
       }
     } catch (error) {
       console.error('Error bloqueando día:', error);
-      alert('Error al bloquear el día');
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('Error al bloquear el día');
+      }
     } finally {
       setActionLoading(false);
     }
@@ -188,8 +238,20 @@ const AdminDashboard = () => {
   const handleUnblockDay = async () => {
     try {
       setActionLoading(true);
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
       
+      // Consultar estado de la fecha primero
+      const status = await checkDateStatus(selectedDate);
+      if (!status) {
+        alert('Error al consultar el estado de la fecha');
+        return;
+      }
+      
+      if (!status.canUnblock) {
+        alert('Este día no está bloqueado administrativamente');
+        return;
+      }
+      
+      const formattedDate = selectedDate.toLocaleDateString('en-US');
       const response = await axios.post(apiConfig.endpoints.adminUnblockDay, {
         date: formattedDate
       });
@@ -199,11 +261,15 @@ const AdminDashboard = () => {
         setShowUnblockModal(false);
         loadBookings();
       } else {
-        alert('Error al desbloquear el día');
+        alert(response.data.error || 'Error al desbloquear el día');
       }
     } catch (error) {
       console.error('Error desbloqueando día:', error);
-      alert('Error al desbloquear el día');
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('Error al desbloquear el día');
+      }
     } finally {
       setActionLoading(false);
     }
@@ -212,8 +278,25 @@ const AdminDashboard = () => {
   const handleBlockSlot = async () => {
     try {
       setActionLoading(true);
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
       
+      // Consultar estado de la fecha primero
+      const status = await checkDateStatus(selectedDate);
+      if (!status) {
+        alert('Error al consultar el estado de la fecha');
+        return;
+      }
+      
+      if (status.blockedTimes.includes(selectedSlot)) {
+        alert(`El horario ${selectedSlot} ya está bloqueado administrativamente`);
+        return;
+      }
+      
+      if (status.bookedTimes.includes(selectedSlot)) {
+        alert(`El horario ${selectedSlot} está ocupado por una reserva confirmada`);
+        return;
+      }
+      
+      const formattedDate = selectedDate.toLocaleDateString('en-US');
       const response = await axios.post(apiConfig.endpoints.adminBlockSlot, {
         date: formattedDate,
         time: selectedSlot
@@ -241,8 +324,20 @@ const AdminDashboard = () => {
   const handleUnblockSlot = async () => {
     try {
       setActionLoading(true);
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
       
+      // Consultar estado de la fecha primero
+      const status = await checkDateStatus(selectedDate);
+      if (!status) {
+        alert('Error al consultar el estado de la fecha');
+        return;
+      }
+      
+      if (!status.blockedTimes.includes(selectedSlot)) {
+        alert(`El horario ${selectedSlot} no está bloqueado administrativamente`);
+        return;
+      }
+      
+      const formattedDate = selectedDate.toLocaleDateString('en-US');
       const response = await axios.post(apiConfig.endpoints.adminUnblockSlot, {
         date: formattedDate,
         time: selectedSlot
