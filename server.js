@@ -69,8 +69,10 @@ const bookingSchema = new mongoose.Schema({
 const bookedSlotSchema = new mongoose.Schema({
   date: { type: String, required: true },
   time: { type: String, required: true },
-  bookingId: { type: String, required: true },
-  reason: { type: String, required: true },
+  bookingId: { type: String, required: false },
+  isBlocked: { type: Boolean, default: false },
+  reason: { type: String, required: false },
+  blockedAt: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 
