@@ -2,9 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
-const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const dns = require('dns');
+
+// Importar configuración de email con SendGrid
+const { 
+  configureSendGrid, 
+  sendAdminNotification, 
+  sendClientConfirmation, 
+  sendFinalConfirmation 
+} = require('./src/config/emailConfig');
 
 // 🔧 FIX: Forzar uso de DNS de Google para resolver MongoDB Atlas
 dns.setServers(['8.8.8.8', '8.8.4.4']);
@@ -107,32 +114,8 @@ const getBaseUrl = (req) => {
   return `${protocol}://${host}`;
 };
 
-// Configurar el transportador de email con configuración explícita para Render
-const emailTransporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true para 465, false para otros puertos
-  auth: {
-    user: 'dedecorinfo@gmail.com',
-    pass: 'vsblbhiyccryicmr'
-  },
-  tls: {
-    rejectUnauthorized: false // Para evitar problemas con certificados en Render
-  },
-  connectionTimeout: 30000, // 30 segundos timeout
-  greetingTimeout: 30000,
-  socketTimeout: 60000
-});
-
-// Verificar la configuración de email
-emailTransporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ Error en la configuración de email:', error);
-    console.log('⚠️ El servidor continuará sin envío de emails');
-  } else {
-    console.log('✅ Servidor de email configurado correctamente');
-  }
-});
+// Configurar SendGrid para emails seguros
+const emailConfigured = configureSendGrid();
 
 // Middleware
 app.use(cors({

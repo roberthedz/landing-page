@@ -5,7 +5,7 @@
   "dependencies": {
     "@craco/craco": "^7.1.0",
     "@emailjs/browser": "^4.4.1",
-    "@sendgrid/mail": "^8.1.5",
+    "@sendgrid/mail": "^8.1.6",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -37,7 +37,7 @@
     "yup": "^1.6.1"
   },
   "scripts": {
-    "start": "node server-production.js",
+    "start": "node server-sendgrid.js",
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
