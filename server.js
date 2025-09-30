@@ -856,6 +856,94 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
+// Endpoint para eliminar una reserva
+app.delete('/api/admin/bookings/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const booking = await Booking.findByIdAndDelete(id);
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Reserva no encontrada'
+      });
+    }
+
+    console.log(`✅ Reserva ${id} eliminada por admin`);
+    
+    res.json({
+      success: true,
+      message: 'Reserva eliminada exitosamente'
+    });
+    
+  } catch (error) {
+    console.error('Error eliminando reserva:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error eliminando reserva'
+    });
+  }
+});
+
+// Endpoint para cambiar el estado de una reserva
+app.put('/api/admin/bookings/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    if (!['pending', 'confirmed', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Estado inválido. Debe ser: pending, confirmed, o rejected'
+      });
+    }
+
+    const booking = await Booking.findByIdAndUpdate(
+      id, 
+      { status: status, updatedAt: new Date() },
+      { new: true }
+    );
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Reserva no encontrada'
+      });
+    }
+
+    // Si se confirma la reserva, bloquear el horario
+    if (status === 'confirmed') {
+      const blockedSlot = new BookedSlot({
+        date: booking.date,
+        time: booking.time,
+        isBlocked: false, // No es bloqueo administrativo, es reserva confirmada
+        reason: 'confirmed-booking',
+        bookingId: booking._id,
+        blockedAt: new Date()
+      });
+      await blockedSlot.save();
+      
+      console.log(`✅ Horario ${booking.date} ${booking.time} bloqueado por reserva confirmada`);
+    }
+
+    console.log(`✅ Reserva ${id} actualizada a estado: ${status}`);
+    
+    res.json({
+      success: true,
+      message: `Reserva actualizada a ${status}`,
+      booking: booking
+    });
+    
+  } catch (error) {
+    console.error('Error actualizando estado de reserva:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error actualizando estado de reserva'
+    });
+  }
+});
+
 // Servir React app para todas las rutas no-API
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));

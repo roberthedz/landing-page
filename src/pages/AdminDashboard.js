@@ -259,6 +259,54 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteBooking = async (bookingId) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar esta reserva? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      const response = await axios.delete(apiConfig.endpoints.adminDeleteBooking(bookingId));
+      
+      if (response.data.success) {
+        alert('Reserva eliminada exitosamente');
+        loadBookings();
+      } else {
+        alert('Error al eliminar la reserva');
+      }
+    } catch (error) {
+      console.error('Error eliminando reserva:', error);
+      alert('Error al eliminar la reserva');
+    }
+  };
+
+  const handleUpdateBookingStatus = async (bookingId, newStatus) => {
+    const statusText = {
+      'pending': 'pendiente',
+      'confirmed': 'confirmada',
+      'rejected': 'rechazada'
+    };
+
+    if (!window.confirm(`¿Estás seguro de que quieres cambiar el estado de esta reserva a ${statusText[newStatus]}?`)) {
+      return;
+    }
+
+    try {
+      const response = await axios.put(apiConfig.endpoints.adminUpdateBookingStatus(bookingId), {
+        status: newStatus
+      });
+      
+      if (response.data.success) {
+        alert(`Reserva actualizada a ${statusText[newStatus]}`);
+        loadBookings();
+      } else {
+        alert('Error al actualizar la reserva');
+      }
+    } catch (error) {
+      console.error('Error actualizando reserva:', error);
+      alert('Error al actualizar la reserva');
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       pending: { variant: 'warning', text: 'Pendiente' },
@@ -435,13 +483,58 @@ const AdminDashboard = () => {
                       <td>{booking.time}</td>
                       <td>{getStatusBadge(booking.status)}</td>
                       <td>
-                        <Button 
-                          size="sm" 
-                          variant="outline-primary"
-                          onClick={() => window.open(`/booking-confirmation/${booking._id}`, '_blank')}
-                        >
-                          <i className="bi bi-eye"></i>
-                        </Button>
+                        <div className="d-flex gap-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline-primary"
+                            onClick={() => window.open(`/booking-confirmation/${booking._id}`, '_blank')}
+                            title="Ver detalles"
+                          >
+                            <i className="bi bi-eye"></i>
+                          </Button>
+                          
+                          {booking.status !== 'pending' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline-warning"
+                              onClick={() => handleUpdateBookingStatus(booking._id, 'pending')}
+                              title="Poner en pendiente"
+                            >
+                              <i className="bi bi-clock"></i>
+                            </Button>
+                          )}
+                          
+                          {booking.status !== 'confirmed' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline-success"
+                              onClick={() => handleUpdateBookingStatus(booking._id, 'confirmed')}
+                              title="Confirmar reserva"
+                            >
+                              <i className="bi bi-check"></i>
+                            </Button>
+                          )}
+                          
+                          {booking.status !== 'rejected' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline-danger"
+                              onClick={() => handleUpdateBookingStatus(booking._id, 'rejected')}
+                              title="Rechazar reserva"
+                            >
+                              <i className="bi bi-x"></i>
+                            </Button>
+                          )}
+                          
+                          <Button 
+                            size="sm" 
+                            variant="outline-dark"
+                            onClick={() => handleDeleteBooking(booking._id)}
+                            title="Eliminar reserva"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
