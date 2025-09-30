@@ -202,13 +202,17 @@ const AdminDashboard = () => {
         return;
       }
       
-      if (!status.canBlock) {
-        if (status.isFullyBlocked) {
-          alert('Este día ya está completamente bloqueado');
-        } else if (status.hasBookings) {
-          alert(`No se puede bloquear este día porque tiene reservas confirmadas en los horarios: ${status.bookedTimes.join(', ')}`);
-        }
+      // Solo prevenir si tiene reservas confirmadas
+      if (status.hasBookings) {
+        alert(`No se puede bloquear este día porque tiene reservas confirmadas en los horarios: ${status.bookedTimes.join(', ')}`);
         return;
+      }
+      
+      // Si ya está bloqueado administrativamente, preguntar si quiere continuar
+      if (status.isFullyBlocked) {
+        if (!window.confirm('Este día ya está bloqueado administrativamente. ¿Desea bloquearlo nuevamente?')) {
+          return;
+        }
       }
       
       const formattedDate = selectedDate.toLocaleDateString('en-US');
@@ -286,14 +290,17 @@ const AdminDashboard = () => {
         return;
       }
       
-      if (status.blockedTimes.includes(selectedSlot)) {
-        alert(`El horario ${selectedSlot} ya está bloqueado administrativamente`);
-        return;
-      }
-      
+      // Solo prevenir si está ocupado por una reserva confirmada
       if (status.bookedTimes.includes(selectedSlot)) {
         alert(`El horario ${selectedSlot} está ocupado por una reserva confirmada`);
         return;
+      }
+      
+      // Si ya está bloqueado administrativamente, preguntar si quiere continuar
+      if (status.blockedTimes.includes(selectedSlot)) {
+        if (!window.confirm(`El horario ${selectedSlot} ya está bloqueado administrativamente. ¿Desea bloquearlo nuevamente?`)) {
+          return;
+        }
       }
       
       const formattedDate = selectedDate.toLocaleDateString('en-US');

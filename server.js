@@ -368,7 +368,7 @@ app.post('/api/bookings', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error en endpoint /api/bookings:', error);
-    res.status(500).json({
+    res.status(500).json({ 
       success: false,
       error: 'Error interno del servidor'
     });
@@ -398,9 +398,9 @@ app.get('/confirm-booking', async (req, res) => {
       
       // Bloquear los horarios
       const newSlot = new BookedSlot({
-          date: booking.date,
+            date: booking.date,
           time: booking.time,
-          bookingId: booking.id,
+            bookingId: booking.id,
         reason: booking.service
       });
       await newSlot.save();
@@ -412,7 +412,7 @@ app.get('/confirm-booking', async (req, res) => {
             clientName: booking.clientName,
             clientEmail: booking.clientEmail,
             service: booking.service,
-              date: booking.date,
+          date: booking.date,
             time: booking.time
           });
         } catch (emailError) {
@@ -522,9 +522,9 @@ app.post('/api/bookings/:id/status', async (req, res) => {
       
       // Bloquear horarios cuando se confirma
       const newSlot = new BookedSlot({
-        date: booking.date,
-        time: booking.time,
-        bookingId: booking.id,
+          date: booking.date,
+          time: booking.time,
+          bookingId: booking.id,
         reason: booking.service
       });
       await newSlot.save();
@@ -540,7 +540,7 @@ app.post('/api/bookings/:id/status', async (req, res) => {
           clientName: booking.clientName,
           clientEmail: booking.clientEmail,
           service: booking.service,
-          date: booking.date,
+              date: booking.date,
           time: booking.time
         });
         console.log('✅ Email de confirmación enviado');
@@ -702,10 +702,13 @@ app.post('/api/admin/block-day', async (req, res) => {
       reason: 'admin-blocked' 
     });
     
+    // Si ya está bloqueado, eliminar los slots existentes y crear nuevos
     if (existingBlockedSlots.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: `El día ${date} ya está bloqueado administrativamente`
+      console.log(`🔄 Re-bloqueando día ${date} (${existingBlockedSlots.length} slots existentes)`);
+      await BookedSlot.deleteMany({ 
+        date: date, 
+        isBlocked: true, 
+        reason: 'admin-blocked' 
       });
     }
     
@@ -718,7 +721,7 @@ app.post('/api/admin/block-day', async (req, res) => {
     if (existingBookings.length > 0) {
       const occupiedTimes = existingBookings.map(slot => slot.time).join(', ');
       return res.status(400).json({
-        success: false,
+      success: false,
         error: `No se puede bloquear el día ${date} porque tiene reservas confirmadas en los horarios: ${occupiedTimes}`
       });
     }
@@ -747,8 +750,8 @@ app.post('/api/admin/block-day', async (req, res) => {
 
     console.log(`✅ Día ${date} bloqueado completamente por admin (v2.0)`);
     
-    res.json({
-      success: true,
+      res.json({
+        success: true,
       message: `Día ${date} bloqueado completamente`,
       blockedSlots: blockedSlots.length
     });
@@ -783,7 +786,7 @@ app.post('/api/admin/unblock-day', async (req, res) => {
     
     if (existingBlockedSlots.length === 0) {
       return res.status(400).json({
-        success: false,
+      success: false,
         error: `El día ${date} no está bloqueado administrativamente`
       });
     }
@@ -827,14 +830,6 @@ app.post('/api/admin/block-slot', async (req, res) => {
     const existingSlot = await BookedSlot.findOne({ date, time });
     
     if (existingSlot) {
-      // Verificar si ya está bloqueado administrativamente
-      if (existingSlot.isBlocked && existingSlot.reason === 'admin-blocked') {
-        return res.status(400).json({
-          success: false,
-          error: `El horario ${time} del ${date} ya está bloqueado administrativamente`
-        });
-      }
-      
       // Verificar si está ocupado por una reserva confirmada
       if (existingSlot.bookingId && existingSlot.bookingId !== null) {
         return res.status(400).json({
@@ -843,11 +838,19 @@ app.post('/api/admin/block-slot', async (req, res) => {
         });
       }
       
-      // Actualizar slot existente como bloqueado
-      existingSlot.isBlocked = true;
-      existingSlot.reason = 'admin-blocked';
-      existingSlot.blockedAt = new Date();
-      await existingSlot.save();
+      // Si ya está bloqueado administrativamente, actualizar la fecha de bloqueo
+      if (existingSlot.isBlocked && existingSlot.reason === 'admin-blocked') {
+        console.log(`🔄 Re-bloqueando horario ${date} ${time}`);
+        existingSlot.blockedAt = new Date();
+        await existingSlot.save();
+      } else {
+        // Actualizar slot existente como bloqueado
+        existingSlot.isBlocked = true;
+        existingSlot.reason = 'admin-blocked';
+        existingSlot.blockedAt = new Date();
+        existingSlot.bookingId = null;
+        await existingSlot.save();
+      }
     } else {
       // Crear nuevo slot bloqueado
       const blockedSlot = new BookedSlot({
@@ -940,7 +943,7 @@ app.get('/api/admin/date-status', async (req, res) => {
 
     // Consultar slots con reservas confirmadas
     const bookedSlots = await BookedSlot.find({ 
-      date: date, 
+        date: date,
       bookingId: { $ne: null } 
     });
 
@@ -948,7 +951,7 @@ app.get('/api/admin/date-status', async (req, res) => {
     const hasBookings = bookedSlots.length > 0;
     const blockedTimes = blockedSlots.map(slot => slot.time);
     const bookedTimes = bookedSlots.map(slot => slot.time);
-
+    
     res.json({
       success: true,
       date: date,
