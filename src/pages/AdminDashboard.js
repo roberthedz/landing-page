@@ -122,8 +122,6 @@ const AdminDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [dateStatus, setDateStatus] = useState(null);
-  const [checkingStatus, setCheckingStatus] = useState(false);
   const navigate = useNavigate();
 
   // Verificar autenticación
@@ -139,12 +137,6 @@ const AdminDashboard = () => {
     loadBookings();
   }, []);
 
-  // Consultar estado cuando cambia la fecha seleccionada
-  useEffect(() => {
-    if (selectedDate) {
-      checkDateStatus(selectedDate);
-    }
-  }, [selectedDate]);
 
   const loadBookings = async () => {
     try {
@@ -164,26 +156,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const checkDateStatus = async (date) => {
-    try {
-      setCheckingStatus(true);
-      const formattedDate = date.toLocaleDateString('en-US');
-      const response = await axios.get(`${apiConfig.endpoints.adminDateStatus}?date=${formattedDate}`);
-      
-      if (response.data.success) {
-        setDateStatus(response.data);
-        return response.data;
-      } else {
-        console.error('Error consultando estado de fecha:', response.data.error);
-        return null;
-      }
-    } catch (error) {
-      console.error('Error consultando estado de fecha:', error);
-      return null;
-    } finally {
-      setCheckingStatus(false);
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
@@ -191,117 +163,16 @@ const AdminDashboard = () => {
     navigate('/admin');
   };
 
-  const handleBlockDay = async () => {
-    try {
-      setActionLoading(true);
-      
-      // Consultar estado de la fecha primero
-      const status = await checkDateStatus(selectedDate);
-      if (!status) {
-        alert('Error al consultar el estado de la fecha');
-        return;
-      }
-      
-      // Solo prevenir si tiene reservas confirmadas
-      if (status.hasBookings) {
-        alert(`No se puede bloquear este día porque tiene reservas confirmadas en los horarios: ${status.bookedTimes.join(', ')}`);
-        return;
-      }
-      
-      // Si ya está bloqueado administrativamente, preguntar si quiere continuar
-      if (status.isFullyBlocked) {
-        if (!window.confirm('Este día ya está bloqueado administrativamente. ¿Desea bloquearlo nuevamente?')) {
-          return;
-        }
-      }
-      
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
-      const response = await axios.post(apiConfig.endpoints.adminBlockDay, {
-        date: formattedDate
-      });
-      
-      if (response.data.success) {
-        alert('Día bloqueado exitosamente');
-        setShowBlockModal(false);
-        loadBookings();
-      } else {
-        alert(response.data.error || 'Error al bloquear el día');
-      }
-    } catch (error) {
-      console.error('Error bloqueando día:', error);
-      if (error.response?.data?.error) {
-        alert(error.response.data.error);
-      } else {
-        alert('Error al bloquear el día');
-      }
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
-  const handleUnblockDay = async () => {
-    try {
-      setActionLoading(true);
-      
-      // Consultar estado de la fecha primero
-      const status = await checkDateStatus(selectedDate);
-      if (!status) {
-        alert('Error al consultar el estado de la fecha');
-        return;
-      }
-      
-      if (!status.canUnblock) {
-        alert('Este día no está bloqueado administrativamente');
-        return;
-      }
-      
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
-      const response = await axios.post(apiConfig.endpoints.adminUnblockDay, {
-        date: formattedDate
-      });
-      
-      if (response.data.success) {
-        alert('Día desbloqueado exitosamente');
-        setShowUnblockModal(false);
-        loadBookings();
-      } else {
-        alert(response.data.error || 'Error al desbloquear el día');
-      }
-    } catch (error) {
-      console.error('Error desbloqueando día:', error);
-      if (error.response?.data?.error) {
-        alert(error.response.data.error);
-      } else {
-        alert('Error al desbloquear el día');
-      }
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleBlockSlot = async () => {
+    if (!selectedSlot) {
+      alert('Por favor selecciona un horario');
+      return;
+    }
+
     try {
       setActionLoading(true);
-      
-      // Consultar estado de la fecha primero
-      const status = await checkDateStatus(selectedDate);
-      if (!status) {
-        alert('Error al consultar el estado de la fecha');
-        return;
-      }
-      
-      // Solo prevenir si está ocupado por una reserva confirmada
-      if (status.bookedTimes.includes(selectedSlot)) {
-        alert(`El horario ${selectedSlot} está ocupado por una reserva confirmada`);
-        return;
-      }
-      
-      // Si ya está bloqueado administrativamente, preguntar si quiere continuar
-      if (status.blockedTimes.includes(selectedSlot)) {
-        if (!window.confirm(`El horario ${selectedSlot} ya está bloqueado administrativamente. ¿Desea bloquearlo nuevamente?`)) {
-          return;
-        }
-      }
       
       const formattedDate = selectedDate.toLocaleDateString('en-US');
       const response = await axios.post(apiConfig.endpoints.adminBlockSlot, {
@@ -310,8 +181,9 @@ const AdminDashboard = () => {
       });
       
       if (response.data.success) {
-        alert('Horario bloqueado exitosamente');
+        alert(`Horario ${selectedSlot} bloqueado exitosamente`);
         setShowBlockModal(false);
+        setSelectedSlot('');
         loadBookings();
       } else {
         alert(response.data.error || 'Error al bloquear el horario');
@@ -329,20 +201,13 @@ const AdminDashboard = () => {
   };
 
   const handleUnblockSlot = async () => {
+    if (!selectedSlot) {
+      alert('Por favor selecciona un horario');
+      return;
+    }
+
     try {
       setActionLoading(true);
-      
-      // Consultar estado de la fecha primero
-      const status = await checkDateStatus(selectedDate);
-      if (!status) {
-        alert('Error al consultar el estado de la fecha');
-        return;
-      }
-      
-      if (!status.blockedTimes.includes(selectedSlot)) {
-        alert(`El horario ${selectedSlot} no está bloqueado administrativamente`);
-        return;
-      }
       
       const formattedDate = selectedDate.toLocaleDateString('en-US');
       const response = await axios.post(apiConfig.endpoints.adminUnblockSlot, {
@@ -351,8 +216,9 @@ const AdminDashboard = () => {
       });
       
       if (response.data.success) {
-        alert('Horario desbloqueado exitosamente');
+        alert(`Horario ${selectedSlot} desbloqueado exitosamente`);
         setShowUnblockModal(false);
+        setSelectedSlot('');
         loadBookings();
       } else {
         alert(response.data.error || 'Error al desbloquear el horario');
@@ -537,8 +403,8 @@ const AdminDashboard = () => {
                   onClick={() => setShowBlockModal(true)}
                   className="me-3 mb-2"
                 >
-                  <i className="bi bi-calendar-x me-2"></i>
-                  Bloquear Horarios
+                  <i className="bi bi-clock-fill me-2"></i>
+                  Bloquear Horario
                 </ActionButton>
                 <ActionButton 
                   variant="success" 
@@ -546,14 +412,14 @@ const AdminDashboard = () => {
                   onClick={() => setShowUnblockModal(true)}
                   className="mb-2"
                 >
-                  <i className="bi bi-calendar-check me-2"></i>
-                  Desbloquear Horarios
+                  <i className="bi bi-clock me-2"></i>
+                  Desbloquear Horario
                 </ActionButton>
               </div>
               <div className="text-center mt-3">
                 <small className="text-muted">
                   <i className="bi bi-info-circle me-1"></i>
-                  Selecciona una fecha y elige si bloquear/desbloquear el día completo o un horario específico
+                  Selecciona una fecha y un horario específico para bloquear/desbloquear
                 </small>
               </div>
             </Card>
@@ -655,12 +521,12 @@ const AdminDashboard = () => {
           </Col>
         </Row>
 
-        {/* Modal para Bloquear */}
+        {/* Modal para Bloquear Horario */}
         <Modal show={showBlockModal} onHide={() => setShowBlockModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>
-              <i className="bi bi-calendar-x me-2"></i>
-              Bloquear Horarios
+              <i className="bi bi-clock-fill me-2"></i>
+              Bloquear Horario
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -675,19 +541,19 @@ const AdminDashboard = () => {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Horario Específico (opcional)</Form.Label>
+                <Form.Label>Horario</Form.Label>
                 <Form.Select 
                   value={selectedSlot} 
                   onChange={(e) => setSelectedSlot(e.target.value)}
                 >
-                  <option value="">Bloquear día completo</option>
+                  <option value="">Selecciona un horario</option>
                   {timeSlots.map(slot => (
-                    <option key={slot} value={slot}>Bloquear solo {slot}</option>
+                    <option key={slot} value={slot}>{slot}</option>
                   ))}
                 </Form.Select>
                 <Form.Text className="text-muted">
                   <i className="bi bi-info-circle me-1"></i>
-                  Deja vacío para bloquear todo el día, o selecciona un horario específico
+                  Selecciona el horario específico que deseas bloquear
                 </Form.Text>
               </Form.Group>
             </Form>
@@ -698,20 +564,20 @@ const AdminDashboard = () => {
             </Button>
             <Button 
               variant="warning" 
-              onClick={selectedSlot ? handleBlockSlot : handleBlockDay}
-              disabled={actionLoading}
+              onClick={handleBlockSlot}
+              disabled={actionLoading || !selectedSlot}
             >
-              {actionLoading ? 'Procesando...' : 'Bloquear'}
+              {actionLoading ? 'Procesando...' : 'Bloquear Horario'}
             </Button>
           </Modal.Footer>
         </Modal>
 
-        {/* Modal para Desbloquear */}
+        {/* Modal para Desbloquear Horario */}
         <Modal show={showUnblockModal} onHide={() => setShowUnblockModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>
-              <i className="bi bi-calendar-check me-2"></i>
-              Desbloquear Horarios
+              <i className="bi bi-clock me-2"></i>
+              Desbloquear Horario
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -726,19 +592,19 @@ const AdminDashboard = () => {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Horario Específico (opcional)</Form.Label>
+                <Form.Label>Horario</Form.Label>
                 <Form.Select 
                   value={selectedSlot} 
                   onChange={(e) => setSelectedSlot(e.target.value)}
                 >
-                  <option value="">Desbloquear día completo</option>
+                  <option value="">Selecciona un horario</option>
                   {timeSlots.map(slot => (
-                    <option key={slot} value={slot}>Desbloquear solo {slot}</option>
+                    <option key={slot} value={slot}>{slot}</option>
                   ))}
                 </Form.Select>
                 <Form.Text className="text-muted">
                   <i className="bi bi-info-circle me-1"></i>
-                  Deja vacío para desbloquear todo el día, o selecciona un horario específico
+                  Selecciona el horario específico que deseas desbloquear
                 </Form.Text>
               </Form.Group>
             </Form>
@@ -749,10 +615,10 @@ const AdminDashboard = () => {
             </Button>
             <Button 
               variant="success" 
-              onClick={selectedSlot ? handleUnblockSlot : handleUnblockDay}
-              disabled={actionLoading}
+              onClick={handleUnblockSlot}
+              disabled={actionLoading || !selectedSlot}
             >
-              {actionLoading ? 'Procesando...' : 'Desbloquear'}
+              {actionLoading ? 'Procesando...' : 'Desbloquear Horario'}
             </Button>
           </Modal.Footer>
         </Modal>
