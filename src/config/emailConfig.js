@@ -31,7 +31,10 @@ const sendAdminNotification = async (bookingData) => {
     
     const msg = {
       to: 'dedecorinfo@gmail.com', // Email del admin
-      from: 'dedecorinfo@gmail.com', // Email verificado en SendGrid
+      from: {
+        email: 'dedecorinfo@gmail.com',
+        name: 'DEdecor'
+      }, // Email verificado en SendGrid
       subject: `🎯 Nueva Solicitud de Reserva - ${clientName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -94,7 +97,10 @@ const sendClientConfirmation = async (bookingData) => {
     
     const msg = {
       to: clientEmail,
-      from: 'dedecorinfo@gmail.com', // Email verificado en SendGrid
+      from: {
+        email: 'dedecorinfo@gmail.com',
+        name: 'DEdecor'
+      }, // Email verificado en SendGrid
       subject: `📧 Solicitud de Reserva Recibida - DeDecor`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -151,7 +157,10 @@ const sendFinalConfirmation = async (bookingData) => {
     
     const msg = {
       to: clientEmail,
-      from: 'dedecorinfo@gmail.com',
+      from: {
+        email: 'dedecorinfo@gmail.com',
+        name: 'DEdecor'
+      },
       subject: `✅ Reserva Confirmada - DeDecor`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
