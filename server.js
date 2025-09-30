@@ -444,6 +444,126 @@ app.get('/confirm-booking', async (req, res) => {
   }
 });
 
+// Endpoint para actualizar estado de reserva
+app.post('/api/bookings/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  console.log(`🔄 POST /api/bookings/${id}/status - Cambiando estado a: ${status}`);
+  
+  try {
+    const booking = await Booking.findOne({ id });
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Reserva no encontrada'
+      });
+    }
+    
+    // Actualizar estado
+    booking.status = status;
+    if (status === 'confirmed') {
+      booking.confirmedAt = new Date();
+      
+      // Bloquear horarios cuando se confirma
+      const newSlot = new BookedSlot({
+        date: booking.date,
+        time: booking.time,
+        bookingId: booking.id,
+        reason: booking.service
+      });
+      await newSlot.save();
+      console.log('✅ Horarios bloqueados para reserva confirmada');
+    }
+    
+    await booking.save();
+    
+    // Enviar email de confirmación si se confirma
+    if (status === 'confirmed' && emailConfigured) {
+      try {
+        await sendFinalConfirmation({
+          clientName: booking.clientName,
+          clientEmail: booking.clientEmail,
+          service: booking.service,
+          date: booking.date,
+          time: booking.time
+        });
+        console.log('✅ Email de confirmación enviado');
+      } catch (emailError) {
+        console.error('⚠️ Error enviando confirmación:', emailError);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Reserva ${status === 'confirmed' ? 'confirmada' : 'actualizada'}`,
+      booking: {
+        id: booking.id,
+        status: booking.status,
+        confirmedAt: booking.confirmedAt
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error actualizando reserva:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error actualizando reserva'
+    });
+  }
+});
+
+// Endpoint para obtener horarios ocupados en lote
+app.get('/api/booked-slots-batch', async (req, res) => {
+  const { dates } = req.query;
+  
+  console.log('📅 GET /api/booked-slots-batch - Fechas:', dates);
+  
+  try {
+    if (!dates) {
+      return res.status(400).json({
+        success: false,
+        error: 'Parámetro dates es requerido'
+      });
+    }
+    
+    const dateArray = dates.split(',');
+    const bookedSlots = await BookedSlot.find({ 
+      date: { $in: dateArray } 
+    });
+    
+    // Agrupar por fecha
+    const slotsByDate = {};
+    bookedSlots.forEach(slot => {
+      if (!slotsByDate[slot.date]) {
+        slotsByDate[slot.date] = [];
+      }
+      slotsByDate[slot.date].push({
+        time: slot.time,
+        bookingId: slot.bookingId,
+        reason: slot.reason
+      });
+    });
+    
+    res.json({
+      success: true,
+      totalSlots: bookedSlots.length,
+      dates: dateArray,
+      slotsByDate: slotsByDate,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Error consultando horarios en lote:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error consultando horarios'
+    });
+  }
+});
+
 // Endpoint para contacto
 app.post('/api/contact', async (req, res) => {
   try {
