@@ -457,7 +457,7 @@ const Booking = ({ preloadedData = {} }) => {
   
   // Horarios disponibles predefinidos (deben coincidir con el backend)
   const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
-  const afternoonTimes = ['12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+  const afternoonTimes = ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
   
   // Función optimizada para cargar horarios ocupados con cache inteligente
   const loadBookedSlots = useCallback(async (forceRefresh = false, selectedDateParam = null) => {

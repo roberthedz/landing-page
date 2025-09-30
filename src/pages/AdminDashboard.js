@@ -328,8 +328,8 @@ const AdminDashboard = () => {
 
   // Horarios disponibles (deben coincidir con Booking.js y server.js)
   const timeSlots = [
-    '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'
+    '9:00 AM', '10:00 AM', '11:00 AM',
+    '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'
   ];
 
   if (loading) {
@@ -560,7 +560,7 @@ const AdminDashboard = () => {
                 <DatePicker
                   selected={selectedDate}
                   onChange={(date) => setSelectedDate(date)}
-                  dateFormat="dd/MM/yyyy"
+                  dateFormat="MM/dd/yyyy"
                   className="form-control"
                 />
               </Form.Group>
@@ -611,7 +611,7 @@ const AdminDashboard = () => {
                 <DatePicker
                   selected={selectedDate}
                   onChange={(date) => setSelectedDate(date)}
-                  dateFormat="dd/MM/yyyy"
+                  dateFormat="MM/dd/yyyy"
                   className="form-control"
                 />
               </Form.Group>
