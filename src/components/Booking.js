@@ -1108,7 +1108,7 @@ const Booking = ({ preloadedData = {} }) => {
               <p className="mb-2"><strong>⏳ Tiempo estimado:</strong> Te contactaremos dentro de las próximas 24 horas</p>
               <p className="mb-0"><strong>📧 Confirmación:</strong> Recibirás un email cuando tu reserva sea aprobada</p>
             </div>
-            <p className="mb-3"><strong>✉️ Nota:</strong> Hemos enviado un email de confirmación a tu bandeja de entrada con los detalles de tu solicitud.</p>
+            <p className="mb-3"><strong>✉️ Nota:</strong> Hemos enviado un email de confirmación a tu bandeja de entrada con los detalles de tu solicitud. <strong>Si no lo encuentras, revisa tu carpeta de spam/correo no deseado.</strong></p>
             <p className="mb-4">Si tienes alguna pregunta urgente, no dudes en contactarnos.</p>
             <div className="d-grid gap-2 col-md-6 mx-auto">
               <Button 
