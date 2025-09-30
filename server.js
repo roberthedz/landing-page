@@ -655,6 +655,8 @@ app.post('/api/admin/block-day', async (req, res) => {
   try {
     const { date } = req.body;
     
+    console.log('🔧 BookedSlot schema validation:', BookedSlot.schema.paths.bookingId.required);
+    
     if (!date) {
       return res.status(400).json({
         success: false,
@@ -683,7 +685,7 @@ app.post('/api/admin/block-day', async (req, res) => {
     // Insertar nuevos slots bloqueados
     await BookedSlot.insertMany(blockedSlots);
 
-    console.log(`✅ Día ${date} bloqueado completamente por admin`);
+    console.log(`✅ Día ${date} bloqueado completamente por admin (v2.0)`);
     
     res.json({
       success: true,
