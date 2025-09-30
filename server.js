@@ -631,6 +631,231 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+// ==================== ENDPOINTS DE ADMINISTRACIÓN ====================
+
+// Endpoint para obtener todas las reservas (admin)
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      bookings: bookings
+    });
+  } catch (error) {
+    console.error('Error obteniendo reservas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error obteniendo reservas'
+    });
+  }
+});
+
+// Endpoint para bloquear todos los horarios de un día
+app.post('/api/admin/block-day', async (req, res) => {
+  try {
+    const { date } = req.body;
+    
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        error: 'Fecha requerida'
+      });
+    }
+
+    // Crear slots bloqueados para todo el día
+    const timeSlots = [
+      '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+      '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'
+    ];
+
+    const blockedSlots = timeSlots.map(time => ({
+      date: date,
+      time: time,
+      isBlocked: true,
+      reason: 'admin-blocked',
+      blockedAt: new Date()
+    }));
+
+    // Eliminar slots existentes para esta fecha
+    await BookedSlot.deleteMany({ date: date });
+    
+    // Insertar nuevos slots bloqueados
+    await BookedSlot.insertMany(blockedSlots);
+
+    console.log(`✅ Día ${date} bloqueado completamente por admin`);
+    
+    res.json({
+      success: true,
+      message: `Día ${date} bloqueado completamente`,
+      blockedSlots: blockedSlots.length
+    });
+    
+  } catch (error) {
+    console.error('Error bloqueando día:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error bloqueando día'
+    });
+  }
+});
+
+// Endpoint para desbloquear todos los horarios de un día
+app.post('/api/admin/unblock-day', async (req, res) => {
+  try {
+    const { date } = req.body;
+    
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        error: 'Fecha requerida'
+      });
+    }
+
+    // Eliminar todos los slots bloqueados para esta fecha
+    const result = await BookedSlot.deleteMany({ 
+      date: date,
+      isBlocked: true 
+    });
+
+    console.log(`✅ Día ${date} desbloqueado completamente por admin`);
+    
+    res.json({
+      success: true,
+      message: `Día ${date} desbloqueado completamente`,
+      unblockedSlots: result.deletedCount
+    });
+    
+  } catch (error) {
+    console.error('Error desbloqueando día:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error desbloqueando día'
+    });
+  }
+});
+
+// Endpoint para bloquear un horario específico
+app.post('/api/admin/block-slot', async (req, res) => {
+  try {
+    const { date, time } = req.body;
+    
+    if (!date || !time) {
+      return res.status(400).json({
+        success: false,
+        error: 'Fecha y hora requeridas'
+      });
+    }
+
+    // Verificar si ya existe
+    const existingSlot = await BookedSlot.findOne({ date, time });
+    
+    if (existingSlot) {
+      // Actualizar slot existente como bloqueado
+      existingSlot.isBlocked = true;
+      existingSlot.reason = 'admin-blocked';
+      existingSlot.blockedAt = new Date();
+      await existingSlot.save();
+    } else {
+      // Crear nuevo slot bloqueado
+      const blockedSlot = new BookedSlot({
+        date: date,
+        time: time,
+        isBlocked: true,
+        reason: 'admin-blocked',
+        blockedAt: new Date()
+      });
+      await blockedSlot.save();
+    }
+
+    console.log(`✅ Horario ${date} ${time} bloqueado por admin`);
+    
+    res.json({
+      success: true,
+      message: `Horario ${time} del ${date} bloqueado`
+    });
+    
+  } catch (error) {
+    console.error('Error bloqueando horario:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error bloqueando horario'
+    });
+  }
+});
+
+// Endpoint para desbloquear un horario específico
+app.post('/api/admin/unblock-slot', async (req, res) => {
+  try {
+    const { date, time } = req.body;
+    
+    if (!date || !time) {
+      return res.status(400).json({
+        success: false,
+        error: 'Fecha y hora requeridas'
+      });
+    }
+
+    // Eliminar slot bloqueado
+    const result = await BookedSlot.deleteOne({ 
+      date, 
+      time, 
+      isBlocked: true 
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Horario no encontrado o no estaba bloqueado'
+      });
+    }
+
+    console.log(`✅ Horario ${date} ${time} desbloqueado por admin`);
+    
+    res.json({
+      success: true,
+      message: `Horario ${time} del ${date} desbloqueado`
+    });
+    
+  } catch (error) {
+    console.error('Error desbloqueando horario:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error desbloqueando horario'
+    });
+  }
+});
+
+// Endpoint para obtener estadísticas de admin
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const totalBookings = await Booking.countDocuments();
+    const pendingBookings = await Booking.countDocuments({ status: 'pending' });
+    const confirmedBookings = await Booking.countDocuments({ status: 'confirmed' });
+    const rejectedBookings = await Booking.countDocuments({ status: 'rejected' });
+    
+    const today = new Date().toLocaleDateString('en-US');
+    const todayBookings = await Booking.countDocuments({ date: today });
+    
+    res.json({
+      success: true,
+      stats: {
+        total: totalBookings,
+        pending: pendingBookings,
+        confirmed: confirmedBookings,
+        rejected: rejectedBookings,
+        today: todayBookings
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error obteniendo estadísticas'
+    });
+  }
+});
+
 // Servir React app para todas las rutas no-API
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));

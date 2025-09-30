@@ -159,6 +159,13 @@ export default {
     sendContactEmail: `${API_BASE_URL}/send-contact-email`,
     // Nuevos endpoints para debugging
     systemStatus: `${API_BASE_URL}/system-status`,
-    health: `${API_BASE_URL}/health`
+    health: `${API_BASE_URL}/health`,
+    // Endpoints de administración
+    adminBookings: `${API_BASE_URL}/bookings`,
+    adminStats: `${API_BASE_URL}/admin/stats`,
+    adminBlockDay: `${API_BASE_URL}/admin/block-day`,
+    adminUnblockDay: `${API_BASE_URL}/admin/unblock-day`,
+    adminBlockSlot: `${API_BASE_URL}/admin/block-slot`,
+    adminUnblockSlot: `${API_BASE_URL}/admin/unblock-slot`
   }
 }; 
