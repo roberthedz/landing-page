@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Container, Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import emailConfig from '../config/emailTemplates';
 import apiConfig from '../config/apiConfig';
 import axios from 'axios';
 

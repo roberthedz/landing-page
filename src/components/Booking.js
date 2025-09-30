@@ -5,7 +5,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Container, Row, Col, Form, Button, Card, Alert, Spinner, Badge } from 'react-bootstrap';
 import { Formik, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import emailConfig from '../config/emailTemplates';
 import apiConfig from '../config/apiConfig';
 
 const BookingSection = styled.section`
