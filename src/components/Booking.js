@@ -504,7 +504,7 @@ const Booking = ({ preloadedData = {} }) => {
       }
       
       // 🚀 ESTRATEGIA 3: Hacer petición a la API con reintentos
-      const endpoint = `${apiConfig.endpoints.bookedSlots}?date=${formattedDate}`;
+      const endpoint = `${apiConfig.endpoints.bookedSlotsBatch}?dates=${formattedDate}`;
       console.log('🌐 Cargando horarios ocupados desde API:', endpoint);
       
       // Implementar reintentos automáticos (3 veces con intervalo de 1 segundo)
@@ -535,8 +535,19 @@ const Booking = ({ preloadedData = {} }) => {
       }
       
       // Validar que la respuesta tenga la estructura correcta
-      if (response.data && response.data.success && Array.isArray(response.data.bookedSlots)) {
-        console.log(`✅ Procesando ${response.data.bookedSlots.length} horarios ocupados para ${formattedDate}`);
+      if (response.data && response.data.success && response.data.slotsByDate) {
+        const slotsForDate = response.data.slotsByDate[formattedDate] || [];
+        console.log(`✅ Procesando ${slotsForDate.length} horarios ocupados para ${formattedDate}`);
+        
+        // 🚀 ESTRATEGIA 4: Actualizar cache local
+        const currentCache = JSON.parse(localStorage.getItem('cachedBookedSlots') || '{}');
+        currentCache[formattedDate] = slotsForDate;
+        localStorage.setItem('cachedBookedSlots', JSON.stringify(currentCache));
+        localStorage.setItem('cachedTimestamp', Date.now().toString());
+        
+        setBookedSlots(slotsForDate);
+      } else if (response.data && response.data.success && Array.isArray(response.data.bookedSlots)) {
+        console.log(`✅ Procesando ${response.data.bookedSlots.length} horarios ocupados para ${formattedDate} (formato individual)`);
         
         // 🚀 ESTRATEGIA 4: Actualizar cache local
         const currentCache = JSON.parse(localStorage.getItem('cachedBookedSlots') || '{}');
