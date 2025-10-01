@@ -594,6 +594,11 @@ app.get('/api/booked-slots-batch', async (req, res) => {
     
     console.log(`🔍 Encontrados ${bookedSlots.length} slots ocupados/bloqueados`);
     
+    // DEBUG: Mostrar detalles de cada slot encontrado
+    bookedSlots.forEach((slot, index) => {
+      console.log(`  Slot ${index + 1}: ${slot.date} ${slot.time} - bookingId: ${slot.bookingId}, isBlocked: ${slot.isBlocked}, reason: ${slot.reason}`);
+    });
+    
     // Agrupar por fecha
     const slotsByDate = {};
     bookedSlots.forEach(slot => {
@@ -717,6 +722,14 @@ app.post('/api/admin/block-slot', async (req, res) => {
     }
 
     console.log(`✅ Horario ${date} ${time} bloqueado por admin`);
+    
+    // DEBUG: Verificar que se guardó correctamente
+    const savedSlot = await BookedSlot.findOne({ date, time });
+    if (savedSlot) {
+      console.log(`🔍 DEBUG - Slot guardado: ${savedSlot.date} ${savedSlot.time} - isBlocked: ${savedSlot.isBlocked}, reason: ${savedSlot.reason}, bookingId: ${savedSlot.bookingId}`);
+    } else {
+      console.log(`❌ ERROR - No se pudo encontrar el slot guardado para ${date} ${time}`);
+    }
     
     res.json({
       success: true,
