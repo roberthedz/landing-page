@@ -179,7 +179,11 @@ const AdminDashboard = () => {
     try {
       setActionLoading(true);
       
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
+      const formattedDate = selectedDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
       console.log('🔧 DEBUG AdminDashboard - handleBlockSlot:');
       console.log('  - selectedDate:', selectedDate);
       console.log('  - formattedDate:', formattedDate);
@@ -230,7 +234,11 @@ const AdminDashboard = () => {
     try {
       setActionLoading(true);
       
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
+      const formattedDate = selectedDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
       console.log('🔧 DEBUG AdminDashboard - handleUnblockSlot:');
       console.log('  - selectedDate:', selectedDate);
       console.log('  - formattedDate:', formattedDate);
