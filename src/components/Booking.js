@@ -608,8 +608,11 @@ const Booking = ({ preloadedData = {} }) => {
     if (!date) return false;
     
     const formattedDate = formatDate(date);
-    console.log('Verificando si el horario está ocupado:', formattedDate, time);
-    console.log('Horarios ocupados:', bookedSlots);
+    console.log('🔍 DEBUG isTimeSlotBooked:');
+    console.log('  - formattedDate:', formattedDate);
+    console.log('  - time:', time);
+    console.log('  - bookedSlots:', bookedSlots);
+    console.log('  - bookedSlots length:', bookedSlots?.length);
     
     // Validar que bookedSlots sea un array antes de usar .some()
     if (!Array.isArray(bookedSlots)) {
@@ -618,15 +621,15 @@ const Booking = ({ preloadedData = {} }) => {
     }
     
     // Los slots ya están filtrados por fecha en el backend, solo comparar el tiempo
-    console.log('Comparando tiempo:', time, 'con slots:', bookedSlots.map(slot => slot.time));
+    console.log('  - Comparando tiempo:', time, 'con slots:', bookedSlots.map(slot => slot.time));
     
     const isBooked = bookedSlots.some(slot => {
       const matches = slot.time === time;
-      console.log(`Slot ${slot.time} === ${time}? ${matches}`);
+      console.log(`  - Slot ${slot.time} === ${time}? ${matches} (reason: ${slot.reason}, isBlocked: ${slot.isBlocked})`);
       return matches;
     });
     
-    console.log('¿Está ocupado?', isBooked);
+    console.log('  - ¿Está ocupado?', isBooked);
     return isBooked;
   };
 
