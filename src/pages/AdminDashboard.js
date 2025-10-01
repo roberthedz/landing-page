@@ -134,6 +134,11 @@ const AdminDashboard = () => {
 
   // Cargar reservas
   useEffect(() => {
+    console.log('🔧 DEBUG AdminDashboard - Configuración:');
+    console.log('  - apiConfig.endpoints.adminBlockSlot:', apiConfig.endpoints.adminBlockSlot);
+    console.log('  - apiConfig.endpoints.adminUnblockSlot:', apiConfig.endpoints.adminUnblockSlot);
+    console.log('  - selectedDate inicial:', selectedDate);
+    console.log('  - selectedSlot inicial:', selectedSlot);
     loadBookings();
   }, []);
 
@@ -175,10 +180,22 @@ const AdminDashboard = () => {
       setActionLoading(true);
       
       const formattedDate = selectedDate.toLocaleDateString('en-US');
-      const response = await axios.post(apiConfig.endpoints.adminBlockSlot, {
+      console.log('🔧 DEBUG AdminDashboard - handleBlockSlot:');
+      console.log('  - selectedDate:', selectedDate);
+      console.log('  - formattedDate:', formattedDate);
+      console.log('  - selectedSlot:', selectedSlot);
+      console.log('  - endpoint:', apiConfig.endpoints.adminBlockSlot);
+      
+      const requestData = {
         date: formattedDate,
         time: selectedSlot
-      });
+      };
+      console.log('  - requestData:', requestData);
+      
+      const response = await axios.post(apiConfig.endpoints.adminBlockSlot, requestData);
+      
+      console.log('  - response:', response);
+      console.log('  - response.data:', response.data);
       
       if (response.data.success) {
         alert(`Horario ${selectedSlot} bloqueado exitosamente`);
@@ -189,7 +206,11 @@ const AdminDashboard = () => {
         alert(response.data.error || 'Error al bloquear el horario');
       }
     } catch (error) {
-      console.error('Error bloqueando horario:', error);
+      console.error('❌ Error bloqueando horario:', error);
+      console.error('  - error.response:', error.response);
+      console.error('  - error.message:', error.message);
+      console.error('  - error.config:', error.config);
+      
       if (error.response?.data?.error) {
         alert(error.response.data.error);
       } else {
@@ -210,10 +231,22 @@ const AdminDashboard = () => {
       setActionLoading(true);
       
       const formattedDate = selectedDate.toLocaleDateString('en-US');
-      const response = await axios.post(apiConfig.endpoints.adminUnblockSlot, {
+      console.log('🔧 DEBUG AdminDashboard - handleUnblockSlot:');
+      console.log('  - selectedDate:', selectedDate);
+      console.log('  - formattedDate:', formattedDate);
+      console.log('  - selectedSlot:', selectedSlot);
+      console.log('  - endpoint:', apiConfig.endpoints.adminUnblockSlot);
+      
+      const requestData = {
         date: formattedDate,
         time: selectedSlot
-      });
+      };
+      console.log('  - requestData:', requestData);
+      
+      const response = await axios.post(apiConfig.endpoints.adminUnblockSlot, requestData);
+      
+      console.log('  - response:', response);
+      console.log('  - response.data:', response.data);
       
       if (response.data.success) {
         alert(`Horario ${selectedSlot} desbloqueado exitosamente`);
@@ -224,7 +257,11 @@ const AdminDashboard = () => {
         alert(response.data.error || 'Error al desbloquear el horario');
       }
     } catch (error) {
-      console.error('Error desbloqueando horario:', error);
+      console.error('❌ Error desbloqueando horario:', error);
+      console.error('  - error.response:', error.response);
+      console.error('  - error.message:', error.message);
+      console.error('  - error.config:', error.config);
+      
       if (error.response?.data?.error) {
         alert(error.response.data.error);
       } else {
