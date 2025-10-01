@@ -505,6 +505,7 @@ const Booking = ({ preloadedData = {} }) => {
       // 🚀 ESTRATEGIA 3: Hacer petición a la API con reintentos
       const endpoint = `${apiConfig.endpoints.bookedSlotsBatch}?dates=${formattedDate}`;
       console.log('🌐 Cargando horarios ocupados desde API:', endpoint);
+      console.log('🔍 DEBUG loadBookedSlots - endpoint completo:', endpoint);
       
       // Implementar reintentos automáticos (3 veces con intervalo de 1 segundo)
       let response = null;
@@ -514,6 +515,8 @@ const Booking = ({ preloadedData = {} }) => {
         try {
           console.log(`Intento ${attempt}/3 de cargar horarios ocupados...`);
           response = await apiConfig.getCachedRequest(endpoint);
+          console.log('🔍 DEBUG loadBookedSlots - response completa:', response);
+          console.log('🔍 DEBUG loadBookedSlots - response.data:', response.data);
           console.log('Horarios ocupados cargados exitosamente:', response.data);
           break; // Si llegamos aquí, la petición fue exitosa
         } catch (error) {
@@ -534,9 +537,16 @@ const Booking = ({ preloadedData = {} }) => {
       }
       
       // Validar que la respuesta tenga la estructura correcta
+      console.log('🔍 DEBUG loadBookedSlots - Validando respuesta:');
+      console.log('  - response.data:', response.data);
+      console.log('  - response.data.success:', response.data?.success);
+      console.log('  - response.data.slotsByDate:', response.data?.slotsByDate);
+      console.log('  - response.data.bookedSlots:', response.data?.bookedSlots);
+      
       if (response.data && response.data.success && response.data.slotsByDate) {
         const slotsForDate = response.data.slotsByDate[formattedDate] || [];
         console.log(`✅ Procesando ${slotsForDate.length} horarios ocupados para ${formattedDate}`);
+        console.log('🔍 DEBUG loadBookedSlots - slotsForDate:', slotsForDate);
         
         // 🚀 ESTRATEGIA 4: Actualizar cache local
         const currentCache = JSON.parse(localStorage.getItem('cachedBookedSlots') || '{}');
