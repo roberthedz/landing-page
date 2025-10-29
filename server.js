@@ -379,6 +379,11 @@ app.post('/api/bookings', async (req, res) => {
 app.get('/confirm-booking', async (req, res) => {
   const { id, action } = req.query;
   
+  console.log('🔍 GET /confirm-booking - Parámetros recibidos:');
+  console.log('  - id:', id);
+  console.log('  - action:', action);
+  console.log('  - emailConfigured:', emailConfigured);
+  
   if (!id || !action) {
     return res.status(400).send('Parámetros requeridos: id y action');
   }
@@ -387,8 +392,16 @@ app.get('/confirm-booking', async (req, res) => {
     const booking = await Booking.findOne({ id });
     
     if (!booking) {
+      console.log('❌ Reserva no encontrada para ID:', id);
       return res.status(404).send('Reserva no encontrada');
     }
+    
+    console.log('📋 Reserva encontrada:', {
+      id: booking.id,
+      clientName: booking.clientName,
+      clientEmail: booking.clientEmail,
+      status: booking.status
+    });
     
     if (action === 'confirm') {
       // Confirmar la reserva
@@ -408,16 +421,25 @@ app.get('/confirm-booking', async (req, res) => {
       // Enviar email de confirmación final
       if (emailConfigured) {
         try {
+          console.log('📧 Enviando email de confirmación final al cliente...');
           await sendFinalConfirmation({
             clientName: booking.clientName,
             clientEmail: booking.clientEmail,
             service: booking.service,
-          date: booking.date,
+            date: booking.date,
             time: booking.time
           });
+          console.log('✅ Email de confirmación final enviado exitosamente');
         } catch (emailError) {
-          console.error('Error enviando confirmación final:', emailError);
+          console.error('❌ Error enviando confirmación final:', emailError);
+          console.error('❌ Detalles del error:', {
+            message: emailError.message,
+            code: emailError.code,
+            response: emailError.response?.body
+          });
         }
+      } else {
+        console.warn('⚠️ SendGrid no configurado - email de confirmación NO enviado');
       }
       
       res.send(`
@@ -540,7 +562,7 @@ app.post('/api/bookings/:id/status', async (req, res) => {
           clientName: booking.clientName,
           clientEmail: booking.clientEmail,
           service: booking.service,
-              date: booking.date,
+          date: booking.date,
           time: booking.time
         });
         console.log('✅ Email de confirmación enviado');
