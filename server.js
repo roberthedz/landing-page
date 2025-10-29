@@ -5,9 +5,9 @@ const path = require('path');
 const mongoose = require('mongoose');
 const dns = require('dns');
 
-// Importar configuración de email con SendGrid
+// Importar configuración de email con Nodemailer + Gmail
 const { 
-  configureSendGrid, 
+  configureEmail, 
   sendAdminNotification, 
   sendClientConfirmation, 
   sendFinalConfirmation 
@@ -98,7 +98,7 @@ const getBaseUrl = (req) => {
 };
 
 // Configurar SendGrid para emails seguros
-const emailConfigured = configureSendGrid();
+const emailConfigured = configureEmail();
 
 // Middleware
 app.use(cors({
