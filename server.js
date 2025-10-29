@@ -939,6 +939,26 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
       await blockedSlot.save();
       
       console.log(`✅ Horario ${booking.date} ${booking.time} bloqueado por reserva confirmada`);
+      
+      // 🔥 CRÍTICO: Enviar email de confirmación al cliente
+      if (emailConfigured) {
+        try {
+          console.log('📧 Enviando email de confirmación al cliente...');
+          await sendFinalConfirmation({
+            clientName: booking.clientName,
+            clientEmail: booking.clientEmail,
+            service: booking.service,
+            date: booking.date,
+            time: booking.time
+          });
+          console.log('✅ Email de confirmación enviado exitosamente');
+        } catch (emailError) {
+          console.error('❌ Error enviando email de confirmación:', emailError);
+          // No fallar la operación por error de email
+        }
+      } else {
+        console.warn('⚠️ SendGrid no configurado - email no enviado');
+      }
     }
 
     console.log(`✅ Reserva ${id} actualizada a estado: ${status}`);

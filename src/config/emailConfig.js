@@ -369,6 +369,13 @@ const sendFinalConfirmation = async (bookingData) => {
   try {
     const { clientName, clientEmail, service, date, time } = bookingData;
     
+    console.log('📧 DEBUG sendFinalConfirmation - Iniciando envío:');
+    console.log('  - clientName:', clientName);
+    console.log('  - clientEmail:', clientEmail);
+    console.log('  - service:', service);
+    console.log('  - date:', date);
+    console.log('  - time:', time);
+    
     const msg = {
       to: clientEmail,
       from: {
@@ -517,8 +524,10 @@ DEdecor - Decoración de Interiores
       `
     };
     
-    await sgMail.send(msg);
-    console.log('✅ Email de confirmación final enviado al CLIENTE');
+    console.log('📧 DEBUG sendFinalConfirmation - Enviando email via SendGrid...');
+    const result = await sgMail.send(msg);
+    console.log('✅ Email de confirmación final enviado al CLIENTE exitosamente');
+    console.log('📧 DEBUG sendFinalConfirmation - Resultado SendGrid:', result[0]?.statusCode);
     return true;
   } catch (error) {
     console.error('❌ Error enviando confirmación final:', error);
