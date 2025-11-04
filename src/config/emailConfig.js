@@ -18,13 +18,12 @@ const createTransporter = () => {
   console.log('📧 Usuario:', 'dedecorinfo@gmail.com');
   console.log('🔑 Contraseña configurada:', appPassword ? 'Sí (' + appPassword.length + ' caracteres)' : 'No');
   
-  // Probar primero con puerto 587 (TLS) que es más compatible con Render
-  // Si falla, intentar con 465 (SSL)
+  // Probar con puerto 465 (SSL) que es más directo
+  // Gmail permite ambos puertos, pero 465 puede funcionar mejor desde algunos hosts
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587, // Puerto 587 con TLS (más compatible con Render)
-    secure: false, // false para 587, true para 465
-    requireTLS: true, // Requerir TLS para 587
+    port: 465, // Puerto 465 con SSL
+    secure: true, // true para 465
     auth: {
       user: 'dedecorinfo@gmail.com',
       pass: appPassword
@@ -33,11 +32,10 @@ const createTransporter = () => {
     socketTimeout: 30000,
     greetingTimeout: 30000,
     tls: {
-      rejectUnauthorized: false,
-      ciphers: 'SSLv3'
+      rejectUnauthorized: false
     },
-    debug: true, // Habilitar debug para ver qué está pasando
-    logger: true // Loggear en consola
+    debug: false, // Deshabilitar debug para producción (muy verbose)
+    logger: false
   });
 };
 

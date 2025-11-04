@@ -1046,9 +1046,8 @@ app.get('/api/test/email-status', async (req, res) => {
       },
       smtp: {
         host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        requireTLS: true
+        port: 465,
+        secure: true
       }
     });
   } catch (error) {
