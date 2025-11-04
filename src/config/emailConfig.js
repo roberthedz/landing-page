@@ -9,6 +9,16 @@ const { Resend } = require('resend');
 let resendClientAdmin = null;
 let resendClientGeneral = null;
 
+// Configuración del remitente de email
+// Cambiar a 'noreply@dedecorinfo.com' una vez que el dominio esté verificado en Resend
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+const FROM_NAME = 'DEdecor';
+
+// Función para obtener el remitente configurado
+const getFromAddress = () => {
+  return `${FROM_NAME} <${FROM_EMAIL}>`;
+};
+
 // Verificar configuración de email
 const configureEmail = () => {
   const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
@@ -199,7 +209,7 @@ Sistema de Reservas Profesional
     `;
     
     const { data, error } = await resend.emails.send({
-      from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
+      from: getFromAddress(),
       to: 'dedecorinfo@gmail.com',
       subject: `Solicitud de Reserva - ${clientName}`,
       html: htmlContent,
@@ -327,7 +337,7 @@ Sistema de Reservas Profesional
     // Intentar enviar con la primera API key
     try {
       const result = await resend.emails.send({
-        from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
+        from: getFromAddress(),
         to: clientEmail,
         subject: 'Hemos recibido tu solicitud de reserva',
         html: htmlContent,
@@ -346,7 +356,7 @@ Sistema de Reservas Profesional
       try {
         const adminResend = getResendClientAdmin();
         const result = await adminResend.emails.send({
-          from: 'DEdecor <onboarding@resend.dev>',
+          from: getFromAddress(),
           to: clientEmail,
           subject: 'Hemos recibido tu solicitud de reserva',
           html: htmlContent,
@@ -485,7 +495,7 @@ Sistema de Reservas Profesional
     `;
     
     console.log(`📧 Enviando email vía Resend a: ${clientEmail}`);
-    console.log(`📧 From: DEdecor <onboarding@resend.dev>`);
+    console.log(`📧 From: ${getFromAddress()}`);
     console.log(`📧 Subject: Reserva Confirmada - ${service}`);
     
     let data, error;
@@ -494,7 +504,7 @@ Sistema de Reservas Profesional
     // Intentar enviar con la primera API key
     try {
       const result = await resend.emails.send({
-        from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
+        from: getFromAddress(),
         to: clientEmail,
         subject: `Reserva Confirmada - ${service}`,
         html: htmlContent,
@@ -514,7 +524,7 @@ Sistema de Reservas Profesional
       try {
         const adminResend = getResendClientAdmin();
         const result = await adminResend.emails.send({
-          from: 'DEdecor <onboarding@resend.dev>',
+          from: getFromAddress(),
           to: clientEmail,
           subject: `Reserva Confirmada - ${service}`,
           html: htmlContent,
