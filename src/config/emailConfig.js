@@ -10,8 +10,8 @@ let resendClientAdmin = null;
 let resendClientGeneral = null;
 
 // Configuración del remitente de email
-// Cambiar a 'noreply@dedecorinfo.com' una vez que el dominio esté verificado en Resend
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+// Usar dominio verificado para poder enviar a cualquier email
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@dedecorinfo.com';
 const FROM_NAME = 'DEdecor';
 
 // Función para obtener el remitente configurado
