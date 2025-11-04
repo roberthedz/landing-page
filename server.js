@@ -378,7 +378,7 @@ app.post('/api/bookings', async (req, res) => {
           : 'Reserva guardada. Los emails se enviarán en segundo plano.')
         : 'Emails enviados correctamente. MongoDB no disponible temporalmente.'
     });
-
+    
   } catch (error) {
     console.error('❌ Error en endpoint /api/bookings:', error);
     res.status(500).json({ 
@@ -830,8 +830,8 @@ app.get('/api/admin/date-status', async (req, res) => {
     const blockedTimes = blockedSlots.map(slot => slot.time);
     const bookedTimes = bookedSlots.map(slot => slot.time);
     
-    res.json({
-      success: true,
+      res.json({
+        success: true,
       date: date,
       isFullyBlocked: isFullyBlocked,
       hasBookings: hasBookings,
@@ -974,7 +974,7 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
           console.error('⚠️ Error enviando email de confirmación:', emailError);
           // No fallar la respuesta si el email falla, pero registrar el error
         }
-      } else {
+        } else {
         console.warn('⚠️ Email no configurado - No se envió confirmación');
       }
     }
@@ -997,6 +997,64 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
 });
 
 // Servir React app para todas las rutas no-API
+// ============================================
+// ENDPOINT DE DIAGNÓSTICO DE EMAIL
+// ============================================
+
+app.get('/api/test/email-status', async (req, res) => {
+  try {
+    const appPassword = process.env.GMAIL_APP_PASSWORD;
+    const hasPassword = !!appPassword;
+    const passwordLength = appPassword ? appPassword.length : 0;
+    
+    // Intentar crear transporter para verificar configuración
+    let transporterStatus = 'no-config';
+    let connectionTest = 'not-tested';
+    
+    if (hasPassword) {
+      try {
+        const { createTransporter } = require('./src/config/emailConfig');
+        const transporter = createTransporter();
+        transporterStatus = 'created';
+        
+        // Intentar verificar la conexión (sin enviar email)
+        try {
+          await transporter.verify();
+          connectionTest = 'success';
+        } catch (verifyError) {
+          connectionTest = `failed: ${verifyError.message}`;
+        }
+      } catch (createError) {
+        transporterStatus = `error: ${createError.message}`;
+      }
+    }
+    
+    res.json({
+      emailConfigured: emailConfigured,
+      appPassword: {
+        exists: hasPassword,
+        length: passwordLength,
+        preview: hasPassword ? `${appPassword.substring(0, 2)}***${appPassword.substring(passwordLength - 2)}` : null
+      },
+      transporter: {
+        status: transporterStatus,
+        connectionTest: connectionTest
+      },
+      smtp: {
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        requireTLS: true
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      details: error.toString()
+    });
+  }
+});
+
 // ============================================
 // ENDPOINTS DE PRUEBA PARA EMAILS (SOLO TESTING)
 // ============================================
@@ -1118,8 +1176,8 @@ app.post('/api/test/booking-flow', async (req, res) => {
     const emailPromise = Promise.all([
       sendAdminNotification({
         bookingId,
-        clientName,
-        clientEmail,
+      clientName,
+      clientEmail,
         clientPhone,
         service,
         date,
