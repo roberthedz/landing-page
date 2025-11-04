@@ -307,9 +307,9 @@ app.post('/api/bookings', async (req, res) => {
           })
         ]);
         
-        // Timeout de 20 segundos para el envío de emails
+        // Timeout de 35 segundos para el envío de emails (aumentado para Gmail)
         const timeoutPromise = new Promise((resolve) => 
-          setTimeout(() => resolve([false, false]), 20000)
+          setTimeout(() => resolve([false, false]), 35000)
         );
         
         const results = await Promise.race([emailPromise, timeoutPromise]);

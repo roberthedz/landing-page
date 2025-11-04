@@ -14,14 +14,17 @@ const createTransporter = () => {
       pass: process.env.GMAIL_APP_PASSWORD
     },
     secure: true,
-    connectionTimeout: 10000, // 10 segundos para conectar
-    socketTimeout: 10000, // 10 segundos para operaciones
-    greetingTimeout: 10000 // 10 segundos para saludo SMTP
+    connectionTimeout: 30000, // 30 segundos para conectar (aumentado)
+    socketTimeout: 30000, // 30 segundos para operaciones (aumentado)
+    greetingTimeout: 30000, // 30 segundos para saludo SMTP (aumentado)
+    pool: true, // Usar conexión persistente
+    maxConnections: 1,
+    maxMessages: 3
   });
 };
 
 // Helper para enviar email con timeout
-const sendEmailWithTimeout = async (transporter, mailOptions, timeoutMs = 15000) => {
+const sendEmailWithTimeout = async (transporter, mailOptions, timeoutMs = 30000) => {
   return Promise.race([
     transporter.sendMail(mailOptions),
     new Promise((_, reject) => 
