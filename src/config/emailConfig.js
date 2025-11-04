@@ -5,6 +5,9 @@
 
 const nodemailer = require('nodemailer');
 
+// Transporter global para reutilizar conexiones
+let globalTransporter = null;
+
 // Configurar transportador de Gmail
 const createTransporter = () => {
   const appPassword = process.env.GMAIL_APP_PASSWORD;
@@ -14,39 +17,98 @@ const createTransporter = () => {
     throw new Error('GMAIL_APP_PASSWORD no configurada');
   }
   
+  // Reutilizar transporter si ya existe
+  if (globalTransporter) {
+    return globalTransporter;
+  }
+  
   console.log('🔧 Configurando Nodemailer con Gmail SMTP...');
   console.log('📧 Usuario:', 'dedecorinfo@gmail.com');
   console.log('🔑 Contraseña configurada:', appPassword ? 'Sí (' + appPassword.length + ' caracteres)' : 'No');
   
-  // Probar con puerto 465 (SSL) que es más directo
-  // Gmail permite ambos puertos, pero 465 puede funcionar mejor desde algunos hosts
-  return nodemailer.createTransport({
+  // Configuración optimizada para Render - probar múltiples métodos
+  // Método 1: service: 'gmail' (a veces funciona mejor)
+  try {
+    globalTransporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'dedecorinfo@gmail.com',
+        pass: appPassword
+      },
+      // Pool de conexiones para mejor rendimiento
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 3,
+      // Timeouts más cortos para detectar problemas rápido
+      connectionTimeout: 10000, // 10 segundos
+      socketTimeout: 10000, // 10 segundos
+      greetingTimeout: 10000, // 10 segundos
+      // TLS configurado explícitamente
+      tls: {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      }
+    });
+    
+    console.log('✅ Transporter creado con service: gmail');
+    return globalTransporter;
+  } catch (error) {
+    console.warn('⚠️ Error con service: gmail, intentando configuración SMTP explícita:', error.message);
+  }
+  
+  // Método 2: Configuración SMTP explícita con puerto 587 (TLS)
+  // Este es más confiable desde algunos hosts
+  globalTransporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465, // Puerto 465 con SSL
-    secure: true, // true para 465
+    port: 587,
+    secure: false, // false para 587
+    requireTLS: true,
     auth: {
       user: 'dedecorinfo@gmail.com',
       pass: appPassword
     },
-    connectionTimeout: 30000,
-    socketTimeout: 30000,
-    greetingTimeout: 30000,
+    // Pool de conexiones
+    pool: true,
+    maxConnections: 1,
+    maxMessages: 3,
+    // Timeouts
+    connectionTimeout: 10000,
+    socketTimeout: 10000,
+    greetingTimeout: 10000,
+    // TLS específico
     tls: {
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1.2',
+      ciphers: 'SSLv3'
     },
-    debug: false, // Deshabilitar debug para producción (muy verbose)
+    debug: false,
     logger: false
   });
+  
+  console.log('✅ Transporter creado con configuración SMTP explícita (puerto 587)');
+  return globalTransporter;
 };
 
-// Helper para enviar email con timeout
-const sendEmailWithTimeout = async (transporter, mailOptions, timeoutMs = 30000) => {
-  return Promise.race([
-    transporter.sendMail(mailOptions),
-    new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout: Email tardó demasiado en enviarse')), timeoutMs)
-    )
-  ]);
+// Helper para enviar email con timeout y reintentos
+const sendEmailWithTimeout = async (transporter, mailOptions, timeoutMs = 25000, retries = 2) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const result = await Promise.race([
+        transporter.sendMail(mailOptions),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error(`Timeout: Email tardó demasiado en enviarse (intento ${attempt}/${retries})`)), timeoutMs)
+        )
+      ]);
+      return result;
+    } catch (error) {
+      if (attempt === retries) {
+        throw error;
+      }
+      console.warn(`⚠️ Intento ${attempt} falló, reintentando...`, error.message);
+      // Esperar un poco antes de reintentar
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
 };
 
 // Verificar configuración de email
