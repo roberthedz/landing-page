@@ -5,36 +5,35 @@
 
 const { Resend } = require('resend');
 
-// Clientes de Resend (pueden ser diferentes para admin y clientes)
+// Clientes de Resend (uno para admin, otro para clientes)
 let resendClientAdmin = null;
-let resendClientCustomer = null;
+let resendClientGeneral = null;
 
 // Verificar configuración de email
 const configureEmail = () => {
   const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
-  const apiKeyCustomer = process.env.RESEND_API_KEY || process.env.RESEND_API_KEY_CUSTOMER;
+  const apiKeyGeneral = process.env.RESEND_API_KEY;
   
-  // Si hay al menos una API key, el email está configurado
+  // Si hay API key de admin, usar esa para admin; si no, usar la general
   const hasAdminKey = !!apiKeyAdmin;
-  const hasCustomerKey = !!apiKeyCustomer;
+  const hasGeneralKey = !!apiKeyGeneral;
   
-  if (!hasAdminKey && !hasCustomerKey) {
-    console.warn('⚠️ RESEND_API_KEY no configurada - emails deshabilitados');
+  if (!hasAdminKey && !hasGeneralKey) {
+    console.warn('⚠️ RESEND_API_KEY o RESEND_API_KEY_ADMIN no configuradas - emails deshabilitados');
     return false;
   }
   
   try {
     if (hasAdminKey) {
       resendClientAdmin = new Resend(apiKeyAdmin);
-      console.log('✅ Resend Admin configurado');
+      console.log('✅ Resend ADMIN configurado correctamente');
     }
     
-    if (hasCustomerKey) {
-      resendClientCustomer = new Resend(apiKeyCustomer);
-      console.log('✅ Resend Customer configurado');
+    if (hasGeneralKey) {
+      resendClientGeneral = new Resend(apiKeyGeneral);
+      console.log('✅ Resend GENERAL configurado correctamente');
     }
     
-    console.log('✅ Resend configurado correctamente');
     return true;
   } catch (error) {
     console.error('❌ Error configurando Resend:', error.message);
@@ -42,34 +41,42 @@ const configureEmail = () => {
   }
 };
 
-// Obtener cliente de Resend para admin
+// Obtener cliente para admin (prioriza RESEND_API_KEY_ADMIN)
 const getResendClientAdmin = () => {
-  if (!resendClientAdmin) {
-    const apiKey = process.env.RESEND_API_KEY_ADMIN;
-    if (!apiKey) {
-      // Fallback a la API key principal si no hay una específica
-      const fallbackKey = process.env.RESEND_API_KEY;
-      if (!fallbackKey) {
-        throw new Error('RESEND_API_KEY_ADMIN no configurada');
-      }
-      resendClientAdmin = new Resend(fallbackKey);
-    } else {
-      resendClientAdmin = new Resend(apiKey);
+  const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
+  const apiKeyGeneral = process.env.RESEND_API_KEY;
+  
+  // Priorizar API key de admin
+  if (apiKeyAdmin) {
+    if (!resendClientAdmin) {
+      resendClientAdmin = new Resend(apiKeyAdmin);
     }
+    return resendClientAdmin;
   }
-  return resendClientAdmin;
+  
+  // Si no hay API key de admin, usar la general
+  if (apiKeyGeneral) {
+    if (!resendClientGeneral) {
+      resendClientGeneral = new Resend(apiKeyGeneral);
+    }
+    return resendClientGeneral;
+  }
+  
+  throw new Error('RESEND_API_KEY_ADMIN o RESEND_API_KEY no configurada');
 };
 
-// Obtener cliente de Resend para clientes
-const getResendClientCustomer = () => {
-  if (!resendClientCustomer) {
-    const apiKey = process.env.RESEND_API_KEY || process.env.RESEND_API_KEY_CUSTOMER;
-    if (!apiKey) {
-      throw new Error('RESEND_API_KEY no configurada');
-    }
-    resendClientCustomer = new Resend(apiKey);
+// Obtener cliente para clientes (usa RESEND_API_KEY)
+const getResendClientGeneral = () => {
+  const apiKey = process.env.RESEND_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY no configurada');
   }
-  return resendClientCustomer;
+  
+  if (!resendClientGeneral) {
+    resendClientGeneral = new Resend(apiKey);
+  }
+  return resendClientGeneral;
 };
 
 // Función para enviar email de nueva reserva al admin
@@ -81,7 +88,7 @@ const sendAdminNotification = async (bookingData) => {
     const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
     const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
     
-    const resend = getResendClientAdmin(); // Usar cuenta de admin para emails al admin
+    const resend = getResendClient();
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -179,7 +186,7 @@ Sistema de Reservas Profesional
     `;
     
     const { data, error } = await resend.emails.send({
-      from: 'DEdecor <onboarding@resend.dev>',
+      from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
       to: 'dedecorinfo@gmail.com',
       subject: `Solicitud de Reserva - ${clientName}`,
       html: htmlContent,
@@ -203,16 +210,16 @@ const sendClientConfirmation = async (bookingData) => {
   try {
     const { clientName, clientEmail, service, date, time } = bookingData;
     
-    const resend = getResendClientCustomer(); // Usar cuenta de clientes para emails a clientes
+    const resend = getResendClient();
     
     const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Solicitud de Reserva Recibida - DEdecor</title>
-        </head>
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Solicitud de Reserva Recibida - DEdecor</title>
+      </head>
       <body style="margin: 0; padding: 0; background-color: #ffffff; font-family: Arial, sans-serif; line-height: 1.6; color: #333333;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
           <tr>
@@ -289,7 +296,7 @@ Sistema de Reservas Profesional
     `;
     
     const { data, error } = await resend.emails.send({
-      from: 'DEdecor <onboarding@resend.dev>',
+      from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
       to: clientEmail,
       subject: 'Hemos recibido tu solicitud de reserva',
       html: htmlContent,
@@ -313,16 +320,16 @@ const sendFinalConfirmation = async (bookingData) => {
   try {
     const { clientName, clientEmail, service, date, time } = bookingData;
     
-    const resend = getResendClientCustomer(); // Usar cuenta de clientes para emails a clientes
+    const resend = getResendClient();
     
     const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Reserva Confirmada - DEdecor</title>
-        </head>
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reserva Confirmada - DEdecor</title>
+      </head>
       <body style="margin: 0; padding: 0; background-color: #ffffff; font-family: Arial, sans-serif; line-height: 1.6; color: #333333;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
           <tr>
@@ -397,7 +404,7 @@ Sistema de Reservas Profesional
     `;
     
     const { data, error } = await resend.emails.send({
-      from: 'DEdecor <onboarding@resend.dev>',
+      from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
       to: clientEmail,
       subject: `Reserva Confirmada - ${service}`,
       html: htmlContent,

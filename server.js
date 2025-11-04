@@ -1005,29 +1005,26 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
 app.get('/api/test/email-status', async (req, res) => {
   try {
     const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
-    const apiKeyCustomer = process.env.RESEND_API_KEY || process.env.RESEND_API_KEY_CUSTOMER;
-    
+    const apiKeyGeneral = process.env.RESEND_API_KEY;
     const hasAdminKey = !!apiKeyAdmin;
-    const hasCustomerKey = !!apiKeyCustomer;
-    const adminKeyLength = apiKeyAdmin ? apiKeyAdmin.length : 0;
-    const customerKeyLength = apiKeyCustomer ? apiKeyCustomer.length : 0;
+    const hasGeneralKey = !!apiKeyGeneral;
     
     res.json({
       emailConfigured: emailConfigured,
       resend: {
         admin: {
           apiKeyExists: hasAdminKey,
-          keyLength: adminKeyLength,
-          preview: hasAdminKey ? `${apiKeyAdmin.substring(0, 4)}***${apiKeyAdmin.substring(adminKeyLength - 4)}` : null
+          keyLength: apiKeyAdmin ? apiKeyAdmin.length : 0,
+          preview: hasAdminKey ? `${apiKeyAdmin.substring(0, 4)}***${apiKeyAdmin.substring(apiKeyAdmin.length - 4)}` : null
         },
-        customer: {
-          apiKeyExists: hasCustomerKey,
-          keyLength: customerKeyLength,
-          preview: hasCustomerKey ? `${apiKeyCustomer.substring(0, 4)}***${apiKeyCustomer.substring(customerKeyLength - 4)}` : null
+        general: {
+          apiKeyExists: hasGeneralKey,
+          keyLength: apiKeyGeneral ? apiKeyGeneral.length : 0,
+          preview: hasGeneralKey ? `${apiKeyGeneral.substring(0, 4)}***${apiKeyGeneral.substring(apiKeyGeneral.length - 4)}` : null
         }
       },
       provider: 'Resend',
-      note: 'Usando API REST - No requiere SMTP. Puede usar dos cuentas: una para admin y otra para clientes.'
+      note: 'Usando API REST - No requiere SMTP'
     });
   } catch (error) {
     res.status(500).json({
