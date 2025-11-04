@@ -1017,9 +1017,13 @@ app.get('/api/test/email-status', async (req, res) => {
         const transporter = createTransporter();
         transporterStatus = 'created';
         
-        // Intentar verificar la conexión (sin enviar email)
+        // Intentar verificar la conexión (sin enviar email) con timeout corto
         try {
-          await transporter.verify();
+          const verifyPromise = transporter.verify();
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Verificación timeout después de 15 segundos')), 15000)
+          );
+          await Promise.race([verifyPromise, timeoutPromise]);
           connectionTest = 'success';
         } catch (verifyError) {
           connectionTest = `failed: ${verifyError.message}`;
