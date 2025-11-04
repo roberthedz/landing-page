@@ -30,7 +30,7 @@ console.log('  - Full origin:', window.location.origin);
 
 // Configuración de timeout y reintentos
 const API_CONFIG = {
-  timeout: 45000, // 45 segundos timeout (aumentado para Render en cold start)
+  timeout: 60000, // 60 segundos timeout (aumentado para Render en cold start y envío de emails)
   maxRetries: 3,
   retryDelay: 1000, // 1 segundo entre reintentos
   // Configurar headers por defecto (solo los esenciales)

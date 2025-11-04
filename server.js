@@ -959,39 +959,29 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
       
       console.log(`✅ Horario ${booking.date} ${booking.time} bloqueado por reserva confirmada`);
       
-      // Enviar email de confirmación al cliente
+      // Enviar email de confirmación al cliente (ASÍNCRONO - no bloquea la respuesta)
       if (emailConfigured) {
-        try {
-          console.log(`📧 Intentando enviar email de confirmación final a: ${booking.clientEmail}`);
-          console.log(`📧 Datos del email:`, {
-            clientName: booking.clientName,
-            clientEmail: booking.clientEmail,
-            service: booking.service,
-            date: booking.date,
-            time: booking.time
-          });
-          
-          await sendFinalConfirmation({
-            clientName: booking.clientName,
-            clientEmail: booking.clientEmail,
-            service: booking.service,
-            date: booking.date,
-            time: booking.time
-          });
-          
+        // Enviar email en background sin esperar
+        sendFinalConfirmation({
+          clientName: booking.clientName,
+          clientEmail: booking.clientEmail,
+          service: booking.service,
+          date: booking.date,
+          time: booking.time
+        }).then(() => {
           console.log(`✅ Email de confirmación FINAL enviado exitosamente a ${booking.clientEmail}`);
-        } catch (emailError) {
+        }).catch((emailError) => {
           console.error('❌ Error enviando email de confirmación final:', emailError.message || emailError);
           console.error('❌ Detalles del error:', emailError);
-          // No fallar la respuesta si el email falla, pero registrar el error
-        }
-      } else {
+        });
+        } else {
         console.warn('⚠️ Email no configurado - No se envió confirmación');
       }
     }
 
     console.log(`✅ Reserva ${id} actualizada a estado: ${status}`);
     
+    // Responder inmediatamente sin esperar el email
     res.json({
       success: true,
       message: `Reserva actualizada a ${status}`,
