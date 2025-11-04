@@ -197,7 +197,7 @@ const Services = () => {
       id: 'paquete-comercial-basico',
       title: 'Paquete Comercial Básico',
       price: '$6 por pie cuadrado',
-      description: 'Ideal para dueños de negocios que buscan mejorar la imagen visual y funcionalidad de su local. Incluye reunión inicial presencial, moodboard digital, paleta de colores, propuesta de distribución 2D, ronda de ajuste online y lista de recomendaciones. Entrega en 12-15 días hábiles.',
+      description: 'Ideal para dueños de negocios, marcas o emprendedores que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 1 moodboard digital, paleta de colores sugerida, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (1 opción por ítem) y selección estratégica de proveedores con descuentos hasta 20%. Entrega en 12-15 días hábiles.',
       image: '/images/service3.jpg',
       tag: 'Comercial',
       duration: 'Presencial'
@@ -206,7 +206,7 @@ const Services = () => {
       id: 'paquete-comercial-premium',
       title: 'Paquete Comercial Premium',
       price: '$9 por pie cuadrado',
-      description: 'Solución completa para negocios que buscan una transformación profesional. Incluye reunión inicial y seguimiento, 2 moodboards digitales, paleta de colores personalizada, propuesta de distribución 2D, ronda de ajuste online, lista de recomendaciones con 2 opciones por ítem y selección estratégica de proveedores con descuentos. Entrega en 15-21 días hábiles.',
+      description: 'Solución completa para negocios que buscan una transformación profesional. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 2 moodboards digitales, paleta de colores personalizada, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (2 opciones por ítem) y selección estratégica de proveedores con descuentos hasta 20%. PDF de presentación final incluido. Entrega en 15-21 días hábiles.',
       image: '/images/service4.jpg',
       tag: 'Comercial',
       duration: 'Presencial'
