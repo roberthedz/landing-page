@@ -1001,6 +1001,77 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
 // ENDPOINT DE DIAGNÓSTICO DE EMAIL
 // ============================================
 
+// Endpoint para probar conexión TCP directa (diagnóstico definitivo)
+app.get('/api/test/smtp-connection', async (req, res) => {
+  const net = require('net');
+  const dns = require('dns');
+  
+  const results = {
+    dns: { status: 'testing', message: '' },
+    tcp465: { status: 'testing', message: '' },
+    tcp587: { status: 'testing', message: '' }
+  };
+  
+  // 1. Probar DNS
+  try {
+    const addresses = await new Promise((resolve, reject) => {
+      dns.resolve4('smtp.gmail.com', (err, addresses) => {
+        if (err) reject(err);
+        else resolve(addresses);
+      });
+    });
+    results.dns = { status: 'success', message: `Resuelto a: ${addresses.join(', ')}` };
+  } catch (error) {
+    results.dns = { status: 'failed', message: error.message };
+  }
+  
+  // 2. Probar conexión TCP puerto 465
+  await new Promise((resolve) => {
+    const socket = net.createConnection(465, 'smtp.gmail.com');
+    socket.on('connect', () => {
+      results.tcp465 = { status: 'success', message: 'Puerto 465 ACCESIBLE - Render NO bloquea SMTP' };
+      socket.end();
+      resolve();
+    });
+    socket.on('error', (err) => {
+      results.tcp465 = { status: 'failed', message: `Puerto 465 BLOQUEADO: ${err.code} - Render bloquea conexiones SMTP` };
+      resolve();
+    });
+    socket.setTimeout(10000, () => {
+      results.tcp465 = { status: 'timeout', message: 'Timeout - Puerto 465 no accesible (probable bloqueo)' };
+      socket.destroy();
+      resolve();
+    });
+  });
+  
+  // 3. Probar conexión TCP puerto 587
+  await new Promise((resolve) => {
+    const socket = net.createConnection(587, 'smtp.gmail.com');
+    socket.on('connect', () => {
+      results.tcp587 = { status: 'success', message: 'Puerto 587 ACCESIBLE' };
+      socket.end();
+      resolve();
+    });
+    socket.on('error', (err) => {
+      results.tcp587 = { status: 'failed', message: `Puerto 587 BLOQUEADO: ${err.code}` };
+      resolve();
+    });
+    socket.setTimeout(10000, () => {
+      results.tcp587 = { status: 'timeout', message: 'Timeout - Puerto 587 no accesible' };
+      socket.destroy();
+      resolve();
+    });
+  });
+  
+  res.json({
+    diagnostic: 'Conexión TCP directa a Gmail SMTP',
+    conclusion: results.tcp465.status === 'success' || results.tcp587.status === 'success'
+      ? 'Render NO bloquea SMTP - El problema es otra cosa'
+      : 'Render BLOQUEA conexiones SMTP salientes',
+    results
+  });
+});
+
 app.get('/api/test/email-status', async (req, res) => {
   try {
     const appPassword = process.env.GMAIL_APP_PASSWORD;
