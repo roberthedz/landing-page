@@ -5,7 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const dns = require('dns');
 
-// Importar configuración de email con Nodemailer + Gmail
+// Importar configuración de email con Resend
 const { 
   configureEmail, 
   sendAdminNotification, 
@@ -97,7 +97,7 @@ const getBaseUrl = (req) => {
   return `${protocol}://${host}`;
 };
 
-// Configurar SendGrid para emails seguros
+// Configurar Resend para emails
 const emailConfigured = configureEmail();
 
 // Middleware
@@ -326,7 +326,7 @@ app.post('/api/bookings', async (req, res) => {
         // Continuar aunque falle el email - no bloquear la reserva
       }
     } else {
-      console.warn('⚠️ Gmail no configurado - emails no enviados');
+      console.warn('⚠️ Resend no configurado - emails no enviados');
     }
 
     // 4️⃣ INTENTAR CREAR LA RESERVA EN MongoDB (si falla, no importa, los emails ya se enviaron)
@@ -1001,125 +1001,22 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
 // ENDPOINT DE DIAGNÓSTICO DE EMAIL
 // ============================================
 
-// Endpoint para probar conexión TCP directa (diagnóstico definitivo)
-app.get('/api/test/smtp-connection', async (req, res) => {
-  const net = require('net');
-  const dns = require('dns');
-  
-  const results = {
-    dns: { status: 'testing', message: '' },
-    tcp465: { status: 'testing', message: '' },
-    tcp587: { status: 'testing', message: '' }
-  };
-  
-  // 1. Probar DNS
-  try {
-    const addresses = await new Promise((resolve, reject) => {
-      dns.resolve4('smtp.gmail.com', (err, addresses) => {
-        if (err) reject(err);
-        else resolve(addresses);
-      });
-    });
-    results.dns = { status: 'success', message: `Resuelto a: ${addresses.join(', ')}` };
-  } catch (error) {
-    results.dns = { status: 'failed', message: error.message };
-  }
-  
-  // 2. Probar conexión TCP puerto 465
-  await new Promise((resolve) => {
-    const socket = net.createConnection(465, 'smtp.gmail.com');
-    socket.on('connect', () => {
-      results.tcp465 = { status: 'success', message: 'Puerto 465 ACCESIBLE - Render NO bloquea SMTP' };
-      socket.end();
-      resolve();
-    });
-    socket.on('error', (err) => {
-      results.tcp465 = { status: 'failed', message: `Puerto 465 BLOQUEADO: ${err.code} - Render bloquea conexiones SMTP` };
-      resolve();
-    });
-    socket.setTimeout(10000, () => {
-      results.tcp465 = { status: 'timeout', message: 'Timeout - Puerto 465 no accesible (probable bloqueo)' };
-      socket.destroy();
-      resolve();
-    });
-  });
-  
-  // 3. Probar conexión TCP puerto 587
-  await new Promise((resolve) => {
-    const socket = net.createConnection(587, 'smtp.gmail.com');
-    socket.on('connect', () => {
-      results.tcp587 = { status: 'success', message: 'Puerto 587 ACCESIBLE' };
-      socket.end();
-      resolve();
-    });
-    socket.on('error', (err) => {
-      results.tcp587 = { status: 'failed', message: `Puerto 587 BLOQUEADO: ${err.code}` };
-      resolve();
-    });
-    socket.setTimeout(10000, () => {
-      results.tcp587 = { status: 'timeout', message: 'Timeout - Puerto 587 no accesible' };
-      socket.destroy();
-      resolve();
-    });
-  });
-  
-  res.json({
-    diagnostic: 'Conexión TCP directa a Gmail SMTP',
-    conclusion: results.tcp465.status === 'success' || results.tcp587.status === 'success'
-      ? 'Render NO bloquea SMTP - El problema es otra cosa'
-      : 'Render BLOQUEA conexiones SMTP salientes',
-    results
-  });
-});
-
+// Endpoint para verificar estado de Resend
 app.get('/api/test/email-status', async (req, res) => {
   try {
-    const appPassword = process.env.GMAIL_APP_PASSWORD;
-    const hasPassword = !!appPassword;
-    const passwordLength = appPassword ? appPassword.length : 0;
-    
-    // Intentar crear transporter para verificar configuración
-    let transporterStatus = 'no-config';
-    let connectionTest = 'not-tested';
-    
-    if (hasPassword) {
-      try {
-        const { createTransporter } = require('./src/config/emailConfig');
-        const transporter = createTransporter();
-        transporterStatus = 'created';
-        
-        // Intentar verificar la conexión (sin enviar email) con timeout corto
-        try {
-          const verifyPromise = transporter.verify();
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Verificación timeout después de 15 segundos')), 15000)
-          );
-          await Promise.race([verifyPromise, timeoutPromise]);
-          connectionTest = 'success';
-        } catch (verifyError) {
-          connectionTest = `failed: ${verifyError.message}`;
-        }
-      } catch (createError) {
-        transporterStatus = `error: ${createError.message}`;
-      }
-    }
+    const apiKey = process.env.RESEND_API_KEY;
+    const hasKey = !!apiKey;
+    const keyLength = apiKey ? apiKey.length : 0;
     
     res.json({
       emailConfigured: emailConfigured,
-      appPassword: {
-        exists: hasPassword,
-        length: passwordLength,
-        preview: hasPassword ? `${appPassword.substring(0, 2)}***${appPassword.substring(passwordLength - 2)}` : null
+      resend: {
+        apiKeyExists: hasKey,
+        keyLength: keyLength,
+        preview: hasKey ? `${apiKey.substring(0, 4)}***${apiKey.substring(keyLength - 4)}` : null
       },
-      transporter: {
-        status: transporterStatus,
-        connectionTest: connectionTest
-      },
-      smtp: {
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true
-      }
+      provider: 'Resend',
+      note: 'Usando API REST - No requiere SMTP'
     });
   } catch (error) {
     res.status(500).json({
