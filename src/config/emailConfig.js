@@ -156,7 +156,7 @@ Sistema de Reservas Profesional
       `
     };
     
-    await sendEmailWithTimeout(transporter, mailOptions, 15000);
+    await sendEmailWithTimeout(transporter, mailOptions, 30000);
     console.log('✅ Email de notificación enviado al ADMIN');
     return true;
   } catch (error) {
@@ -259,7 +259,7 @@ Sistema de Reservas Profesional
       `
     };
     
-    await sendEmailWithTimeout(transporter, mailOptions, 15000);
+    await sendEmailWithTimeout(transporter, mailOptions, 30000);
     console.log('✅ Email de confirmación enviado al CLIENTE');
     return true;
   } catch (error) {
@@ -360,7 +360,7 @@ Sistema de Reservas Profesional
       `
     };
     
-    await sendEmailWithTimeout(transporter, mailOptions, 15000);
+    await sendEmailWithTimeout(transporter, mailOptions, 30000);
     console.log('✅ Email de confirmación final enviado al CLIENTE');
     return true;
   } catch (error) {
