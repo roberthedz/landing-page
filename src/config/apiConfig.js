@@ -5,12 +5,12 @@ import axios from 'axios';
 
 // CONFIGURACIÓN FORZADA: Siempre usar Render para APIs en producción
 const getBaseUrl = () => {
-  // En desarrollo local, usar localhost
+  // En desarrollo local, usar localhost en el puerto 3000 (donde corre el servidor)
   if (window.location.hostname === 'localhost' || 
       window.location.hostname === '127.0.0.1' ||
       window.location.port === '3000' ||
       window.location.port === '3001') {
-    return 'http://localhost:3001/api';
+    return 'http://localhost:3000/api';
   }
   
   // EN CUALQUIER OTRO CASO (dedecorinfo.com, render, etc.)
