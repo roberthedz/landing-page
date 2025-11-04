@@ -7,19 +7,28 @@ const nodemailer = require('nodemailer');
 
 // Configurar transportador de Gmail
 const createTransporter = () => {
+  // Usar configuración SMTP explícita en lugar de 'service: gmail'
+  // Esto es más confiable desde servidores de hosting como Render
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // true para 465, false para otros puertos
     auth: {
       user: 'dedecorinfo@gmail.com',
       pass: process.env.GMAIL_APP_PASSWORD
     },
-    secure: true,
-    connectionTimeout: 30000, // 30 segundos para conectar (aumentado)
-    socketTimeout: 30000, // 30 segundos para operaciones (aumentado)
-    greetingTimeout: 30000, // 30 segundos para saludo SMTP (aumentado)
-    pool: true, // Usar conexión persistente
-    maxConnections: 1,
-    maxMessages: 3
+    connectionTimeout: 30000, // 30 segundos para conectar
+    socketTimeout: 30000, // 30 segundos para operaciones
+    greetingTimeout: 30000, // 30 segundos para saludo SMTP
+    tls: {
+      // No rechazar certificados no autorizados
+      rejectUnauthorized: false
+    },
+    // Intentar múltiples veces si falla
+    retry: {
+      attempts: 3,
+      delay: 2000
+    }
   });
 };
 
