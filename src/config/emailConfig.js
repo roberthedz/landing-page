@@ -26,66 +26,29 @@ const createTransporter = () => {
   console.log('📧 Usuario:', 'dedecorinfo@gmail.com');
   console.log('🔑 Contraseña configurada:', appPassword ? 'Sí (' + appPassword.length + ' caracteres)' : 'No');
   
-  // Configuración optimizada para Render - probar múltiples métodos
-  // Método 1: service: 'gmail' (a veces funciona mejor)
-  try {
-    globalTransporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'dedecorinfo@gmail.com',
-        pass: appPassword
-      },
-      // Pool de conexiones para mejor rendimiento
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 3,
-      // Timeouts más cortos para detectar problemas rápido
-      connectionTimeout: 10000, // 10 segundos
-      socketTimeout: 10000, // 10 segundos
-      greetingTimeout: 10000, // 10 segundos
-      // TLS configurado explícitamente
-      tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
-      }
-    });
-    
-    console.log('✅ Transporter creado con service: gmail');
-    return globalTransporter;
-  } catch (error) {
-    console.warn('⚠️ Error con service: gmail, intentando configuración SMTP explícita:', error.message);
-  }
-  
-  // Método 2: Configuración SMTP explícita con puerto 587 (TLS)
-  // Este es más confiable desde algunos hosts
+  // Configuración optimizada - probar sin pool primero (a veces pool causa problemas)
+  // Método 1: service: 'gmail' SIN pool (más simple, más compatible)
   globalTransporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // false para 587
-    requireTLS: true,
+    service: 'gmail',
     auth: {
       user: 'dedecorinfo@gmail.com',
       pass: appPassword
     },
-    // Pool de conexiones
-    pool: true,
-    maxConnections: 1,
-    maxMessages: 3,
-    // Timeouts
-    connectionTimeout: 10000,
-    socketTimeout: 10000,
-    greetingTimeout: 10000,
-    // TLS específico
+    // NO usar pool inicialmente - puede causar problemas de conexión
+    // Timeouts aumentados para dar más tiempo
+    connectionTimeout: 20000, // 20 segundos
+    socketTimeout: 20000, // 20 segundos
+    greetingTimeout: 20000, // 20 segundos
+    // TLS mínimo necesario
     tls: {
-      rejectUnauthorized: false,
-      minVersion: 'TLSv1.2',
-      ciphers: 'SSLv3'
+      rejectUnauthorized: false
     },
+    // Debug temporal para ver qué está pasando
     debug: false,
     logger: false
   });
   
-  console.log('✅ Transporter creado con configuración SMTP explícita (puerto 587)');
+  console.log('✅ Transporter creado con service: gmail (sin pool)');
   return globalTransporter;
 };
 
