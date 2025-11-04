@@ -331,6 +331,66 @@ const ServiceDetailPage = () => {
             'Necesita visualización 3D profesional del resultado',
             'Valora la atención preferente y personalizada'
           ]
+        },
+        // SERVICIOS COMERCIALES
+        {
+          id: 'paquete-comercial-basico',
+          title: 'Paquete Comercial Básico',
+          price: '$6 por pie cuadrado',
+          duration: 'Presencial',
+          description: 'Ideal para dueños de negocios que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda.',
+          longDescription: 'Este paquete está diseñado para dueños de negocios, marcas o emprendedores que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda. Incluye una propuesta única y final, cuidadosamente diseñada para reflejar la esencia de tu marca, mejorar la funcionalidad del espacio y elevar la experiencia visual de tus clientes. Entrega entre 12 y 15 días hábiles después de la reunión inicial.',
+          image: '/images/service3.jpg',
+          tag: 'Comercial',
+          category: 'asesoria-comercial',
+          features: [
+            '1 reunión inicial presencial (hasta 90 minutos) para conocer el espacio, necesidades del negocio y la identidad visual de la marca',
+            '1 reunión de seguimiento y presentación del proyecto',
+            '1 Moodboard digital con la propuesta estética y el concepto visual del local',
+            'Paleta de colores sugerida, adaptada a la identidad de su marca y el tipo de cliente que desea atraer',
+            'Propuesta de distribución general (layout en plano 2D) para optimizar la circulación, visibilidad de productos y experiencia del cliente',
+            '1 ronda de ajuste online (45 minutos) posterior a la entrega, para revisar y afinar detalles',
+            'Lista de recomendaciones de mobiliario, decoración e iluminación, con links de compra (1 opción por ítem) según el presupuesto y estilo del negocio',
+            'PDF de presentación final, con la visión completa del espacio, resumen de sugerencias y propuestas finales',
+            'Selección estratégica de tiendas, marcas y proveedores recomendados, con descuentos de hasta un 20% en algunos de ellos',
+            'Entrega entre 12 y 15 días hábiles después de la reunión inicial'
+          ],
+          includes: [
+            'Es dueño de un negocio, marca o emprendedor',
+            'Busca mejorar la imagen visual y funcionalidad de su local, showroom o tienda',
+            'Desea una asesoría personalizada en sitio, con observaciones reales del espacio, iluminación y flujo de clientes',
+            'Quiere una propuesta integral, práctica y lista para implementar sin complicaciones'
+          ]
+        },
+        {
+          id: 'paquete-comercial-premium',
+          title: 'Paquete Comercial Premium',
+          price: '$9 por pie cuadrado',
+          duration: 'Presencial',
+          description: 'Solución completa para negocios que buscan una transformación profesional con múltiples opciones y acompañamiento detallado.',
+          longDescription: 'Este paquete premium está diseñado para dueños de negocios, marcas o emprendedores que buscan una solución completa y profesional para transformar su local comercial. Incluye una propuesta única y final, cuidadosamente diseñada para reflejar la esencia de tu marca, mejorar la funcionalidad del espacio y elevar la experiencia visual de tus clientes. Entrega entre 15 y 21 días hábiles después de la reunión inicial.',
+          image: '/images/service4.jpg',
+          tag: 'Comercial',
+          category: 'asesoria-comercial',
+          features: [
+            '1 reunión inicial presencial (hasta 90 minutos) para conocer el espacio, necesidades del negocio y la identidad visual de la marca',
+            '1 reunión de seguimiento para presentación del proyecto',
+            '2 Moodboards digitales con la propuesta estética y el concepto visual del local',
+            'Paleta de colores sugerida, adaptada a la identidad de su marca y el tipo de cliente que desea atraer',
+            'Propuesta de distribución general (layout en plano 2D) para optimizar la circulación, visibilidad de productos y experiencia del cliente',
+            '1 ronda de ajuste online (45 minutos) posterior a la entrega, para revisar y afinar detalles',
+            'Lista de recomendaciones de mobiliario, decoración e iluminación, con links de compra (2 opciones por ítem) según el presupuesto y estilo del negocio',
+            'PDF de presentación final, con la visión completa del espacio, resumen de sugerencias y propuestas finales',
+            'Selección estratégica de tiendas, marcas y proveedores recomendados, con descuentos de hasta un 20% en algunos de ellos',
+            'Entrega entre 15 y 21 días hábiles después de la reunión inicial'
+          ],
+          includes: [
+            'Es dueño de un negocio, marca o emprendedor',
+            'Busca mejorar la imagen visual y funcionalidad de su local, showroom o tienda',
+            'Desea una asesoría personalizada en sitio, con observaciones reales del espacio, iluminación y flujo de clientes',
+            'Quiere una propuesta integral, práctica y lista para implementar sin complicaciones',
+            'Valora tener múltiples opciones por ítem para elegir según su presupuesto'
+          ]
         }
       ];
       
