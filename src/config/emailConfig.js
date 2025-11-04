@@ -210,7 +210,7 @@ const sendClientConfirmation = async (bookingData) => {
   try {
     const { clientName, clientEmail, service, date, time } = bookingData;
     
-    const resend = getResendClient();
+    const resend = getResendClientGeneral(); // Usar cliente general para clientes
     
     const htmlContent = `
       <!DOCTYPE html>
