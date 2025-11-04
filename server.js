@@ -997,6 +997,194 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
 });
 
 // Servir React app para todas las rutas no-API
+// ============================================
+// ENDPOINTS DE PRUEBA PARA EMAILS (SOLO TESTING)
+// ============================================
+
+// Endpoint para probar email de notificación al admin
+app.post('/api/test/admin-email', async (req, res) => {
+  console.log('🧪 TEST: Enviando email de notificación al ADMIN');
+  try {
+    const { clientName = 'Test Admin User', clientEmail = 'test@example.com', clientPhone = '1234567890', service = 'Test Service', date = '11/05/2025', time = '10:00 AM', notes = 'Email de prueba' } = req.body;
+    
+    const bookingId = `test-${Date.now()}`;
+    
+    await sendAdminNotification({
+      bookingId,
+      clientName,
+      clientEmail,
+      clientPhone,
+      service,
+      date,
+      time,
+      notes
+    });
+    
+    res.json({
+      success: true,
+      message: 'Email de notificación al ADMIN enviado exitosamente',
+      bookingId,
+      recipient: 'dedecorinfo@gmail.com'
+    });
+  } catch (error) {
+    console.error('❌ Error en test de email al admin:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error enviando email al admin',
+      details: error.toString()
+    });
+  }
+});
+
+// Endpoint para probar email de confirmación inicial al cliente
+app.post('/api/test/client-confirmation', async (req, res) => {
+  console.log('🧪 TEST: Enviando email de confirmación inicial al CLIENTE');
+  try {
+    const { clientName = 'Test Client User', clientEmail = 'test@example.com', service = 'Test Service', date = '11/05/2025', time = '10:00 AM' } = req.body;
+    
+    const bookingId = `test-${Date.now()}`;
+    
+    await sendClientConfirmation({
+      bookingId,
+      clientName,
+      clientEmail,
+      service,
+      date,
+      time
+    });
+    
+    res.json({
+      success: true,
+      message: 'Email de confirmación inicial al CLIENTE enviado exitosamente',
+      bookingId,
+      recipient: clientEmail
+    });
+  } catch (error) {
+    console.error('❌ Error en test de email al cliente:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error enviando email al cliente',
+      details: error.toString()
+    });
+  }
+});
+
+// Endpoint para probar email de confirmación final al cliente
+app.post('/api/test/client-final-confirmation', async (req, res) => {
+  console.log('🧪 TEST: Enviando email de confirmación FINAL al CLIENTE');
+  try {
+    const { clientName = 'Test Client User', clientEmail = 'test@example.com', service = 'Test Service', date = '11/05/2025', time = '10:00 AM' } = req.body;
+    
+    await sendFinalConfirmation({
+      clientName,
+      clientEmail,
+      service,
+      date,
+      time
+    });
+    
+    res.json({
+      success: true,
+      message: 'Email de confirmación FINAL al CLIENTE enviado exitosamente',
+      recipient: clientEmail
+    });
+  } catch (error) {
+    console.error('❌ Error en test de email final al cliente:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error enviando email final al cliente',
+      details: error.toString()
+    });
+  }
+});
+
+// Endpoint para probar el flujo completo (ambos emails)
+app.post('/api/test/booking-flow', async (req, res) => {
+  console.log('🧪 TEST: Flujo completo de booking (ambos emails)');
+  try {
+    const { 
+      clientName = 'Test User', 
+      clientEmail = 'test@example.com', 
+      clientPhone = '1234567890', 
+      service = 'Test Service', 
+      date = '11/05/2025', 
+      time = '10:00 AM', 
+      notes = 'Email de prueba completo' 
+    } = req.body;
+    
+    const bookingId = `test-${Date.now()}`;
+    
+    // Enviar ambos emails en paralelo
+    const emailPromise = Promise.all([
+      sendAdminNotification({
+        bookingId,
+        clientName,
+        clientEmail,
+        clientPhone,
+        service,
+        date,
+        time,
+        notes
+      }).catch(err => {
+        console.error('⚠️ Error enviando email al admin:', err.message || err);
+        return false;
+      }),
+      
+      sendClientConfirmation({
+        bookingId,
+        clientName,
+        clientEmail,
+        service,
+        date,
+        time
+      }).catch(err => {
+        console.error('⚠️ Error enviando email al cliente:', err.message || err);
+        return false;
+      })
+    ]);
+    
+    // Timeout de 20 segundos
+    const timeoutPromise = new Promise((resolve) => 
+      setTimeout(() => resolve([false, false]), 20000)
+    );
+    
+    const results = await Promise.race([emailPromise, timeoutPromise]);
+    
+    const adminSent = Array.isArray(results) && results[0] === true;
+    const clientSent = Array.isArray(results) && results[1] === true;
+    
+    res.json({
+      success: adminSent || clientSent,
+      message: 'Flujo completo de booking probado',
+      bookingId,
+      emails: {
+        admin: {
+          sent: adminSent,
+          recipient: 'dedecorinfo@gmail.com'
+        },
+        client: {
+          sent: clientSent,
+          recipient: clientEmail
+        }
+      },
+      note: adminSent && clientSent 
+        ? 'Ambos emails enviados exitosamente' 
+        : adminSent 
+          ? 'Solo email al admin se envió' 
+          : clientSent 
+            ? 'Solo email al cliente se envió' 
+            : 'Ningún email se pudo enviar (timeout o error)'
+    });
+  } catch (error) {
+    console.error('❌ Error en test de flujo completo:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error en flujo completo',
+      details: error.toString()
+    });
+  }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
