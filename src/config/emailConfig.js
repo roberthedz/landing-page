@@ -88,7 +88,7 @@ const sendAdminNotification = async (bookingData) => {
     const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
     const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
     
-    const resend = getResendClient();
+    const resend = getResendClientAdmin(); // Usar cliente de admin
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -320,7 +320,7 @@ const sendFinalConfirmation = async (bookingData) => {
   try {
     const { clientName, clientEmail, service, date, time } = bookingData;
     
-    const resend = getResendClient();
+    const resend = getResendClientGeneral(); // Usar cliente general para clientes
     
     const htmlContent = `
       <!DOCTYPE html>
