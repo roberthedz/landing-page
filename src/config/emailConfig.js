@@ -81,7 +81,7 @@ const sendAdminNotification = async (bookingData) => {
     const confirmUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=confirm`;
     const rejectUrl = `${baseUrl}/confirm-booking?id=${bookingId}&action=reject`;
     
-    const resend = getResendClient();
+    const resend = getResendClientAdmin(); // Usar cuenta de admin para emails al admin
     
     const htmlContent = `
       <!DOCTYPE html>
