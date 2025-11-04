@@ -85,7 +85,6 @@ const getResendClientGeneral = () => {
   if (apiKeyGeneral) {
     if (!resendClientGeneral) {
       resendClientGeneral = new Resend(apiKeyGeneral);
-      console.log('📧 Usando RESEND_API_KEY para emails a clientes');
     }
     return resendClientGeneral;
   }
@@ -351,8 +350,6 @@ Sistema de Reservas Profesional
     
     // Si falla con error 403 y hay una API key de admin, intentar con esa
     if (error && (error.statusCode === 403 || (error.message && error.message.includes('only send testing emails'))) && apiKeyGeneral && apiKeyAdmin && !usingAdminKey) {
-      console.log('⚠️ RESEND_API_KEY falló con error 403, intentando con RESEND_API_KEY_ADMIN...');
-      
       try {
         const adminResend = getResendClientAdmin();
         const result = await adminResend.emails.send({
@@ -364,7 +361,6 @@ Sistema de Reservas Profesional
         });
         data = result.data;
         error = result.error;
-        console.log('✅ Email enviado exitosamente usando RESEND_API_KEY_ADMIN');
       } catch (adminError) {
         error = adminError;
       }
@@ -387,8 +383,6 @@ const sendFinalConfirmation = async (bookingData) => {
   try {
     const { clientName, clientEmail, service, date, time } = bookingData;
     
-    console.log(`📧 sendFinalConfirmation - Preparando email para: ${clientEmail}`);
-    
     if (!clientName || !clientEmail || !service || !date || !time) {
       throw new Error(`Faltan datos requeridos: clientName=${!!clientName}, clientEmail=${!!clientEmail}, service=${!!service}, date=${!!date}, time=${!!time}`);
     }
@@ -402,16 +396,12 @@ const sendFinalConfirmation = async (bookingData) => {
     
     if (apiKeyGeneral) {
       resend = getResendClientGeneral();
-      console.log('📧 Intentando primero con RESEND_API_KEY');
     } else if (apiKeyAdmin) {
       resend = getResendClientAdmin();
       usingAdminKey = true;
-      console.log('⚠️ Usando RESEND_API_KEY_ADMIN (RESEND_API_KEY no configurada)');
     } else {
       throw new Error('RESEND_API_KEY o RESEND_API_KEY_ADMIN no configurada');
     }
-    
-    console.log(`📧 Cliente Resend obtenido para enviar a: ${clientEmail}`);
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -494,10 +484,6 @@ Email: dedecorinfo@gmail.com
 Sistema de Reservas Profesional
     `;
     
-    console.log(`📧 Enviando email vía Resend a: ${clientEmail}`);
-    console.log(`📧 From: ${getFromAddress()}`);
-    console.log(`📧 Subject: Reserva Confirmada - ${service}`);
-    
     let data, error;
     let lastError = null;
     
@@ -519,8 +505,6 @@ Sistema de Reservas Profesional
     
     // Si falla con error 403 y hay una API key de admin, intentar con esa
     if (error && (error.statusCode === 403 || (error.message && error.message.includes('only send testing emails'))) && apiKeyGeneral && apiKeyAdmin && !usingAdminKey) {
-      console.log('⚠️ RESEND_API_KEY falló con error 403, intentando con RESEND_API_KEY_ADMIN...');
-      
       try {
         const adminResend = getResendClientAdmin();
         const result = await adminResend.emails.send({
@@ -532,7 +516,6 @@ Sistema de Reservas Profesional
         });
         data = result.data;
         error = result.error;
-        console.log('✅ Email enviado exitosamente usando RESEND_API_KEY_ADMIN');
       } catch (adminError) {
         error = adminError;
         lastError = adminError;
@@ -540,11 +523,6 @@ Sistema de Reservas Profesional
     }
     
     if (error) {
-      console.error('❌ Error de Resend:', error);
-      console.error('❌ Código de error:', error.name || 'N/A');
-      console.error('❌ Mensaje de error:', error.message || 'N/A');
-      
-      // Mensaje más descriptivo para el error común de Resend
       if (error.message && error.message.includes('only send testing emails to your own email address')) {
         const detailedError = new Error(
           `Resend solo permite enviar a la dirección de email asociada a la cuenta (dedecorinfo@gmail.com). ` +
@@ -558,12 +536,9 @@ Sistema de Reservas Profesional
       throw new Error(error.message || 'Error enviando email');
     }
     
-    console.log('✅ Email de confirmación final enviado al CLIENTE exitosamente');
-    console.log('✅ ID del email:', data?.id || 'N/A');
     return true;
   } catch (error) {
-    console.error('❌ Error completo enviando confirmación final:', error);
-    console.error('❌ Stack trace:', error.stack);
+    console.error('❌ Error enviando confirmación final:', error.message || error);
     throw error;
   }
 };

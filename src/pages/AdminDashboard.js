@@ -134,11 +134,6 @@ const AdminDashboard = () => {
 
   // Cargar reservas
   useEffect(() => {
-    console.log('🔧 DEBUG AdminDashboard - Configuración:');
-    console.log('  - apiConfig.endpoints.adminBlockSlot:', apiConfig.endpoints.adminBlockSlot);
-    console.log('  - apiConfig.endpoints.adminUnblockSlot:', apiConfig.endpoints.adminUnblockSlot);
-    console.log('  - selectedDate inicial:', selectedDate);
-    console.log('  - selectedSlot inicial:', selectedSlot);
     loadBookings();
   }, []);
 

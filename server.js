@@ -20,7 +20,6 @@ console.log('🔧 DNS configurado:', dns.getServers());
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-console.log('🔍 Puerto configurado:', PORT);
 console.log('🌐 Environment:', process.env.NODE_ENV || 'development');
 
 // Configuración MongoDB Atlas directa
@@ -166,7 +165,6 @@ app.get('/api/booked-slots', async (req, res) => {
       });
     }
 
-    console.log('🔍 Consultando horarios ocupados para:', date);
     
     // Obtener slots ocupados (reservas confirmadas) Y slots bloqueados administrativamente
     const bookedSlots = await BookedSlot.find({ 
@@ -210,7 +208,6 @@ app.get('/api/booked-slots', async (req, res) => {
 
 // Endpoint principal para crear reservas
 app.post('/api/bookings', async (req, res) => {
-  console.log('🔍 POST /api/bookings - Solicitud recibida desde:', req.get('origin'));
   console.log('📝 Datos recibidos:', req.body);
   
   try {
@@ -254,7 +251,6 @@ app.post('/api/bookings', async (req, res) => {
     
     // 2️⃣ VERIFICAR QUE EL HORARIO ESTÉ DISPONIBLE (si MongoDB está disponible)
     try {
-    console.log('🔍 Verificando disponibilidad del horario:', date, time);
     const existingSlot = await BookedSlot.findOne({ date, time });
     if (existingSlot) {
         console.log('⚠️ Horario ya ocupado:', date, time);
@@ -271,7 +267,6 @@ app.post('/api/bookings', async (req, res) => {
     }
 
     // 3️⃣ ENVIAR EMAILS PRIMERO (ANTES DE MongoDB para asegurar que se envíen)
-    console.log('📧 Enviando emails de nueva solicitud...');
     let emailsSent = false;
     
     if (emailConfigured) {
@@ -605,12 +600,6 @@ app.get('/api/booked-slots-batch', async (req, res) => {
       ]
     });
     
-    console.log(`🔍 Encontrados ${bookedSlots.length} slots ocupados/bloqueados`);
-    
-    // DEBUG: Mostrar detalles de cada slot encontrado
-    bookedSlots.forEach((slot, index) => {
-      console.log(`  Slot ${index + 1}: ${slot.date} ${slot.time} - bookingId: ${slot.bookingId}, isBlocked: ${slot.isBlocked}, reason: ${slot.reason}`);
-    });
     
     // Agrupar por fecha
     const slotsByDate = {};
@@ -735,14 +724,6 @@ app.post('/api/admin/block-slot', async (req, res) => {
     }
 
     console.log(`✅ Horario ${date} ${time} bloqueado por admin`);
-    
-    // DEBUG: Verificar que se guardó correctamente
-    const savedSlot = await BookedSlot.findOne({ date, time });
-    if (savedSlot) {
-      console.log(`🔍 DEBUG - Slot guardado: ${savedSlot.date} ${savedSlot.time} - isBlocked: ${savedSlot.isBlocked}, reason: ${savedSlot.reason}, bookingId: ${savedSlot.bookingId}`);
-    } else {
-      console.log(`❌ ERROR - No se pudo encontrar el slot guardado para ${date} ${time}`);
-    }
     
     res.json({
       success: true,
@@ -969,7 +950,7 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
           date: booking.date,
           time: booking.time
         }).then(() => {
-          console.log(`✅ Email de confirmación FINAL enviado exitosamente a ${booking.clientEmail}`);
+          console.log(`✅ Email de confirmación enviado a ${booking.clientEmail}`);
         }).catch((emailError) => {
           console.error('❌ Error enviando email de confirmación final:', emailError.message || emailError);
           console.error('❌ Detalles del error:', emailError);
@@ -998,231 +979,6 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
 });
 
 // Servir React app para todas las rutas no-API
-// ============================================
-// ENDPOINT DE DIAGNÓSTICO DE EMAIL
-// ============================================
-
-// Endpoint para verificar estado de Resend
-app.get('/api/test/email-status', async (req, res) => {
-  try {
-    const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
-    const apiKeyGeneral = process.env.RESEND_API_KEY;
-    const hasAdminKey = !!apiKeyAdmin;
-    const hasGeneralKey = !!apiKeyGeneral;
-    
-    res.json({
-      emailConfigured: emailConfigured,
-      resend: {
-        admin: {
-          apiKeyExists: hasAdminKey,
-          keyLength: apiKeyAdmin ? apiKeyAdmin.length : 0,
-          preview: hasAdminKey ? `${apiKeyAdmin.substring(0, 4)}***${apiKeyAdmin.substring(apiKeyAdmin.length - 4)}` : null
-        },
-        general: {
-          apiKeyExists: hasGeneralKey,
-          keyLength: apiKeyGeneral ? apiKeyGeneral.length : 0,
-          preview: hasGeneralKey ? `${apiKeyGeneral.substring(0, 4)}***${apiKeyGeneral.substring(apiKeyGeneral.length - 4)}` : null
-        }
-      },
-      provider: 'Resend',
-      note: 'Usando API REST - No requiere SMTP'
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: error.message,
-      details: error.toString()
-    });
-  }
-});
-
-// ============================================
-// ENDPOINTS DE PRUEBA PARA EMAILS (SOLO TESTING)
-// ============================================
-
-// Endpoint para probar email de notificación al admin
-app.post('/api/test/admin-email', async (req, res) => {
-  console.log('🧪 TEST: Enviando email de notificación al ADMIN');
-  try {
-    const { clientName = 'Test Admin User', clientEmail = 'test@example.com', clientPhone = '1234567890', service = 'Test Service', date = '11/05/2025', time = '10:00 AM', notes = 'Email de prueba' } = req.body;
-    
-    const bookingId = `test-${Date.now()}`;
-    
-    await sendAdminNotification({
-      bookingId,
-      clientName,
-      clientEmail,
-      clientPhone,
-      service,
-      date,
-      time,
-      notes
-    });
-    
-    res.json({
-      success: true,
-      message: 'Email de notificación al ADMIN enviado exitosamente',
-      bookingId,
-      recipient: 'dedecorinfo@gmail.com'
-    });
-  } catch (error) {
-    console.error('❌ Error en test de email al admin:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Error enviando email al admin',
-      details: error.toString()
-    });
-  }
-});
-
-// Endpoint para probar email de confirmación inicial al cliente
-app.post('/api/test/client-confirmation', async (req, res) => {
-  console.log('🧪 TEST: Enviando email de confirmación inicial al CLIENTE');
-  try {
-    const { clientName = 'Test Client User', clientEmail = 'test@example.com', service = 'Test Service', date = '11/05/2025', time = '10:00 AM' } = req.body;
-    
-    const bookingId = `test-${Date.now()}`;
-    
-    await sendClientConfirmation({
-      bookingId,
-      clientName,
-      clientEmail,
-      service,
-      date,
-      time
-    });
-    
-    res.json({
-      success: true,
-      message: 'Email de confirmación inicial al CLIENTE enviado exitosamente',
-      bookingId,
-      recipient: clientEmail
-    });
-  } catch (error) {
-    console.error('❌ Error en test de email al cliente:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Error enviando email al cliente',
-      details: error.toString()
-    });
-  }
-});
-
-// Endpoint para probar email de confirmación final al cliente
-app.post('/api/test/client-final-confirmation', async (req, res) => {
-  console.log('🧪 TEST: Enviando email de confirmación FINAL al CLIENTE');
-  try {
-    const { clientName = 'Test Client User', clientEmail = 'test@example.com', service = 'Test Service', date = '11/05/2025', time = '10:00 AM' } = req.body;
-    
-    await sendFinalConfirmation({
-      clientName,
-      clientEmail,
-      service,
-      date,
-      time
-    });
-    
-    res.json({
-      success: true,
-      message: 'Email de confirmación FINAL al CLIENTE enviado exitosamente',
-      recipient: clientEmail
-    });
-  } catch (error) {
-    console.error('❌ Error en test de email final al cliente:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Error enviando email final al cliente',
-      details: error.toString()
-    });
-  }
-});
-
-// Endpoint para probar el flujo completo (ambos emails)
-app.post('/api/test/booking-flow', async (req, res) => {
-  console.log('🧪 TEST: Flujo completo de booking (ambos emails)');
-  try {
-    const { 
-      clientName = 'Test User', 
-      clientEmail = 'test@example.com', 
-      clientPhone = '1234567890', 
-      service = 'Test Service', 
-      date = '11/05/2025', 
-      time = '10:00 AM', 
-      notes = 'Email de prueba completo' 
-    } = req.body;
-    
-    const bookingId = `test-${Date.now()}`;
-    
-    // Enviar ambos emails en paralelo
-    const emailPromise = Promise.all([
-      sendAdminNotification({
-        bookingId,
-      clientName,
-      clientEmail,
-        clientPhone,
-        service,
-        date,
-        time,
-        notes
-      }).catch(err => {
-        console.error('⚠️ Error enviando email al admin:', err.message || err);
-        return false;
-      }),
-      
-      sendClientConfirmation({
-        bookingId,
-        clientName,
-        clientEmail,
-        service,
-        date,
-        time
-      }).catch(err => {
-        console.error('⚠️ Error enviando email al cliente:', err.message || err);
-        return false;
-      })
-    ]);
-    
-    // Timeout de 20 segundos
-    const timeoutPromise = new Promise((resolve) => 
-      setTimeout(() => resolve([false, false]), 20000)
-    );
-    
-    const results = await Promise.race([emailPromise, timeoutPromise]);
-    
-    const adminSent = Array.isArray(results) && results[0] === true;
-    const clientSent = Array.isArray(results) && results[1] === true;
-    
-    res.json({
-      success: adminSent || clientSent,
-      message: 'Flujo completo de booking probado',
-      bookingId,
-      emails: {
-        admin: {
-          sent: adminSent,
-          recipient: 'dedecorinfo@gmail.com'
-        },
-        client: {
-          sent: clientSent,
-          recipient: clientEmail
-        }
-      },
-      note: adminSent && clientSent 
-        ? 'Ambos emails enviados exitosamente' 
-        : adminSent 
-          ? 'Solo email al admin se envió' 
-          : clientSent 
-            ? 'Solo email al cliente se envió' 
-            : 'Ningún email se pudo enviar (timeout o error)'
-    });
-  } catch (error) {
-    console.error('❌ Error en test de flujo completo:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Error en flujo completo',
-      details: error.toString()
-    });
-  }
-});
-
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
@@ -1231,7 +987,6 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
   console.log(`🔗 MongoDB Atlas: ${mongoose.connection.readyState === 1 ? 'Conectado' : 'Desconectado'}`);
-  console.log(`📧 Email: ${emailConfigured ? 'Configurado' : 'No configurado'}`);
       console.log('✨ ¡Sistema de reservas listo para producción!');
     });
 

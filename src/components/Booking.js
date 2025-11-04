@@ -502,10 +502,8 @@ const Booking = ({ preloadedData = {} }) => {
         }
       }
       
-      // 🚀 ESTRATEGIA 3: Hacer petición a la API con reintentos
+      // Hacer petición a la API con reintentos
       const endpoint = `${apiConfig.endpoints.bookedSlotsBatch}?dates=${formattedDate}`;
-      console.log('🌐 Cargando horarios ocupados desde API:', endpoint);
-      console.log('🔍 DEBUG loadBookedSlots - endpoint completo:', endpoint);
       
       // Implementar reintentos automáticos (3 veces con intervalo de 1 segundo)
       let response = null;
@@ -513,40 +511,22 @@ const Booking = ({ preloadedData = {} }) => {
       
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          console.log(`Intento ${attempt}/3 de cargar horarios ocupados...`);
           response = await apiConfig.getCachedRequest(endpoint);
-          console.log('🔍 DEBUG loadBookedSlots - response completa:', response);
-          console.log('🔍 DEBUG loadBookedSlots - response.data:', response.data);
-          console.log('Horarios ocupados cargados exitosamente:', response.data);
-          break; // Si llegamos aquí, la petición fue exitosa
+          break;
         } catch (error) {
           lastError = error;
-          console.error(`Error en intento ${attempt}/3:`, error);
-          
-          // Si es el último intento, no esperar
           if (attempt < 3) {
-            console.log(`Esperando 1 segundo antes del siguiente intento...`);
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
       }
       
-      // Si después de 3 intentos no tenemos respuesta, lanzar el último error
       if (!response) {
         throw lastError || new Error('No se pudo cargar los horarios después de 3 intentos');
       }
       
-      // Validar que la respuesta tenga la estructura correcta
-      console.log('🔍 DEBUG loadBookedSlots - Validando respuesta:');
-      console.log('  - response.data:', response.data);
-      console.log('  - response.data.success:', response.data?.success);
-      console.log('  - response.data.slotsByDate:', response.data?.slotsByDate);
-      console.log('  - response.data.bookedSlots:', response.data?.bookedSlots);
-      
       if (response.data && response.data.success && response.data.slotsByDate) {
         const slotsForDate = response.data.slotsByDate[formattedDate] || [];
-        console.log(`✅ Procesando ${slotsForDate.length} horarios ocupados para ${formattedDate}`);
-        console.log('🔍 DEBUG loadBookedSlots - slotsForDate:', slotsForDate);
         
         // 🚀 ESTRATEGIA 4: Actualizar cache local
         const currentCache = JSON.parse(localStorage.getItem('cachedBookedSlots') || '{}');
@@ -618,28 +598,13 @@ const Booking = ({ preloadedData = {} }) => {
     if (!date) return false;
     
     const formattedDate = formatDate(date);
-    console.log('🔍 DEBUG isTimeSlotBooked:');
-    console.log('  - formattedDate:', formattedDate);
-    console.log('  - time:', time);
-    console.log('  - bookedSlots:', bookedSlots);
-    console.log('  - bookedSlots length:', bookedSlots?.length);
-    
     // Validar que bookedSlots sea un array antes de usar .some()
     if (!Array.isArray(bookedSlots)) {
-      console.warn('bookedSlots no es un array válido, tratando como array vacío');
       return false;
     }
     
     // Los slots ya están filtrados por fecha en el backend, solo comparar el tiempo
-    console.log('  - Comparando tiempo:', time, 'con slots:', bookedSlots.map(slot => slot.time));
-    
-    const isBooked = bookedSlots.some(slot => {
-      const matches = slot.time === time;
-      console.log(`  - Slot ${slot.time} === ${time}? ${matches} (reason: ${slot.reason}, isBlocked: ${slot.isBlocked})`);
-      return matches;
-    });
-    
-    console.log('  - ¿Está ocupado?', isBooked);
+    const isBooked = bookedSlots.some(slot => slot.time === time);
     return isBooked;
   };
 
