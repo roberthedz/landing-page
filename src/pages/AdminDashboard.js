@@ -179,22 +179,13 @@ const AdminDashboard = () => {
         month: '2-digit',
         day: '2-digit'
       });
-      console.log('🔧 DEBUG AdminDashboard - handleBlockSlot:');
-      console.log('  - selectedDate:', selectedDate);
-      console.log('  - formattedDate:', formattedDate);
-      console.log('  - selectedSlot:', selectedSlot);
-      console.log('  - endpoint:', apiConfig.endpoints.adminBlockSlot);
       
       const requestData = {
         date: formattedDate,
         time: selectedSlot
       };
-      console.log('  - requestData:', requestData);
       
       const response = await axios.post(apiConfig.endpoints.adminBlockSlot, requestData);
-      
-      console.log('  - response:', response);
-      console.log('  - response.data:', response.data);
       
       if (response.data.success) {
         alert(`Horario ${selectedSlot} bloqueado exitosamente`);
@@ -205,11 +196,6 @@ const AdminDashboard = () => {
         alert(response.data.error || 'Error al bloquear el horario');
       }
     } catch (error) {
-      console.error('❌ Error bloqueando horario:', error);
-      console.error('  - error.response:', error.response);
-      console.error('  - error.message:', error.message);
-      console.error('  - error.config:', error.config);
-      
       if (error.response?.data?.error) {
         alert(error.response.data.error);
       } else {
@@ -234,17 +220,11 @@ const AdminDashboard = () => {
         month: '2-digit',
         day: '2-digit'
       });
-      console.log('🔧 DEBUG AdminDashboard - handleUnblockSlot:');
-      console.log('  - selectedDate:', selectedDate);
-      console.log('  - formattedDate:', formattedDate);
-      console.log('  - selectedSlot:', selectedSlot);
-      console.log('  - endpoint:', apiConfig.endpoints.adminUnblockSlot);
       
       const requestData = {
         date: formattedDate,
         time: selectedSlot
       };
-      console.log('  - requestData:', requestData);
       
       const response = await axios.post(apiConfig.endpoints.adminUnblockSlot, requestData);
       
