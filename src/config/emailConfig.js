@@ -223,7 +223,21 @@ const sendClientConfirmation = async (bookingData) => {
   try {
     const { clientName, clientEmail, service, date, time } = bookingData;
     
-    const resend = getResendClientGeneral(); // Usar cliente general para clientes
+    // Intentar primero con RESEND_API_KEY, luego con RESEND_API_KEY_ADMIN si falla
+    const apiKeyGeneral = process.env.RESEND_API_KEY;
+    const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
+    
+    let resend = null;
+    let usingAdminKey = false;
+    
+    if (apiKeyGeneral) {
+      resend = getResendClientGeneral();
+    } else if (apiKeyAdmin) {
+      resend = getResendClientAdmin();
+      usingAdminKey = true;
+    } else {
+      throw new Error('RESEND_API_KEY o RESEND_API_KEY_ADMIN no configurada');
+    }
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -308,13 +322,43 @@ Email: dedecorinfo@gmail.com
 Sistema de Reservas Profesional
     `;
     
-    const { data, error } = await resend.emails.send({
-      from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
-      to: clientEmail,
-      subject: 'Hemos recibido tu solicitud de reserva',
-      html: htmlContent,
-      text: textContent
-    });
+    let data, error;
+    
+    // Intentar enviar con la primera API key
+    try {
+      const result = await resend.emails.send({
+        from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
+        to: clientEmail,
+        subject: 'Hemos recibido tu solicitud de reserva',
+        html: htmlContent,
+        text: textContent
+      });
+      data = result.data;
+      error = result.error;
+    } catch (sendError) {
+      error = sendError;
+    }
+    
+    // Si falla con error 403 y hay una API key de admin, intentar con esa
+    if (error && (error.statusCode === 403 || (error.message && error.message.includes('only send testing emails'))) && apiKeyGeneral && apiKeyAdmin && !usingAdminKey) {
+      console.log('⚠️ RESEND_API_KEY falló con error 403, intentando con RESEND_API_KEY_ADMIN...');
+      
+      try {
+        const adminResend = getResendClientAdmin();
+        const result = await adminResend.emails.send({
+          from: 'DEdecor <onboarding@resend.dev>',
+          to: clientEmail,
+          subject: 'Hemos recibido tu solicitud de reserva',
+          html: htmlContent,
+          text: textContent
+        });
+        data = result.data;
+        error = result.error;
+        console.log('✅ Email enviado exitosamente usando RESEND_API_KEY_ADMIN');
+      } catch (adminError) {
+        error = adminError;
+      }
+    }
     
     if (error) {
       throw new Error(error.message || 'Error enviando email');
@@ -339,17 +383,25 @@ const sendFinalConfirmation = async (bookingData) => {
       throw new Error(`Faltan datos requeridos: clientName=${!!clientName}, clientEmail=${!!clientEmail}, service=${!!service}, date=${!!date}, time=${!!time}`);
     }
     
-    const resend = getResendClientGeneral(); // Usar cliente general para clientes (con fallback a admin)
-    console.log(`📧 Cliente Resend obtenido para enviar a: ${clientEmail}`);
-    
-    // Verificar qué API key se está usando
+    // Intentar primero con RESEND_API_KEY, luego con RESEND_API_KEY_ADMIN si falla
     const apiKeyGeneral = process.env.RESEND_API_KEY;
     const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
+    
+    let resend = null;
+    let usingAdminKey = false;
+    
     if (apiKeyGeneral) {
-      console.log('📧 Usando RESEND_API_KEY para este email');
+      resend = getResendClientGeneral();
+      console.log('📧 Intentando primero con RESEND_API_KEY');
     } else if (apiKeyAdmin) {
-      console.log('⚠️ Usando RESEND_API_KEY_ADMIN como fallback (RESEND_API_KEY no configurada)');
+      resend = getResendClientAdmin();
+      usingAdminKey = true;
+      console.log('⚠️ Usando RESEND_API_KEY_ADMIN (RESEND_API_KEY no configurada)');
+    } else {
+      throw new Error('RESEND_API_KEY o RESEND_API_KEY_ADMIN no configurada');
     }
+    
+    console.log(`📧 Cliente Resend obtenido para enviar a: ${clientEmail}`);
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -436,13 +488,46 @@ Sistema de Reservas Profesional
     console.log(`📧 From: DEdecor <onboarding@resend.dev>`);
     console.log(`📧 Subject: Reserva Confirmada - ${service}`);
     
-    const { data, error } = await resend.emails.send({
-      from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
-      to: clientEmail,
-      subject: `Reserva Confirmada - ${service}`,
-      html: htmlContent,
-      text: textContent
-    });
+    let data, error;
+    let lastError = null;
+    
+    // Intentar enviar con la primera API key
+    try {
+      const result = await resend.emails.send({
+        from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
+        to: clientEmail,
+        subject: `Reserva Confirmada - ${service}`,
+        html: htmlContent,
+        text: textContent
+      });
+      data = result.data;
+      error = result.error;
+    } catch (sendError) {
+      error = sendError;
+      lastError = sendError;
+    }
+    
+    // Si falla con error 403 y hay una API key de admin, intentar con esa
+    if (error && (error.statusCode === 403 || (error.message && error.message.includes('only send testing emails'))) && apiKeyGeneral && apiKeyAdmin && !usingAdminKey) {
+      console.log('⚠️ RESEND_API_KEY falló con error 403, intentando con RESEND_API_KEY_ADMIN...');
+      
+      try {
+        const adminResend = getResendClientAdmin();
+        const result = await adminResend.emails.send({
+          from: 'DEdecor <onboarding@resend.dev>',
+          to: clientEmail,
+          subject: `Reserva Confirmada - ${service}`,
+          html: htmlContent,
+          text: textContent
+        });
+        data = result.data;
+        error = result.error;
+        console.log('✅ Email enviado exitosamente usando RESEND_API_KEY_ADMIN');
+      } catch (adminError) {
+        error = adminError;
+        lastError = adminError;
+      }
+    }
     
     if (error) {
       console.error('❌ Error de Resend:', error);
