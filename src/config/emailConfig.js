@@ -320,7 +320,14 @@ const sendFinalConfirmation = async (bookingData) => {
   try {
     const { clientName, clientEmail, service, date, time } = bookingData;
     
+    console.log(`📧 sendFinalConfirmation - Preparando email para: ${clientEmail}`);
+    
+    if (!clientName || !clientEmail || !service || !date || !time) {
+      throw new Error(`Faltan datos requeridos: clientName=${!!clientName}, clientEmail=${!!clientEmail}, service=${!!service}, date=${!!date}, time=${!!time}`);
+    }
+    
     const resend = getResendClientGeneral(); // Usar cliente general para clientes
+    console.log(`📧 Cliente Resend obtenido para enviar a: ${clientEmail}`);
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -403,6 +410,10 @@ Email: dedecorinfo@gmail.com
 Sistema de Reservas Profesional
     `;
     
+    console.log(`📧 Enviando email vía Resend a: ${clientEmail}`);
+    console.log(`📧 From: DEdecor <onboarding@resend.dev>`);
+    console.log(`📧 Subject: Reserva Confirmada - ${service}`);
+    
     const { data, error } = await resend.emails.send({
       from: 'DEdecor <onboarding@resend.dev>', // TODO: Cambiar a tu dominio después de verificarlo en Resend
       to: clientEmail,
@@ -412,13 +423,18 @@ Sistema de Reservas Profesional
     });
     
     if (error) {
+      console.error('❌ Error de Resend:', error);
+      console.error('❌ Código de error:', error.name || 'N/A');
+      console.error('❌ Mensaje de error:', error.message || 'N/A');
       throw new Error(error.message || 'Error enviando email');
     }
     
-    console.log('✅ Email de confirmación final enviado al CLIENTE');
+    console.log('✅ Email de confirmación final enviado al CLIENTE exitosamente');
+    console.log('✅ ID del email:', data?.id || 'N/A');
     return true;
   } catch (error) {
-    console.error('❌ Error enviando confirmación final:', error.message || error);
+    console.error('❌ Error completo enviando confirmación final:', error);
+    console.error('❌ Stack trace:', error.stack);
     throw error;
   }
 };

@@ -962,6 +962,15 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
       // Enviar email de confirmación al cliente
       if (emailConfigured) {
         try {
+          console.log(`📧 Intentando enviar email de confirmación final a: ${booking.clientEmail}`);
+          console.log(`📧 Datos del email:`, {
+            clientName: booking.clientName,
+            clientEmail: booking.clientEmail,
+            service: booking.service,
+            date: booking.date,
+            time: booking.time
+          });
+          
           await sendFinalConfirmation({
             clientName: booking.clientName,
             clientEmail: booking.clientEmail,
@@ -969,12 +978,14 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
             date: booking.date,
             time: booking.time
           });
-          console.log(`✅ Email de confirmación enviado a ${booking.clientEmail}`);
+          
+          console.log(`✅ Email de confirmación FINAL enviado exitosamente a ${booking.clientEmail}`);
         } catch (emailError) {
-          console.error('⚠️ Error enviando email de confirmación:', emailError);
+          console.error('❌ Error enviando email de confirmación final:', emailError.message || emailError);
+          console.error('❌ Detalles del error:', emailError);
           // No fallar la respuesta si el email falla, pero registrar el error
         }
-        } else {
+      } else {
         console.warn('⚠️ Email no configurado - No se envió confirmación');
       }
     }
