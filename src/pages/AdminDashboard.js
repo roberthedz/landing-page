@@ -228,9 +228,6 @@ const AdminDashboard = () => {
       
       const response = await axios.post(apiConfig.endpoints.adminUnblockSlot, requestData);
       
-      console.log('  - response:', response);
-      console.log('  - response.data:', response.data);
-      
       if (response.data.success) {
         alert(`Horario ${selectedSlot} desbloqueado exitosamente`);
         setShowUnblockModal(false);
