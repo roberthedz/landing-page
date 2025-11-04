@@ -312,9 +312,11 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await axios.put(apiConfig.endpoints.adminUpdateBookingStatus(bookingId), {
-        status: newStatus
-      });
+      const response = await axios.put(
+        apiConfig.endpoints.adminUpdateBookingStatus(bookingId), 
+        { status: newStatus },
+        { timeout: 60000 } // 60 segundos timeout para permitir envío de email
+      );
       
       if (response.data.success) {
         alert(`Reserva actualizada a ${statusText[newStatus]}`);
@@ -324,7 +326,11 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error actualizando reserva:', error);
-      alert('Error al actualizar la reserva');
+      if (error.message && error.message.includes('timeout')) {
+        alert('La operación está tomando más tiempo del esperado. La reserva se está procesando en segundo plano. Por favor, recarga la página en unos momentos.');
+      } else {
+        alert('Error al actualizar la reserva');
+      }
     }
   };
 
