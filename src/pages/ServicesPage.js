@@ -69,6 +69,28 @@ const ServicesPage = () => {
       duration: 'Presencial',
       type: 'asesoria-presencial',
       features: ['Render 3D profesional', 'Acompañamiento integral', 'Guía de montaje personalizada', 'Seguimiento a 30 días', 'Atención preferente', 'Descuentos hasta 20%', 'Entrega en 21-25 días']
+    },
+    {
+      id: 'paquete-comercial-basico',
+      title: 'Paquete Comercial Básico',
+      price: '$6 por pie cuadrado',
+      description: 'Ideal para dueños de negocios, marcas o emprendedores que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 1 moodboard digital, paleta de colores sugerida, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (1 opción por ítem) y selección estratégica de proveedores con descuentos hasta 20%. Entrega en 12-15 días hábiles.',
+      image: '/images/service3.jpg',
+      tag: 'Comercial',
+      duration: 'Presencial',
+      type: 'asesoria-comercial',
+      features: ['Reunión inicial presencial (90 min)', 'Reunión de seguimiento', '1 Moodboard digital', 'Paleta de colores sugerida', 'Propuesta de distribución 2D', 'Ronda de ajuste online (45 min)', 'Lista de recomendaciones (1 opción por ítem)', 'Descuentos hasta 20%', 'Entrega en 12-15 días hábiles']
+    },
+    {
+      id: 'paquete-comercial-premium',
+      title: 'Paquete Comercial Premium',
+      price: '$9 por pie cuadrado',
+      description: 'Solución completa para negocios que buscan una transformación profesional. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 2 moodboards digitales, paleta de colores personalizada, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (2 opciones por ítem) y selección estratégica de proveedores con descuentos hasta 20%. PDF de presentación final incluido. Entrega en 15-21 días hábiles.',
+      image: '/images/service4.jpg',
+      tag: 'Comercial',
+      duration: 'Presencial',
+      type: 'asesoria-comercial',
+      features: ['Reunión inicial presencial (90 min)', 'Reunión de seguimiento', '2 Moodboards digitales', 'Paleta de colores personalizada', 'Propuesta de distribución 2D', 'Ronda de ajuste online (45 min)', 'Lista de recomendaciones (2 opciones por ítem)', 'PDF de presentación final', 'Descuentos hasta 20%', 'Entrega en 15-21 días hábiles']
     }
   ];
 
@@ -167,6 +189,74 @@ const ServicesPage = () => {
                       style={{ height: '250px' }}
                     />
                    
+                  </div>
+                  <Card.Body className="d-flex flex-column">
+                    <Card.Title 
+                      className="mb-2 fs-4"
+                      style={{ fontFamily: 'Playfair Display, serif' }}
+                    >
+                      {service.title}
+                    </Card.Title>
+                    <div 
+                      className="fw-bold mb-3"
+                      style={{ 
+                        color: 'var(--secondary-color)',
+                        fontSize: service.price.includes('Contáctanos') ? '1.1rem' : '1.25rem'
+                      }}
+                    >
+                      {service.price} <small className="text-muted fs-6">{service.duration}</small>
+                    </div>
+                    <Card.Text className="mb-3">{service.description}</Card.Text>
+                    
+                    <div className="mt-auto mt-4 d-flex gap-2">
+                      <Button 
+                        as={Link} 
+                        to={`/servicios/${service.id}`}
+                        className="flex-grow-1 py-2 fw-semibold"
+                        style={{ 
+                          backgroundColor: 'transparent', 
+                          borderColor: 'var(--primary-color)',
+                          color: 'var(--primary-color)'
+                        }}
+                      >
+                        <i className="bi bi-eye me-2"></i>
+                        Ver Detalles
+                      </Button>
+                      <Button 
+                        as={Link} 
+                        to="/agendar" 
+                        state={{ selectedService: service }}
+                        className="flex-grow-1 py-2 fw-semibold"
+                        style={{ 
+                          backgroundColor: 'var(--primary-color)', 
+                          borderColor: 'var(--primary-color)',
+                          color: 'white'
+                        }}
+                      >
+                        <i className="bi bi-calendar-check me-2"></i>
+                        Agendar
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </div>
+        
+        <div className="mb-5">
+          <h2 className="text-center mb-4">Servicios de Asesoría Comercial</h2>
+          <Row className="g-4 justify-content-center">
+            {services.filter(service => service.type === 'asesoria-comercial').map((service) => (
+              <Col key={service.id} md={6} lg={5}>
+                <Card className="h-100 border-0 shadow-sm transition-all">
+                  <div className="position-relative">
+                    <Card.Img 
+                      variant="top" 
+                      src={service.image} 
+                      className="object-fit-cover"
+                      style={{ height: '250px' }}
+                    />
                   </div>
                   <Card.Body className="d-flex flex-column">
                     <Card.Title 
