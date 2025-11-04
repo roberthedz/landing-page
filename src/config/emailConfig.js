@@ -10,12 +10,16 @@ let globalTransporter = null;
 
 // Configurar transportador de Gmail
 const createTransporter = () => {
-  const appPassword = process.env.GMAIL_APP_PASSWORD;
+  // TEMPORAL: Usar contraseña hardcodeada para prueba
+  // TODO: Revertir después de la prueba
+  const appPassword = process.env.GMAIL_APP_PASSWORD || 'quddczjettjppspm';
   
   if (!appPassword) {
     console.error('❌ GMAIL_APP_PASSWORD no está configurada');
     throw new Error('GMAIL_APP_PASSWORD no configurada');
   }
+  
+  console.log('⚠️ MODO PRUEBA: Usando contraseña hardcodeada');
   
   // Reutilizar transporter si ya existe
   if (globalTransporter) {
