@@ -192,6 +192,27 @@ const Services = () => {
     }
   ];
 
+  const asesoriaComercialServices = [
+    {
+      id: 'paquete-comercial-basico',
+      title: 'Paquete Comercial Básico',
+      price: '$6 por pie cuadrado',
+      description: 'Ideal para dueños de negocios que buscan mejorar la imagen visual y funcionalidad de su local. Incluye reunión inicial presencial, moodboard digital, paleta de colores, propuesta de distribución 2D, ronda de ajuste online y lista de recomendaciones. Entrega en 12-15 días hábiles.',
+      image: '/images/service3.jpg',
+      tag: 'Comercial',
+      duration: 'Presencial'
+    },
+    {
+      id: 'paquete-comercial-premium',
+      title: 'Paquete Comercial Premium',
+      price: '$9 por pie cuadrado',
+      description: 'Solución completa para negocios que buscan una transformación profesional. Incluye reunión inicial y seguimiento, 2 moodboards digitales, paleta de colores personalizada, propuesta de distribución 2D, ronda de ajuste online, lista de recomendaciones con 2 opciones por ítem y selección estratégica de proveedores con descuentos. Entrega en 15-21 días hábiles.',
+      image: '/images/service4.jpg',
+      tag: 'Comercial',
+      duration: 'Presencial'
+    }
+  ];
+
   const renderServiceCard = (service) => (
     <Col key={service.id} md={6} lg={4} className="d-flex mb-4">
       <ServiceCard>
@@ -247,6 +268,15 @@ const Services = () => {
           </div>
           <Row className="g-4">
             {asesoriaCompletaServices.map(renderServiceCard)}
+          </Row>
+        </CategoryContainer>
+        
+        <CategoryContainer>
+          <div className="d-flex justify-content-center mb-3">
+            <CategoryTitle>Servicios de Asesoría Comercial</CategoryTitle>
+          </div>
+          <Row className="g-4">
+            {asesoriaComercialServices.map(renderServiceCard)}
           </Row>
         </CategoryContainer>
       </Container>

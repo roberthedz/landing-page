@@ -452,6 +452,27 @@ const Booking = ({ preloadedData = {} }) => {
       tag: 'Por Habitación',
       duration: 'Presencial',
       type: 'asesoria-presencial'
+    },
+    // SERVICIOS COMERCIALES
+    {
+      id: 'paquete-comercial-basico',
+      title: 'Paquete Comercial Básico',
+      price: '$6 por pie cuadrado',
+      description: 'Ideal para dueños de negocios que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, moodboard digital, paleta de colores, propuesta de distribución 2D, ronda de ajuste online (45 min) y lista de recomendaciones con links de compra. Entrega en 12-15 días hábiles.',
+      image: '/images/service3.jpg',
+      tag: 'Comercial',
+      duration: 'Presencial',
+      type: 'asesoria-comercial'
+    },
+    {
+      id: 'paquete-comercial-premium',
+      title: 'Paquete Comercial Premium',
+      price: '$9 por pie cuadrado',
+      description: 'Solución completa para negocios que buscan una transformación profesional. Incluye reunión inicial y seguimiento, 2 moodboards digitales, paleta de colores personalizada, propuesta de distribución 2D, ronda de ajuste online, lista de recomendaciones con 2 opciones por ítem y selección estratégica de proveedores con descuentos hasta 20%. Entrega en 15-21 días hábiles.',
+      image: '/images/service4.jpg',
+      tag: 'Comercial',
+      duration: 'Presencial',
+      type: 'asesoria-comercial'
     }
   ];
   
@@ -1147,7 +1168,7 @@ const Booking = ({ preloadedData = {} }) => {
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
-                    <Row xs={1} md={2} className="g-4">
+                    <Row xs={1} md={3} className="g-4">
                       <Col className="d-flex">
                         <Card 
                           className={`w-100 text-center border ${appointmentType === 'asesoria-presencial' ? 'bg-light' : ''}`}
@@ -1188,6 +1209,26 @@ const Booking = ({ preloadedData = {} }) => {
                           </Card.Body>
                         </Card>
                       </Col>
+                      <Col className="d-flex">
+                        <Card 
+                          className={`w-100 text-center border ${appointmentType === 'asesoria-comercial' ? 'bg-light' : ''}`}
+                          onClick={() => handleAppointmentTypeSelect('asesoria-comercial', setFieldValue)}
+                          style={{ 
+                            cursor: 'pointer', 
+                            transition: 'all 0.3s ease',
+                            borderColor: appointmentType === 'asesoria-comercial' ? 'var(--primary-color)' : '#dee2e6',
+                            borderWidth: appointmentType === 'asesoria-comercial' ? '2px' : '1px'
+                          }}
+                        >
+                          <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
+                            <div className="mb-2" style={{ color: 'var(--primary-color)' }}>
+                              <i className="bi bi-briefcase-fill fs-1"></i>
+                            </div>
+                            <Card.Title className="h6 fw-bold mb-1">Servicios Comerciales</Card.Title>
+                            <Card.Text className="text-muted small">Asesoría para negocios y locales comerciales</Card.Text>
+                          </Card.Body>
+                        </Card>
+                      </Col>
                     </Row>
                     {touched.appointmentType && errors.appointmentType && (
                       <div className="text-danger text-center mt-3 small">
@@ -1210,7 +1251,10 @@ const Booking = ({ preloadedData = {} }) => {
                     <div className="d-flex align-items-center">
                       <i className="bi bi-grid-3x3-gap fs-5 me-3"></i>
                       <h5 className="m-0 fw-semibold">
-                        {appointmentType === 'asesoria-online' ? 'Servicios Online' : appointmentType === 'asesoria-presencial' ? 'Servicios Presenciales' : 'Servicios'}
+                        {appointmentType === 'asesoria-online' ? 'Servicios Online' : 
+                         appointmentType === 'asesoria-presencial' ? 'Servicios Presenciales' : 
+                         appointmentType === 'asesoria-comercial' ? 'Servicios Comerciales' : 
+                         'Servicios'}
                       </h5>
                       {selectedService && <i className="bi bi-check-circle-fill ms-auto"></i>}
                     </div>
@@ -1333,6 +1377,58 @@ const Booking = ({ preloadedData = {} }) => {
                               </Row>
                             )}
                           </>
+                        ) : appointmentType === 'asesoria-comercial' ? (
+                          // Layout para servicios comerciales (2 en fila)
+                          <Row xs={1} md={2} className="g-3 justify-content-center">
+                            {getFilteredServices().map(service => (
+                              <Col key={service.id} className="d-flex">
+                                <Card 
+                                  className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
+                                  onClick={() => handleServiceSelect(service, setFieldValue)}
+                                  style={{ 
+                                    cursor: 'pointer', 
+                                    transition: 'all 0.3s ease',
+                                    borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
+                                    borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                                  }}
+                                >
+                                  <Card.Header 
+                                    className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
+                                    style={{ 
+                                      backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#f8f9fa',
+                                      minHeight: '70px', 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      justifyContent: 'center', 
+                                      flexDirection: 'column' 
+                                    }}
+                                  >
+                                    <h6 className="m-0">{service.title}</h6>
+                                    {service.duration && (
+                                      <small className="mt-1 opacity-75">({service.duration})</small>
+                                    )}
+                                  </Card.Header>
+                                  <Card.Body className="text-center p-3">
+                                    <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
+                                    <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
+                                    {service.tag && (
+                                      <span 
+                                        className="badge mt-2"
+                                        style={{ 
+                                          fontSize: '0.7rem', 
+                                          backgroundColor: 'var(--primary-color)', 
+                                          color: 'white',
+                                          padding: '0.25rem 0.5rem'
+                                        }}
+                                      >
+                                        {service.tag}
+                                      </span>
+                                    )}
+                                  </Card.Body>
+                                </Card>
+                              </Col>
+                            ))}
+                          </Row>
                         ) : (
                           // Layout normal para servicios presenciales (3 en fila)
                           <Row xs={1} md={3} className="g-3">
