@@ -49,7 +49,10 @@ const CategoryTitle = styled.h3`
   margin-bottom: 2rem;
   text-align: center;
   position: relative;
-  display: inline-block;
+  display: block;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
   
   &:after {
     content: '';
