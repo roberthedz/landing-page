@@ -65,18 +65,31 @@ const getResendClientAdmin = () => {
   throw new Error('RESEND_API_KEY_ADMIN o RESEND_API_KEY no configurada');
 };
 
-// Obtener cliente para clientes (usa RESEND_API_KEY)
+// Obtener cliente para clientes (usa RESEND_API_KEY, o fallback a RESEND_API_KEY_ADMIN)
 const getResendClientGeneral = () => {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKeyGeneral = process.env.RESEND_API_KEY;
+  const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
   
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY no configurada');
+  // Priorizar RESEND_API_KEY, pero si no existe, usar RESEND_API_KEY_ADMIN como fallback
+  // Esto permite que los emails a clientes funcionen incluso si RESEND_API_KEY no está configurada
+  if (apiKeyGeneral) {
+    if (!resendClientGeneral) {
+      resendClientGeneral = new Resend(apiKeyGeneral);
+      console.log('📧 Usando RESEND_API_KEY para emails a clientes');
+    }
+    return resendClientGeneral;
   }
   
-  if (!resendClientGeneral) {
-    resendClientGeneral = new Resend(apiKey);
+  // Fallback a RESEND_API_KEY_ADMIN si RESEND_API_KEY no está disponible
+  if (apiKeyAdmin) {
+    console.log('⚠️ RESEND_API_KEY no configurada, usando RESEND_API_KEY_ADMIN como fallback');
+    if (!resendClientAdmin) {
+      resendClientAdmin = new Resend(apiKeyAdmin);
+    }
+    return resendClientAdmin;
   }
-  return resendClientGeneral;
+  
+  throw new Error('RESEND_API_KEY o RESEND_API_KEY_ADMIN no configurada');
 };
 
 // Función para enviar email de nueva reserva al admin
@@ -326,8 +339,17 @@ const sendFinalConfirmation = async (bookingData) => {
       throw new Error(`Faltan datos requeridos: clientName=${!!clientName}, clientEmail=${!!clientEmail}, service=${!!service}, date=${!!date}, time=${!!time}`);
     }
     
-    const resend = getResendClientGeneral(); // Usar cliente general para clientes
+    const resend = getResendClientGeneral(); // Usar cliente general para clientes (con fallback a admin)
     console.log(`📧 Cliente Resend obtenido para enviar a: ${clientEmail}`);
+    
+    // Verificar qué API key se está usando
+    const apiKeyGeneral = process.env.RESEND_API_KEY;
+    const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
+    if (apiKeyGeneral) {
+      console.log('📧 Usando RESEND_API_KEY para este email');
+    } else if (apiKeyAdmin) {
+      console.log('⚠️ Usando RESEND_API_KEY_ADMIN como fallback (RESEND_API_KEY no configurada)');
+    }
     
     const htmlContent = `
       <!DOCTYPE html>
