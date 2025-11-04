@@ -13,8 +13,21 @@ const createTransporter = () => {
       user: 'dedecorinfo@gmail.com',
       pass: process.env.GMAIL_APP_PASSWORD
     },
-    secure: true
+    secure: true,
+    connectionTimeout: 10000, // 10 segundos para conectar
+    socketTimeout: 10000, // 10 segundos para operaciones
+    greetingTimeout: 10000 // 10 segundos para saludo SMTP
   });
+};
+
+// Helper para enviar email con timeout
+const sendEmailWithTimeout = async (transporter, mailOptions, timeoutMs = 15000) => {
+  return Promise.race([
+    transporter.sendMail(mailOptions),
+    new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout: Email tardó demasiado en enviarse')), timeoutMs)
+    )
+  ]);
 };
 
 // Verificar configuración de email
@@ -140,11 +153,11 @@ Sistema de Reservas Profesional
       `
     };
     
-    await transporter.sendMail(mailOptions);
+    await sendEmailWithTimeout(transporter, mailOptions, 15000);
     console.log('✅ Email de notificación enviado al ADMIN');
     return true;
   } catch (error) {
-    console.error('❌ Error enviando notificación al admin:', error);
+    console.error('❌ Error enviando notificación al admin:', error.message || error);
     throw error;
   }
 };
@@ -243,11 +256,11 @@ Sistema de Reservas Profesional
       `
     };
     
-    await transporter.sendMail(mailOptions);
+    await sendEmailWithTimeout(transporter, mailOptions, 15000);
     console.log('✅ Email de confirmación enviado al CLIENTE');
     return true;
   } catch (error) {
-    console.error('❌ Error enviando confirmación al cliente:', error);
+    console.error('❌ Error enviando confirmación al cliente:', error.message || error);
     throw error;
   }
 };
@@ -344,11 +357,11 @@ Sistema de Reservas Profesional
       `
     };
     
-    await transporter.sendMail(mailOptions);
+    await sendEmailWithTimeout(transporter, mailOptions, 15000);
     console.log('✅ Email de confirmación final enviado al CLIENTE');
     return true;
   } catch (error) {
-    console.error('❌ Error enviando confirmación final:', error);
+    console.error('❌ Error enviando confirmación final:', error.message || error);
     throw error;
   }
 };
