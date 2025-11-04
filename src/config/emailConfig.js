@@ -7,28 +7,37 @@ const nodemailer = require('nodemailer');
 
 // Configurar transportador de Gmail
 const createTransporter = () => {
-  // Usar configuración SMTP explícita en lugar de 'service: gmail'
-  // Esto es más confiable desde servidores de hosting como Render
+  const appPassword = process.env.GMAIL_APP_PASSWORD;
+  
+  if (!appPassword) {
+    console.error('❌ GMAIL_APP_PASSWORD no está configurada');
+    throw new Error('GMAIL_APP_PASSWORD no configurada');
+  }
+  
+  console.log('🔧 Configurando Nodemailer con Gmail SMTP...');
+  console.log('📧 Usuario:', 'dedecorinfo@gmail.com');
+  console.log('🔑 Contraseña configurada:', appPassword ? 'Sí (' + appPassword.length + ' caracteres)' : 'No');
+  
+  // Probar primero con puerto 587 (TLS) que es más compatible con Render
+  // Si falla, intentar con 465 (SSL)
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // true para 465, false para otros puertos
+    port: 587, // Puerto 587 con TLS (más compatible con Render)
+    secure: false, // false para 587, true para 465
+    requireTLS: true, // Requerir TLS para 587
     auth: {
       user: 'dedecorinfo@gmail.com',
-      pass: process.env.GMAIL_APP_PASSWORD
+      pass: appPassword
     },
-    connectionTimeout: 30000, // 30 segundos para conectar
-    socketTimeout: 30000, // 30 segundos para operaciones
-    greetingTimeout: 30000, // 30 segundos para saludo SMTP
+    connectionTimeout: 30000,
+    socketTimeout: 30000,
+    greetingTimeout: 30000,
     tls: {
-      // No rechazar certificados no autorizados
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      ciphers: 'SSLv3'
     },
-    // Intentar múltiples veces si falla
-    retry: {
-      attempts: 3,
-      delay: 2000
-    }
+    debug: true, // Habilitar debug para ver qué está pasando
+    logger: true // Loggear en consola
   });
 };
 
