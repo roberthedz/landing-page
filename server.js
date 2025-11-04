@@ -1004,19 +1004,30 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
 // Endpoint para verificar estado de Resend
 app.get('/api/test/email-status', async (req, res) => {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
-    const hasKey = !!apiKey;
-    const keyLength = apiKey ? apiKey.length : 0;
+    const apiKeyAdmin = process.env.RESEND_API_KEY_ADMIN;
+    const apiKeyCustomer = process.env.RESEND_API_KEY || process.env.RESEND_API_KEY_CUSTOMER;
+    
+    const hasAdminKey = !!apiKeyAdmin;
+    const hasCustomerKey = !!apiKeyCustomer;
+    const adminKeyLength = apiKeyAdmin ? apiKeyAdmin.length : 0;
+    const customerKeyLength = apiKeyCustomer ? apiKeyCustomer.length : 0;
     
     res.json({
       emailConfigured: emailConfigured,
       resend: {
-        apiKeyExists: hasKey,
-        keyLength: keyLength,
-        preview: hasKey ? `${apiKey.substring(0, 4)}***${apiKey.substring(keyLength - 4)}` : null
+        admin: {
+          apiKeyExists: hasAdminKey,
+          keyLength: adminKeyLength,
+          preview: hasAdminKey ? `${apiKeyAdmin.substring(0, 4)}***${apiKeyAdmin.substring(adminKeyLength - 4)}` : null
+        },
+        customer: {
+          apiKeyExists: hasCustomerKey,
+          keyLength: customerKeyLength,
+          preview: hasCustomerKey ? `${apiKeyCustomer.substring(0, 4)}***${apiKeyCustomer.substring(customerKeyLength - 4)}` : null
+        }
       },
       provider: 'Resend',
-      note: 'Usando API REST - No requiere SMTP'
+      note: 'Usando API REST - No requiere SMTP. Puede usar dos cuentas: una para admin y otra para clientes.'
     });
   } catch (error) {
     res.status(500).json({
