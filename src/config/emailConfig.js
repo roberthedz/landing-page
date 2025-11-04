@@ -389,6 +389,7 @@ Sistema de Reservas Profesional
 
 module.exports = {
   configureEmail,
+  createTransporter,
   sendAdminNotification,
   sendClientConfirmation,
   sendFinalConfirmation
