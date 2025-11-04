@@ -448,6 +448,18 @@ Sistema de Reservas Profesional
       console.error('❌ Error de Resend:', error);
       console.error('❌ Código de error:', error.name || 'N/A');
       console.error('❌ Mensaje de error:', error.message || 'N/A');
+      
+      // Mensaje más descriptivo para el error común de Resend
+      if (error.message && error.message.includes('only send testing emails to your own email address')) {
+        const detailedError = new Error(
+          `Resend solo permite enviar a la dirección de email asociada a la cuenta (dedecorinfo@gmail.com). ` +
+          `Para enviar a otros emails, verifica el dominio dedecorinfo.com en resend.com/domains. ` +
+          `Email intentado: ${clientEmail}`
+        );
+        detailedError.originalError = error;
+        throw detailedError;
+      }
+      
       throw new Error(error.message || 'Error enviando email');
     }
     
