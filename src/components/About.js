@@ -106,7 +106,7 @@ const TeamMemberName = styled(Card.Title)`
 
 const TeamMemberRole = styled.p`
   font-style: italic;
-  color: var(--secondary-color);
+  color: #4a6163;
   margin-bottom: 1rem;
   font-weight: 500;
 `;
@@ -115,7 +115,7 @@ const ReadMoreButton = styled(Link)`
   display: inline-block;
   margin-top: 1rem;
   padding: 0.6rem 1.5rem;
-  background-color: var(--secondary-color);
+  background-color: #4a6163;
   color: white;
   border-radius: 50px;
   text-decoration: none;
@@ -123,9 +123,9 @@ const ReadMoreButton = styled(Link)`
   transition: all 0.3s ease;
   
   &:hover {
-    background-color: var(--accent-color);
+    background-color: #5d7a7c;
     transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 15px rgba(74, 97, 99, 0.3);
     color: white;
   }
   
@@ -221,7 +221,7 @@ const SocialMediaText = styled.p`
 const SocialMediaButton = styled.span`
   display: inline-block;
   padding: 0.5rem 1.2rem;
-  background-color: var(--secondary-color);
+  background-color: #4a6163;
   color: white;
   border-radius: 50px;
   font-weight: 600;
@@ -234,7 +234,7 @@ const SocialMediaButton = styled.span`
   }
   
   &:hover {
-    background-color: var(--accent-color);
+    background-color: #5d7a7c;
   }
 `;
 

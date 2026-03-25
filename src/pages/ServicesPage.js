@@ -1,116 +1,32 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Badge, Breadcrumb } from 'react-bootstrap';
+import { servicesData, getConsultaRapidaServices } from '../data/servicesData';
 
 const ServicesPage = () => {
-  const services = [
-    {
-      id: 'consulta-online-habitacion-cerrada',
-      title: 'Habitación Cerrada 12x12',
-      price: '$150',
-      description: 'Asesoría personalizada de 1 hora en línea para transformar una habitación específica de hasta 12x12 pies. Incluye moodboard digital, recomendaciones de productos y sesión de videollamada.',
-      image: '/images/service1.jpg',
-      tag: 'Online',
-      duration: '60 min',
-      type: 'asesoria-online',
-      features: ['Cuestionario de estilo personalizado', 'Sesión de videollamada de 60 min', 'Moodboard digital', 'Documento resumen con enlaces de compra', 'Selección de tiendas con descuentos hasta 20%']
-    },
-    {
-      id: 'consulta-online-open-concept-1-2',
-      title: '1-2 Habitaciones Open Concept',
-      price: '$220',
-      description: 'Ideal para espacios abiertos donde conviven sala, comedor, cocina. Enfoque estratégico para mantener armonía entre zonas. Incluye moodboard y 6 horas de preparación previa.',
-      image: '/images/service2.jpg',
-      tag: 'Open Concept',
-      duration: '60 min',
-      type: 'asesoria-online',
-      features: ['6 horas de preparación previa', 'Enfoque estratégico para open concept', 'Transiciones fluidas entre áreas', 'Moodboard digital', 'Selección de tiendas con descuentos hasta 20%']
-    },
-    {
-      id: 'consulta-online-open-concept-3-4',
-      title: '3-4 Habitaciones Open Concept',
-      price: '$400',
-      description: 'Para renovar múltiples áreas en espacios abiertos. Transiciones fluidas entre habitaciones con coherencia visual. Incluye 8 horas de preparación previa y sesión extendida.',
-      image: '/images/service3.jpg',
-      tag: 'Completo',
-      duration: '120 min',
-      type: 'asesoria-online',
-      features: ['8 horas de preparación previa', 'Sesión extendida de 120 min', 'Coherencia visual entre múltiples áreas', 'Moodboard digital', 'Selección de tiendas con descuentos hasta 20%']
-    },
-    {
-      id: 'paquete-esencial',
-      title: 'Paquete Esencial',
-      price: '$500',
-      description: 'Guía profesional para transformar un espacio (12x12) con estilo. Incluye reunión inicial, moodboard, paleta de colores, propuesta de distribución y lista de recomendaciones. Entrega en 10-12 días.',
-      image: '/images/service4.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial',
-      type: 'asesoria-presencial',
-      features: ['Reunión inicial (60 min)', 'Moodboard digital', 'Paleta de colores sugerida', 'Propuesta de distribución', 'Lista de recomendaciones con links', 'PDF de presentación final', 'Entrega en 10-12 días']
-    },
-    {
-      id: 'paquete-intermedio',
-      title: 'Paquete Intermedio',
-      price: '$750',
-      description: 'Transformación con estilo y funcionalidad. Dos moodboards, plano 2D, reunión de revisión, seguimiento por WhatsApp. Incluye descuentos hasta 20% en proveedores. Entrega en 15-18 días.',
-      image: '/images/service5.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial',
-      type: 'asesoria-presencial',
-      features: ['Dos moodboards por área', 'Plano 2D a escala', 'Reunión de revisión', 'Seguimiento por WhatsApp', 'Lista de compras detallada', 'Descuentos hasta 20%', 'Entrega en 15-18 días']
-    },
-    {
-      id: 'paquete-premium',
-      title: 'Paquete Premium',
-      price: '$1,200',
-      description: 'Proyecto exclusivo y detallado con diseño a medida. Incluye render 3D profesional, acompañamiento integral, guía de montaje y seguimiento a 30 días. Entrega en 21-25 días.',
-      image: '/images/service1.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial',
-      type: 'asesoria-presencial',
-      features: ['Render 3D profesional', 'Acompañamiento integral', 'Guía de montaje personalizada', 'Seguimiento a 30 días', 'Atención preferente', 'Descuentos hasta 20%', 'Entrega en 21-25 días']
-    },
-    {
-      id: 'paquete-comercial-basico',
-      title: 'Paquete Comercial Básico',
-      price: '$6 por pie cuadrado',
-      description: 'Ideal para dueños de negocios, marcas o emprendedores que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 1 moodboard digital, paleta de colores sugerida, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (1 opción por ítem) y selección estratégica de proveedores con descuentos hasta 20%. Entrega en 12-15 días hábiles.',
-      image: '/images/service3.jpg',
-      tag: 'Comercial',
-      duration: 'Presencial',
-      type: 'asesoria-comercial',
-      features: ['Reunión inicial presencial (90 min)', 'Reunión de seguimiento', '1 Moodboard digital', 'Paleta de colores sugerida', 'Propuesta de distribución 2D', 'Ronda de ajuste online (45 min)', 'Lista de recomendaciones (1 opción por ítem)', 'Descuentos hasta 20%', 'Entrega en 12-15 días hábiles']
-    },
-    {
-      id: 'paquete-comercial-premium',
-      title: 'Paquete Comercial Premium',
-      price: '$9 por pie cuadrado',
-      description: 'Solución completa para negocios que buscan una transformación profesional. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 2 moodboards digitales, paleta de colores personalizada, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (2 opciones por ítem) y selección estratégica de proveedores con descuentos hasta 20%. PDF de presentación final incluido. Entrega en 15-21 días hábiles.',
-      image: '/images/service4.jpg',
-      tag: 'Comercial',
-      duration: 'Presencial',
-      type: 'asesoria-comercial',
-      features: ['Reunión inicial presencial (90 min)', 'Reunión de seguimiento', '2 Moodboards digitales', 'Paleta de colores personalizada', 'Propuesta de distribución 2D', 'Ronda de ajuste online (45 min)', 'Lista de recomendaciones (2 opciones por ítem)', 'PDF de presentación final', 'Descuentos hasta 20%', 'Entrega en 15-21 días hábiles']
-    }
-  ];
+  const services = servicesData;
+  const consultaRapida = getConsultaRapidaServices();
 
   return (
     <section className="py-5 bg-light" style={{ marginTop: '70px' }}>
       <Container>
        
         <div className="text-center mb-5">
-          <h1 className="display-4 fw-bold">Nuestros Servicios</h1>
-          <div className="mx-auto my-3" style={{ width: '80px', height: '3px', backgroundColor: 'var(--primary-color)', borderRadius: '2px' }}></div>
+          <h1 className="display-4 fw-bold" style={{ color: 'var(--primary-color)' }}>Nuestros Servicios</h1>
+          <div className="mx-auto my-3" style={{ width: '80px', height: '3px', backgroundColor: '#4a6163', borderRadius: '2px' }}></div>
           <p className="lead text-muted col-md-8 mx-auto">
             Descubre nuestra selección de servicios especializados para transformar tu espacio con estilo y funcionalidad.
           </p>
         </div>
-        
+
         <div className="mb-5">
-          <h2 className="text-center mb-4">Servicios de Asesoría Online</h2>
-          <Row className="g-4 justify-content-center">
+          <h2 className="text-center mb-4" style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+            <span>Servicios de Asesoría Online</span>
+            <div className="mx-auto mt-3" style={{ width: '60px', height: '2px', backgroundColor: '#4a6163', borderRadius: '2px' }}></div>
+          </h2>
+          <Row className="g-4">
             {services.filter(service => service.type === 'asesoria-online').map((service) => (
-              <Col key={service.id} md={6} lg={5}>
+              <Col key={service.id} md={6} lg={4}>
                 <Card className="h-100 border-0 shadow-sm transition-all">
                   <div className="position-relative">
                     <Card.Img 
@@ -135,7 +51,7 @@ const ServicesPage = () => {
                         fontSize: service.price.includes('Contáctanos') ? '1.1rem' : '1.25rem'
                       }}
                     >
-                      {service.price} <small className="text-muted fs-6">{service.duration}</small>
+                      {service.price}
                     </div>
                     <Card.Text className="mb-3">{service.description}</Card.Text>
                     
@@ -146,8 +62,8 @@ const ServicesPage = () => {
                         className="flex-grow-1 py-2 fw-semibold"
                         style={{ 
                           backgroundColor: 'transparent', 
-                          borderColor: 'var(--primary-color)',
-                          color: 'var(--primary-color)'
+                          borderColor: '#4a6163',
+                          color: '#4a6163'
                         }}
                       >
                         <i className="bi bi-eye me-2"></i>
@@ -159,8 +75,8 @@ const ServicesPage = () => {
                         state={{ selectedService: service }}
                         className="flex-grow-1 py-2 fw-semibold"
                         style={{ 
-                          backgroundColor: 'var(--primary-color)', 
-                          borderColor: 'var(--primary-color)',
+                          backgroundColor: '#4a6163', 
+                          borderColor: '#4a6163',
                           color: 'white'
                         }}
                       >
@@ -176,7 +92,10 @@ const ServicesPage = () => {
         </div>
         
         <div className="mb-5">
-          <h2 className="text-center mb-4">Servicios de Asesoría Presencial</h2>
+          <h2 className="text-center mb-4" style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+            <span>Servicios de Asesoría Presencial</span>
+            <div className="mx-auto mt-3" style={{ width: '60px', height: '2px', backgroundColor: '#4a6163', borderRadius: '2px' }}></div>
+          </h2>
           <Row className="g-4">
             {services.filter(service => service.type === 'asesoria-presencial').map((service) => (
               <Col key={service.id} md={6} lg={4}>
@@ -204,7 +123,7 @@ const ServicesPage = () => {
                         fontSize: service.price.includes('Contáctanos') ? '1.1rem' : '1.25rem'
                       }}
                     >
-                      {service.price} <small className="text-muted fs-6">{service.duration}</small>
+                      {service.price}
                     </div>
                     <Card.Text className="mb-3">{service.description}</Card.Text>
                     
@@ -215,8 +134,8 @@ const ServicesPage = () => {
                         className="flex-grow-1 py-2 fw-semibold"
                         style={{ 
                           backgroundColor: 'transparent', 
-                          borderColor: 'var(--primary-color)',
-                          color: 'var(--primary-color)'
+                          borderColor: '#4a6163',
+                          color: '#4a6163'
                         }}
                       >
                         <i className="bi bi-eye me-2"></i>
@@ -228,8 +147,8 @@ const ServicesPage = () => {
                         state={{ selectedService: service }}
                         className="flex-grow-1 py-2 fw-semibold"
                         style={{ 
-                          backgroundColor: 'var(--primary-color)', 
-                          borderColor: 'var(--primary-color)',
+                          backgroundColor: '#4a6163', 
+                          borderColor: '#4a6163',
                           color: 'white'
                         }}
                       >
@@ -245,7 +164,10 @@ const ServicesPage = () => {
         </div>
         
         <div className="mb-5">
-          <h2 className="text-center mb-4">Servicios de Asesoría Comercial</h2>
+          <h2 className="text-center mb-4" style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+            <span>Servicios de Asesoría Comercial</span>
+            <div className="mx-auto mt-3" style={{ width: '60px', height: '2px', backgroundColor: '#4a6163', borderRadius: '2px' }}></div>
+          </h2>
           <Row className="g-4 justify-content-center">
             {services.filter(service => service.type === 'asesoria-comercial').map((service) => (
               <Col key={service.id} md={6} lg={5}>
@@ -272,7 +194,7 @@ const ServicesPage = () => {
                         fontSize: service.price.includes('Contáctanos') ? '1.1rem' : '1.25rem'
                       }}
                     >
-                      {service.price} <small className="text-muted fs-6">{service.duration}</small>
+                      {service.price}
                     </div>
                     <Card.Text className="mb-3">{service.description}</Card.Text>
                     
@@ -283,8 +205,8 @@ const ServicesPage = () => {
                         className="flex-grow-1 py-2 fw-semibold"
                         style={{ 
                           backgroundColor: 'transparent', 
-                          borderColor: 'var(--primary-color)',
-                          color: 'var(--primary-color)'
+                          borderColor: '#4a6163',
+                          color: '#4a6163'
                         }}
                       >
                         <i className="bi bi-eye me-2"></i>
@@ -296,8 +218,8 @@ const ServicesPage = () => {
                         state={{ selectedService: service }}
                         className="flex-grow-1 py-2 fw-semibold"
                         style={{ 
-                          backgroundColor: 'var(--primary-color)', 
-                          borderColor: 'var(--primary-color)',
+                          backgroundColor: '#4a6163', 
+                          borderColor: '#4a6163',
                           color: 'white'
                         }}
                       >
@@ -312,6 +234,54 @@ const ServicesPage = () => {
           </Row>
         </div>
         
+        {/* Separador + Consulta Rápida al final */}
+        <div className="d-flex align-items-center gap-3 mb-5 mt-2">
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(74,97,99,0.15)' }}></div>
+          <span style={{ color: '#4a6163', fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>¿Solo tienes una duda puntual?</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(74,97,99,0.15)' }}></div>
+        </div>
+
+        {consultaRapida.map(service => (
+          <div key={service.id} className="rounded-4 overflow-hidden shadow-lg mb-5" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '300px' }}>
+            <div className="d-none d-md-block" style={{ overflow: 'hidden' }}>
+              <img
+                src={service.image}
+                alt={service.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', minHeight: '300px' }}
+              />
+            </div>
+            <div className="p-4 p-md-5 d-flex flex-column justify-content-center" style={{ background: 'linear-gradient(135deg, #4a6163 0%, #5d7a7c 100%)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.35rem 0.9rem', borderRadius: '50px', marginBottom: '1rem', width: 'fit-content' }}>
+                <i className="bi bi-lightning-fill"></i>Consulta Rápida
+              </span>
+              <h2 className="fw-bold mb-2" style={{ color: '#ffffff', fontFamily: 'Playfair Display, serif', fontSize: '2rem', lineHeight: '1.2' }}>{service.title}</h2>
+              <div className="fw-bold mb-3" style={{ color: '#ffffff', fontSize: '1.5rem' }}>
+                {service.price} <span style={{ fontSize: '0.95rem', fontWeight: '400', color: 'rgba(255,255,255,0.8)' }}>· {service.duration} por videollamada</span>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: '1.7', marginBottom: '1.75rem', fontSize: '0.95rem' }}>{service.description}</p>
+              <div className="d-flex gap-3 flex-wrap">
+                <Button
+                  as={Link}
+                  to={`/servicios/${service.id}`}
+                  className="fw-bold"
+                  style={{ backgroundColor: '#ffffff', borderColor: '#ffffff', color: '#4a6163', borderRadius: '50px', padding: '0.6rem 1.5rem', fontSize: '0.9rem' }}
+                >
+                  <i className="bi bi-eye me-2"></i>Ver Detalles
+                </Button>
+                <Button
+                  as={Link}
+                  to="/agendar"
+                  state={{ selectedService: service }}
+                  className="fw-semibold"
+                  style={{ backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.6)', color: '#ffffff', borderRadius: '50px', padding: '0.6rem 1.5rem', fontSize: '0.9rem' }}
+                >
+                  <i className="bi bi-calendar-check me-2"></i>Agendar
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+
         <div className="text-center mt-5 pt-3">
           <p className="text-muted mb-4">¿Tienes alguna pregunta sobre nuestros servicios?</p>
           <Button 

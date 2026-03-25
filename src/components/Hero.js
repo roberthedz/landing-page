@@ -6,12 +6,12 @@ import { Container, Row, Col, Button } from 'react-bootstrap';
 const HeroSection = styled.section`
   height: 90vh;
   min-height: 600px;
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1800&auto=format&fit=crop');
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1800&auto=format&fit=crop');
   background-size: cover;
   background-position: center;
   display: flex;
   align-items: center;
-  color: var(--white);
+  color: #ffffff;
   margin-top: 70px;
   position: relative;
   
@@ -36,7 +36,8 @@ const HeroTitle = styled.h1`
   font-size: 3.8rem;
   margin-bottom: 1.5rem;
   font-weight: 700;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  text-shadow: 0 2px 15px rgba(0, 0, 0, 0.8), 0 4px 20px rgba(0, 0, 0, 0.6);
   
   @media (max-width: 768px) {
     font-size: 2.5rem;
@@ -46,7 +47,8 @@ const HeroTitle = styled.h1`
 const HeroSubtitle = styled.p`
   font-size: 1.3rem;
   margin-bottom: 2rem;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  text-shadow: 0 2px 15px rgba(0, 0, 0, 0.8), 0 4px 20px rgba(0, 0, 0, 0.6);
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
@@ -86,21 +88,102 @@ const ButtonsContainer = styled.div`
 `;
 
 const PrimaryButton = styled(Button)`
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
+  background-color: #4a6163 !important;
+  background: #4a6163 !important;
+  border-color: #4a6163 !important;
   padding: 0.8rem 2rem;
   font-weight: 600;
   border-radius: 50px;
-  color: var(--white);
+  color: var(--white) !important;
   min-width: 180px;
   transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 0 20px rgba(74, 97, 99, 0.4), 0 0 25px rgba(74, 97, 99, 0.3);
+  overflow: hidden;
+  opacity: 1 !important;
+  
+  &, &:focus, &:active {
+    background-color: #4a6163 !important;
+    background: #4a6163 !important;
+    border-color: #4a6163 !important;
+  }
+  
+  /* Efecto de brillo sutil animado */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%; 
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+    z-index: 1;
+  }
+  
+  /* Capa adicional para el resplandor verde olivo (solo alrededor, no en el fondo) */
+  &::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: radial-gradient(circle, rgba(74, 97, 99, 0.3) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+    border-radius: 50px;
+    animation: rotateGlow 4s linear infinite;
+  }
+  
+  @keyframes rotateGlow {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  &:hover::before {
+    left: 100%;
+  }
   
   &:hover {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-    color: var(--white);
+    background-color: #5d7a7c !important;
+    background: #5d7a7c !important;
+    border-color: #5d7a7c !important;
+    color: var(--white) !important;
     transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 35px rgba(74, 97, 99, 0.6), 0 0 45px rgba(74, 97, 99, 0.4);
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+  
+  /* Animación más visible de pulso en estado normal */
+  animation: subtlePulse 2.5s ease-in-out infinite;
+  
+  @keyframes subtlePulse {
+    0%, 100% {
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 0 20px rgba(74, 97, 99, 0.4), 0 0 25px rgba(74, 97, 99, 0.3);
+    }
+    50% {
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), 0 0 25px rgba(74, 97, 99, 0.5), 0 0 30px rgba(74, 97, 99, 0.4);
+    }
+  }
+  
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 35px rgba(74, 97, 99, 0.6), 0 0 45px rgba(74, 97, 99, 0.4);
+    }
+    50% {
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 40px rgba(74, 97, 99, 0.7), 0 0 50px rgba(74, 97, 99, 0.5);
+    }
+  }
+  
+  /* Asegurar que el texto esté por encima de los efectos */
+  span, & > * {
+    position: relative;
+    z-index: 2;
   }
   
   @media (max-width: 576px) {
@@ -122,7 +205,7 @@ const SecondaryButton = styled(Button)`
   &:hover {
     background-color: var(--white);
     border-color: var(--white);
-    color: var(--secondary-color);
+    color: #4a6163;
     transform: translateY(-3px);
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
   }
@@ -162,11 +245,13 @@ const SocialIcon = styled.a`
   color: var(--white);
   font-size: 1.5rem;
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   
   &:hover {
-    background-color: var(--secondary-color);
+    background-color: #4a6163;
     color: var(--white);
     transform: translateY(-5px);
+    border-color: #4a6163;
   }
   
   @media (max-width: 768px) {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
 import styled from 'styled-components';
+import { getOnlineServices, getPresencialServices, getComercialServices, getConsultaRapidaServices } from '../data/servicesData';
 
 const ServicesSection = styled.section`
   padding: 5rem 0;
@@ -28,7 +29,7 @@ const SectionTitle = styled.div`
       transform: translateX(-50%);
       width: 80px;
       height: 3px;
-      background-color: var(--secondary-color);
+      background-color: #4a6163;
       border-radius: 2px;
     }
   }
@@ -62,7 +63,7 @@ const CategoryTitle = styled.h3`
     transform: translateX(-50%);
     width: 60px;
     height: 2px;
-    background-color: var(--secondary-color);
+    background-color: #4a6163;
     border-radius: 2px;
   }
 `;
@@ -99,7 +100,7 @@ const ServiceTitle = styled(Card.Title)`
 
 const ServicePrice = styled.div`
   font-weight: 700;
-  color: var(--secondary-color);
+  color: #4a6163;
   font-size: ${props => props.isLongPrice ? '1.1rem' : '1.2rem'};
   margin-bottom: 1rem;
 `;
@@ -108,7 +109,7 @@ const ServiceBadge = styled(Badge)`
   position: absolute;
   top: 15px;
   right: 15px;
-  background-color: var(--secondary-color);
+  background-color: #4a6163;
   color: white;
   padding: 0.5rem 1rem;
   font-weight: 500;
@@ -117,8 +118,8 @@ const ServiceBadge = styled(Badge)`
 `;
 
 const ServiceButton = styled(Button)`
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
+  background-color: #4a6163;
+  border-color: #4a6163;
   color: #fff;
   border-radius: 50px;
   padding: 0.6rem 1.5rem;
@@ -127,104 +128,198 @@ const ServiceButton = styled(Button)`
   transition: all 0.3s ease;
   
   &:hover {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
+    background-color: #5d7a7c;
+    border-color: #5d7a7c;
     transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 15px rgba(74, 97, 99, 0.3);
+  }
+`;
+
+const ConsultaRapidaSection = styled.div`
+  margin-bottom: 5rem;
+`;
+
+const ConsultaRapidaLabel = styled.div`
+  text-align: center;
+  margin-bottom: 1.5rem;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: rgba(74, 97, 99, 0.1);
+    color: #4a6163;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    border: 1px solid rgba(74, 97, 99, 0.2);
+  }
+`;
+
+const ConsultaRapidaCard = styled.div`
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(74, 97, 99, 0.2);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 320px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const ConsultaRapidaImage = styled.div`
+  position: relative;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    min-height: 260px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, transparent 70%, rgba(74, 97, 99, 0.3));
+  }
+
+  @media (max-width: 768px) {
+    img { min-height: 220px; }
+    &::after { background: linear-gradient(to bottom, transparent 60%, rgba(74, 97, 99, 0.4)); }
+  }
+`;
+
+const ConsultaRapidaContent = styled.div`
+  background: linear-gradient(135deg, #4a6163 0%, #5d7a7c 100%);
+  padding: 2.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.4rem;
+    line-height: 1.2;
+  }
+
+  .price-line {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 1rem;
+
+    span {
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 1.75rem;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.75rem;
+  }
+`;
+
+const BtnWhite = styled(Button)`
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #4a6163;
+  border-radius: 50px;
+  padding: 0.6rem 1.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.88);
+    border-color: rgba(255, 255, 255, 0.88);
+    color: #4a6163;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+const BtnOutlineWhite = styled(Button)`
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  border-radius: 50px;
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: #ffffff;
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+`;
+
+const SectionDivider = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: rgba(74, 97, 99, 0.15);
+  }
+
+  span {
+    color: #4a6163;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
 `;
 
 const Services = () => {
-  const asesoriaBasicaServices = [
-    {
-      id: 'consulta-online-habitacion-cerrada',
-      title: 'Habitación Cerrada 12x12',
-      price: '$150',
-      description: 'Asesoría personalizada de 1 hora en línea para transformar una habitación específica de hasta 12x12 pies. Incluye moodboard digital, recomendaciones de productos y sesión de videollamada.',
-      image: '/images/service1.jpg',
-      tag: 'Online',
-      duration: '60 min'
-    },
-    {
-      id: 'consulta-online-open-concept-1-2',
-      title: '1-2 Habitaciones Open Concept',
-      price: '$220',
-      description: 'Ideal para espacios abiertos donde conviven sala, comedor, cocina. Enfoque estratégico para mantener armonía entre zonas. Incluye moodboard y 6 horas de preparación previa.',
-      image: '/images/service2.jpg',
-      tag: 'Open Concept',
-      duration: '60 min'
-    },
-    {
-      id: 'consulta-online-open-concept-3-4',
-      title: '3-4 Habitaciones Open Concept',
-      price: '$400',
-      description: 'Para renovar múltiples áreas en espacios abiertos. Transiciones fluidas entre habitaciones con coherencia visual. Incluye 8 horas de preparación previa y sesión extendida.',
-      image: '/images/service3.jpg',
-      tag: 'Completo',
-      duration: '120 min'
-    }
-  ];
-  
-  const asesoriaCompletaServices = [
-    {
-      id: 'paquete-esencial',
-      title: 'Paquete Esencial',
-      price: '$500',
-      description: 'Guía profesional para transformar un espacio (12x12) con estilo. Incluye reunión inicial, moodboard, paleta de colores, propuesta de distribución y lista de recomendaciones. Entrega en 10-12 días.',
-      image: '/images/service3.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial'
-    },
-    {
-      id: 'paquete-intermedio',
-      title: 'Paquete Intermedio',
-      price: '$750',
-      description: 'Transformación con estilo y funcionalidad. Dos moodboards, plano 2D, reunión de revisión, seguimiento por WhatsApp. Incluye descuentos hasta 20% en proveedores. Entrega en 15-18 días.',
-      image: '/images/service4.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial'
-    },
-    {
-      id: 'paquete-premium',
-      title: 'Paquete Premium',
-      price: '$1,200',
-      description: 'Proyecto exclusivo y detallado con diseño a medida. Incluye render 3D profesional, acompañamiento integral, guía de montaje y seguimiento a 30 días. Entrega en 21-25 días.',
-      image: '/images/service5.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial'
-    }
-  ];
+  // Usar datos centralizados desde servicesData.js
+  const consultaRapidaServices = getConsultaRapidaServices();
+  const asesoriaBasicaServices = getOnlineServices();
+  const asesoriaCompletaServices = getPresencialServices();
+  const asesoriaComercialServices = getComercialServices();
 
-  const asesoriaComercialServices = [
-    {
-      id: 'paquete-comercial-basico',
-      title: 'Paquete Comercial Básico',
-      price: '$6 por pie cuadrado',
-      description: 'Ideal para dueños de negocios, marcas o emprendedores que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 1 moodboard digital, paleta de colores sugerida, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (1 opción por ítem) y selección estratégica de proveedores con descuentos hasta 20%. Entrega en 12-15 días hábiles.',
-      image: '/images/service3.jpg',
-      tag: 'Comercial',
-      duration: 'Presencial'
-    },
-    {
-      id: 'paquete-comercial-premium',
-      title: 'Paquete Comercial Premium',
-      price: '$9 por pie cuadrado',
-      description: 'Solución completa para negocios que buscan una transformación profesional. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 2 moodboards digitales, paleta de colores personalizada, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (2 opciones por ítem) y selección estratégica de proveedores con descuentos hasta 20%. PDF de presentación final incluido. Entrega en 15-21 días hábiles.',
-      image: '/images/service4.jpg',
-      tag: 'Comercial',
-      duration: 'Presencial'
-    }
-  ];
-
-  const renderServiceCard = (service) => (
-    <Col key={service.id} md={6} lg={4} className="d-flex mb-4">
+  const renderServiceCard = (service, index, array) => (
+    <Col key={service.id} md={6} lg={array.length === 4 ? 3 : 4} className="d-flex mb-4">
       <ServiceCard>
         <div className="position-relative">
           <ServiceImage variant="top" src={service.image} />
         </div>
         <Card.Body className="d-flex flex-column p-4">
           <ServiceTitle>{service.title}</ServiceTitle>
-          <ServicePrice isLongPrice={service.price.includes('Contáctanos')}>{service.price} <small>{service.duration}</small></ServicePrice>
+          <ServicePrice isLongPrice={service.price.includes('Contáctanos')}>{service.price}</ServicePrice>
           <Card.Text className="mb-3">{service.description}</Card.Text>
           
           <div className="mt-auto">
@@ -234,8 +329,8 @@ const Services = () => {
               className="w-100 py-2 fw-semibold"
               style={{ 
                 backgroundColor: 'transparent', 
-                borderColor: 'var(--primary-color)',
-                color: 'var(--primary-color)',
+                borderColor: '#4a6163',
+                color: '#4a6163',
                 borderRadius: '8px'
               }}
             >
@@ -282,6 +377,36 @@ const Services = () => {
             {asesoriaComercialServices.map(renderServiceCard)}
           </Row>
         </CategoryContainer>
+
+        <SectionDivider><span>¿Solo tienes una duda puntual?</span></SectionDivider>
+
+        {consultaRapidaServices.map(service => (
+          <ConsultaRapidaSection key={service.id}>
+            <ConsultaRapidaLabel>
+              <span><i className="bi bi-lightning-fill"></i>Consulta Rápida</span>
+            </ConsultaRapidaLabel>
+            <ConsultaRapidaCard>
+              <ConsultaRapidaImage>
+                <img src={service.image} alt={service.title} />
+              </ConsultaRapidaImage>
+              <ConsultaRapidaContent>
+                <h3>{service.title}</h3>
+                <div className="price-line">
+                  {service.price} <span>· {service.duration} por videollamada</span>
+                </div>
+                <p>{service.description}</p>
+                <div className="buttons">
+                  <BtnWhite as={Link} to={`/servicios/${service.id}`}>
+                    <i className="bi bi-eye me-2"></i>Ver Detalles
+                  </BtnWhite>
+                  <BtnOutlineWhite as={Link} to="/agendar" state={{ selectedService: service }}>
+                    <i className="bi bi-calendar-check me-2"></i>Agendar
+                  </BtnOutlineWhite>
+                </div>
+              </ConsultaRapidaContent>
+            </ConsultaRapidaCard>
+          </ConsultaRapidaSection>
+        ))}
       </Container>
     </ServicesSection>
   );

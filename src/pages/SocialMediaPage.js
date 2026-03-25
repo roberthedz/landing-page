@@ -31,7 +31,7 @@ const SectionTitle = styled.div`
       transform: translateX(-50%);
       width: 80px;
       height: 3px;
-      background-color: var(--secondary-color);
+      background-color: #4a6163;
       border-radius: 2px;
     }
   }
@@ -64,20 +64,28 @@ const SocialMediaCard = styled.a`
   padding: 2.5rem 1.5rem;
   background-color: white;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   text-decoration: none;
+  color: inherit;
   
   &:hover {
     transform: translateY(-8px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  &:link, &:visited {
+    color: inherit;
+    text-decoration: none;
   }
 `;
 
 const SocialMediaIcon = styled.div`
   font-size: 3.5rem;
   margin-bottom: 1.5rem;
-  color: ${props => props.color || 'var(--secondary-color)'};
+  color: ${props => props.color || '#4a6163'};
 `;
 
 const SocialMediaName = styled.h4`
@@ -97,7 +105,7 @@ const SocialMediaText = styled.p`
 const SocialMediaButton = styled.span`
   display: inline-block;
   padding: 0.5rem 1.2rem;
-  background-color: var(--secondary-color);
+      background-color: #4a6163;
   color: white;
   border-radius: 50px;
   font-weight: 600;
@@ -109,7 +117,7 @@ const SocialMediaButton = styled.span`
   }
   
   &:hover {
-    background-color: var(--accent-color);
+      background-color: #5d7a7c;
   }
 `;
 
@@ -169,8 +177,8 @@ const SocialMediaPage = () => {
         <div className="text-center mt-5 pt-3">
           <p className="text-muted mb-4">¿Quieres saber más sobre nuestros servicios?</p>
           <Link to="/servicios" className="btn rounded-pill px-4 py-2" style={{ 
-            color: 'var(--primary-color)',
-            borderColor: 'var(--primary-color)',
+            color: '#4a6163',
+            borderColor: '#4a6163',
             backgroundColor: 'transparent'
           }}>
             <i className="bi bi-arrow-right me-2"></i>

@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 const FooterContainer = styled.footer`
-  background-color: var(--primary-color);
-  color: var(--white);
+  background-color: #4a6163;
+  color: #ffffff;
   padding: 3rem 0;
 `;
 
@@ -28,10 +28,24 @@ const FooterContent = styled.div`
 
 const FooterSection = styled.div`
   h3 {
-    color: var(--white);
+    color: #ffffff;
     margin-top: 0;
     margin-bottom: 1.5rem;
     font-size: 1.2rem;
+    position: relative;
+    padding-bottom: 0.75rem;
+    font-weight: 600;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background-color: rgba(255, 255, 255, 0.6);
+      border-radius: 2px;
+    }
   }
 
   ul {
@@ -45,15 +59,19 @@ const FooterSection = styled.div`
   }
 
   a {
-    color: var(--gray-light);
+    color: rgba(255, 255, 255, 0.85);
+    transition: all 0.3s ease;
+    position: relative;
     
     &:hover {
-      color: var(--accent-color);
+      color: #ffffff;
+      padding-left: 5px;
     }
   }
 
   p {
     margin-top: 0;
+    color: rgba(255, 255, 255, 0.9);
   }
 `;
 
@@ -70,10 +88,13 @@ const SocialLinks = styled.div`
     height: 36px;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.1);
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     
     &:hover {
-      background-color: var(--secondary-color);
+      background-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-3px);
     }
   }
 `;
@@ -82,11 +103,15 @@ const Copyright = styled.div`
   text-align: center;
   padding-top: 2rem;
   margin-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--gray-light);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
   max-width: 1200px;
   margin: 2rem auto 0;
   padding: 2rem 1rem 0;
+  
+  p {
+    color: rgba(255, 255, 255, 0.8);
+  }
 `;
 
 const Footer = () => {
@@ -117,9 +142,10 @@ const Footer = () => {
         <FooterSection>
           <h3>Servicios</h3>
           <ul>
-            <li><Link to="/servicios/consulta-online-habitacion-cerrada">Habitación Cerrada 12x12</Link></li>
-            <li><Link to="/servicios/consulta-online-open-concept-1-2">1-2 Habitaciones Open Concept</Link></li>
-            <li><Link to="/servicios/consulta-online-open-concept-3-4">3-4 Habitaciones Open Concept</Link></li>
+            <li><Link to="/servicios/consulta-online">Consulta Rápida</Link></li>
+            <li><Link to="/servicios/consulta-online-habitacion-cerrada">Online Room Reset</Link></li>
+            <li><Link to="/servicios/consulta-online-open-concept-1-2">Open Concept Smart Design</Link></li>
+            <li><Link to="/servicios/consulta-online-open-concept-3-4">Full Transformation</Link></li>
             <li><Link to="/servicios/paquete-esencial">Paquete Esencial</Link></li>
             <li><Link to="/servicios/paquete-intermedio">Paquete Intermedio</Link></li>
             <li><Link to="/servicios/paquete-premium">Paquete Premium</Link></li>

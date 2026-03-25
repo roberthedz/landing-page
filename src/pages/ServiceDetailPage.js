@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Breadcrumb, Button, Badge, Card, ListGroup } from 'react-bootstrap';
 import styled from 'styled-components';
+import { getServiceById } from '../data/servicesData';
 
 const HeroSection = styled.section`
   padding: 8rem 0 3rem;
@@ -23,15 +24,27 @@ const HeroSection = styled.section`
 const PageTitle = styled.h1`
   font-size: 3.2rem;
   font-weight: 700;
-  color: var(--primary-color);
+  color: #4a6163;
   margin-bottom: 1.5rem;
   font-family: 'Playfair Display', serif;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 80px;
+    height: 3px;
+    background-color: #4a6163;
+    border-radius: 2px;
+  }
 `;
 
 const Price = styled.div`
   font-size: ${props => props.isLongPrice ? '1.5rem' : '2.2rem'};
   font-weight: 700;
-  color: var(--secondary-color);
+  color: #4a6163;
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -45,7 +58,7 @@ const Price = styled.div`
 `;
 
 const ServiceTag = styled(Badge)`
-  background-color: var(--secondary-color);
+  background-color: #4a6163;
   color: white;
   padding: 0.5rem 1.2rem;
   font-weight: 500;
@@ -68,22 +81,21 @@ const ContentSection = styled.section`
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 2rem;
-  font-weight: 600;
-  color: var(--primary-color);
-  margin-bottom: 1.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 1.25rem;
   position: relative;
-  display: inline-block;
+  display: block;
   
   &:after {
     content: '';
     position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
+    bottom: -8px;
+    left: 0;
+    width: 50px;
     height: 3px;
-    background-color: var(--secondary-color);
+    background-color: #4a6163;
     border-radius: 2px;
   }
 `;
@@ -112,23 +124,36 @@ const StyledListGroup = styled(ListGroup)`
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(74, 97, 99, 0.1);
   
   .list-group-item {
-    padding: 1rem 1.5rem;
+    padding: 0.875rem 1.25rem;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    border: none;
+    border-bottom: 1px solid rgba(74, 97, 99, 0.08);
+    
+    &:last-child {
+      border-bottom: none;
+    }
     
     i {
-      color: var(--secondary-color);
-      margin-right: 1rem;
-      font-size: 1.2rem;
+      color: #4a6163;
+      margin-right: 0.875rem;
+      font-size: 1.1rem;
+      margin-top: 0.125rem;
+      flex-shrink: 0;
+    }
+    
+    &:hover {
+      background-color: rgba(74, 97, 99, 0.05);
     }
   }
 `;
 
 const BookButton = styled(Button)`
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
+  background-color: #4a6163;
+  border-color: #4a6163;
   color: #fff;
   border-radius: 50px;
   padding: 0.8rem 2rem;
@@ -137,11 +162,55 @@ const BookButton = styled(Button)`
   transition: all 0.3s ease;
   
   &:hover {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
+    background-color: #5d7a7c;
+    border-color: #5d7a7c;
     transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 15px rgba(74, 97, 99, 0.3);
   }
+`;
+
+/* ── Estilos exclusivos para Consulta Rápida ── */
+const ThinSectionTitle = styled.h3`
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4a6163;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(74, 97, 99, 0.2);
+`;
+
+const ThinList = styled.ul`
+  list-style: none;
+  margin: 0 0 2rem 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(74, 97, 99, 0.07);
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.5;
+
+    &:last-child { border-bottom: none; }
+
+    i {
+      color: #4a6163;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      flex-shrink: 0;
+    }
+  }
+`;
+
+const ThinDivider = styled.div`
+  height: 1px;
+  background-color: rgba(74, 97, 99, 0.12);
+  margin: 1.75rem 0;
 `;
 
 const ServiceDetailPage = () => {
@@ -153,248 +222,8 @@ const ServiceDetailPage = () => {
   useEffect(() => {
     // Simulando carga de datos
     setTimeout(() => {
-      // Aquí buscaríamos el servicio por ID en una API real
-      const allServices = [
-        // SERVICIOS ONLINE
-        {
-          id: 'consulta-online-habitacion-cerrada',
-          title: 'Habitación Cerrada 12x12',
-          price: '$150',
-          duration: '60 min',
-          description: 'Asesoría personalizada de 1 hora en línea para transformar una habitación específica de hasta 12x12 pies.',
-          longDescription: 'Si desea transformar una habitación específica de su hogar, este paquete es perfecto para usted. En DEdecor le ofrecemos una asesoría personalizada de 1 hora en línea, pensada para ayudarle a crear un espacio armónico, funcional y lleno de estilo dentro de una habitación cerrada de hasta 12x12 pies. Para garantizar un servicio de calidad, le pedimos que agende su cita con al menos 24 horas de antelación.',
-          image: '/images/service1.jpg',
-          tag: 'Online',
-          category: 'asesoria-online',
-          features: [
-            'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
-            'Definición de estilo y elección de elementos clave: paredes, textiles, sofás, camas, etc.',
-            'Asesoría en colocación de mobiliario y piezas decorativas',
-            'Recomendación de colores, pintura, papel tapiz y texturas para muros',
-            'Detalles finales: accesorios, molduras, acabados y toques especiales',
-            'Sesión de videollamada de 60 minutos',
-            'Cuestionario previo para entender tus gustos, estilo de vida y objetivos',
-            'Un Moodboard digital con la propuesta estética',
-            'Documento resumen con enlaces de compra de los productos sugeridos'
-          ],
-          includes: [
-            'Quiere transformar una habitación específica de hasta 12x12 pies',
-            'Busca asesoría profesional online con resultados claros',
-            'Necesita una guía experta para tomar decisiones de decoración',
-            'Desea un proceso creativo, enriquecedor y emocionante'
-          ]
-        },
-        {
-          id: 'consulta-online-open-concept-1-2',
-          title: '1-2 Habitaciones Open Concept',
-          price: '$220',
-          duration: '60 min',
-          description: 'Ideal para espacios abiertos donde conviven sala, comedor, cocina. Enfoque estratégico para mantener armonía entre zonas.',
-          longDescription: 'Este paquete está diseñado especialmente para quienes tienen espacios abiertos y conectados (open concept) donde la sala, el comedor, la cocina u otras áreas conviven en un mismo entorno. Para quienes desean renovar una o dos áreas principales de su hogar, pero entienden que en un espacio abierto es fundamental mantener la armonía con las zonas alrededor.',
-          image: '/images/service2.jpg',
-          tag: 'Open Concept',
-          category: 'asesoria-online',
-          features: [
-            'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
-            'Definición de estilo y elección de elementos clave: paredes, textiles, sofás, camas, etc.',
-            'Asesoría en colocación de mobiliario y piezas decorativas',
-            'Recomendación de colores, pintura, papel tapiz y texturas para muros',
-            'Detalles finales: accesorios, molduras, acabados y toques especiales',
-            'Sesión de videollamada de 60 minutos',
-            'Cuestionario previo para entender tus gustos, estilo de vida y objetivos',
-            'Un Moodboard digital con la propuesta estética',
-            'Documento resumen con enlaces de compra de los productos sugeridos',
-            '6 horas previas de preparación para propuestas personalizadas'
-          ],
-          includes: [
-            'Tiene espacios abiertos y conectados (open concept)',
-            'Quiere mantener armonía visual entre zonas',
-            'Busca transiciones fluidas sin que se vea desordenado',
-            'Desea un enfoque estratégico para espacios integrados'
-          ]
-        },
-        {
-          id: 'consulta-online-open-concept-3-4',
-          title: '3-4 Habitaciones Open Concept',
-          price: '$400',
-          duration: '120 min',
-          description: 'Para renovar múltiples áreas en espacios abiertos. Transiciones fluidas entre habitaciones con coherencia visual.',
-          longDescription: 'Este paquete está diseñado especialmente para quienes tienen espacios abiertos y conectados (open concept) donde múltiples áreas conviven en un mismo entorno. Para quienes desean renovar 3-4 áreas principales pero entienden que en un espacio abierto es fundamental mantener la armonía y coherencia visual entre todas las zonas.',
-          image: '/images/service3.jpg',
-          tag: 'Completo',
-          category: 'asesoria-online',
-          features: [
-            'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
-            'Definición de estilo y elección de elementos clave: paredes, textiles, sofás, camas, etc.',
-            'Asesoría en colocación de mobiliario y piezas decorativas',
-            'Recomendación de colores, pintura, papel tapiz y texturas para muros',
-            'Detalles finales: accesorios, molduras, acabados y toques especiales',
-            'Sesión de videollamada de 120 minutos',
-            'Cuestionario previo para entender tus gustos, estilo de vida y objetivos',
-            'Un Moodboard digital con la propuesta estética',
-            'Documento resumen con enlaces de compra de los productos sugeridos',
-            '8 horas previas de preparación para propuestas personalizadas'
-          ],
-          includes: [
-            'Tiene múltiples áreas en espacios abiertos',
-            'Quiere coherencia visual entre 3-4 habitaciones',
-            'Busca un enfoque integral para espacios complejos',
-            'Necesita sesión extendida para cubrir todas las áreas'
-          ]
-        },
-        {
-          id: 'paquete-esencial',
-          title: 'Paquete Esencial',
-          price: '$500',
-          duration: 'Por Habitación',
-          description: 'Guía profesional para transformar un espacio (12x12) con estilo. Incluye reunión inicial, moodboard, paleta de colores, propuesta de distribución y lista de recomendaciones.',
-          longDescription: 'Ideal para quienes quieran una guía clara y profesional para transformar un espacio con estilo, sin complicaciones. Este paquete incluye una propuesta única y final, cuidadosamente diseñada según tus gustos y necesidades. Una habitación standard es 12\'x12\'. Entrega entre 10 y 12 días hábiles después de nuestra reunión inicial.',
-          image: '/images/service4.jpg',
-          tag: 'Por Habitación',
-          category: 'asesoria-presencial',
-          features: [
-            '1 reunión inicial (virtual o presencial) para conocer el espacio, necesidades y estilo del cliente (hasta 60 min)',
-            '1 Moodboard digital con la propuesta estética',
-            'Paleta de colores sugerida',
-            'Propuesta de distribución (layout general en plano simple)',
-            '1 Ronda de ajuste online (30 min)',
-            'Lista de recomendaciones de mobiliario y decoración (con links de compra 2 opciones por items)',
-            'PDF de presentación final con sugerencias y visión del espacio',
-            'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
-            'Entrega entre 10 y 12 días hábiles'
-          ],
-          includes: [
-            'Quiere una guía clara y profesional sin complicaciones',
-            'Busca transformar un espacio con estilo',
-            'Prefiere una propuesta única y final bien diseñada',
-            'Necesita recomendaciones específicas con enlaces de compra'
-          ]
-        },
-        {
-          id: 'paquete-intermedio',
-          title: 'Paquete Intermedio',
-          price: '$750',
-          duration: 'Por Habitación',
-          description: 'Transformación con estilo y funcionalidad. Dos moodboards, plano 2D, reunión de revisión, seguimiento por WhatsApp.',
-          longDescription: 'Ideal para quienes desean transformar un espacio con estilo y funcionalidad, contando con asesoría personalizada y dos propuestas de decoración para elegir la que mejor se adapte a su visión. Una habitación standard es 12\'x12\'. Entrega en 15 a 18 días hábiles.',
-          image: '/images/service5.jpg',
-          tag: 'Por Habitación',
-          category: 'asesoria-presencial',
-          features: [
-            'Una (1) reunión inicial (sin costo adicional 60 min)',
-            'Dos (2) moodboards por área (para que EL CLIENTE elija o combine a su gusto)',
-            'Paleta de colores detallada, incluyendo códigos específicos',
-            'Asesoría sobre la combinación de materiales, texturas y estilos',
-            'Plano de distribución a escala 2D',
-            'Una (1) reunión de revisión (presencial o virtual)',
-            'Una (1) ronda de ajustes (en línea)',
-            'Lista de compras. Si es necesario, se enviarán enlaces adicionales para reflejar el cambio (hasta 3 enlaces por artículo)',
-            'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
-            'Entrega en 15 a 18 días hábiles',
-            'Incluye seguimiento por WhatsApp o correo durante el proceso'
-          ],
-          includes: [
-            'Desea transformar un espacio con estilo y funcionalidad',
-            'Quiere dos propuestas para elegir o combinar',
-            'Busca asesoría personalizada y detallada',
-            'Necesita seguimiento durante todo el proceso'
-          ]
-        },
-        {
-          id: 'paquete-premium',
-          title: 'Paquete Premium',
-          price: '$1,200',
-          duration: 'Por Habitación',
-          description: 'Proyecto exclusivo y detallado con diseño a medida. Incluye render 3D profesional, acompañamiento integral, guía de montaje y seguimiento a 30 días.',
-          longDescription: 'Diseñado para quienes buscan un proyecto exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada etapa del proceso. Entrega en 21 a 25 días hábiles.',
-          image: '/images/service1.jpg',
-          tag: 'Por Habitación',
-          category: 'asesoria-presencial',
-          features: [
-            '1 reunión inicial + 2 reuniones de seguimiento (virtual o presencial 60min)',
-            'Estudio del espacio con análisis de luz, proporciones y flujo',
-            '2 moodboards creativos + 1 moodboard final consolidado',
-            'Render 3D profesional del diseño final (visión realista del espacio)',
-            'Lista de compras detallada con enlaces y asesoría de proveedores',
-            'Guía personalizada para montaje',
-            'Acompañamiento online durante la compra y montaje',
-            'Mini guía de mantenimiento y styling del espacio',
-            'Check-in de seguimiento a los 30 días de entrega',
-            'Selección estratégica de tiendas, marcas y proveedores recomendados (con descuentos de hasta un 20% en algunas)',
-            'Entrega en 21 a 25 días hábiles',
-            'Atención preferente y personalizada vía WhatsApp, correo y Presencial'
-          ],
-          includes: [
-            'Busca un proyecto exclusivo y detallado',
-            'Quiere diseño completamente a medida',
-            'Desea acompañamiento integral en cada etapa',
-            'Necesita visualización 3D profesional del resultado',
-            'Valora la atención preferente y personalizada'
-          ]
-        },
-        // SERVICIOS COMERCIALES
-        {
-          id: 'paquete-comercial-basico',
-          title: 'Paquete Comercial Básico',
-          price: '$6 por pie cuadrado',
-          duration: 'Presencial',
-          description: 'Ideal para dueños de negocios que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda.',
-          longDescription: 'Este paquete está diseñado para dueños de negocios, marcas o emprendedores que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda. Incluye una propuesta única y final, cuidadosamente diseñada para reflejar la esencia de tu marca, mejorar la funcionalidad del espacio y elevar la experiencia visual de tus clientes. Entrega entre 12 y 15 días hábiles después de la reunión inicial.',
-          image: '/images/service3.jpg',
-          tag: 'Comercial',
-          category: 'asesoria-comercial',
-          features: [
-            '1 reunión inicial presencial (hasta 90 minutos) para conocer el espacio, necesidades del negocio y la identidad visual de la marca',
-            '1 reunión de seguimiento y presentación del proyecto',
-            '1 Moodboard digital con la propuesta estética y el concepto visual del local',
-            'Paleta de colores sugerida, adaptada a la identidad de su marca y el tipo de cliente que desea atraer',
-            'Propuesta de distribución general (layout en plano 2D) para optimizar la circulación, visibilidad de productos y experiencia del cliente',
-            '1 ronda de ajuste online (45 minutos) posterior a la entrega, para revisar y afinar detalles',
-            'Lista de recomendaciones de mobiliario, decoración e iluminación, con links de compra (1 opción por ítem) según el presupuesto y estilo del negocio',
-            'PDF de presentación final, con la visión completa del espacio, resumen de sugerencias y propuestas finales',
-            'Selección estratégica de tiendas, marcas y proveedores recomendados, con descuentos de hasta un 20% en algunos de ellos',
-            'Entrega entre 12 y 15 días hábiles después de la reunión inicial'
-          ],
-          includes: [
-            'Es dueño de un negocio, marca o emprendedor',
-            'Busca mejorar la imagen visual y funcionalidad de su local, showroom o tienda',
-            'Desea una asesoría personalizada en sitio, con observaciones reales del espacio, iluminación y flujo de clientes',
-            'Quiere una propuesta integral, práctica y lista para implementar sin complicaciones'
-          ]
-        },
-        {
-          id: 'paquete-comercial-premium',
-          title: 'Paquete Comercial Premium',
-          price: '$9 por pie cuadrado',
-          duration: 'Presencial',
-          description: 'Solución completa para negocios que buscan una transformación profesional con múltiples opciones y acompañamiento detallado.',
-          longDescription: 'Este paquete premium está diseñado para dueños de negocios, marcas o emprendedores que buscan una solución completa y profesional para transformar su local comercial. Incluye una propuesta única y final, cuidadosamente diseñada para reflejar la esencia de tu marca, mejorar la funcionalidad del espacio y elevar la experiencia visual de tus clientes. Entrega entre 15 y 21 días hábiles después de la reunión inicial.',
-          image: '/images/service4.jpg',
-          tag: 'Comercial',
-          category: 'asesoria-comercial',
-          features: [
-            '1 reunión inicial presencial (hasta 90 minutos) para conocer el espacio, necesidades del negocio y la identidad visual de la marca',
-            '1 reunión de seguimiento para presentación del proyecto',
-            '2 Moodboards digitales con la propuesta estética y el concepto visual del local',
-            'Paleta de colores sugerida, adaptada a la identidad de su marca y el tipo de cliente que desea atraer',
-            'Propuesta de distribución general (layout en plano 2D) para optimizar la circulación, visibilidad de productos y experiencia del cliente',
-            '1 ronda de ajuste online (45 minutos) posterior a la entrega, para revisar y afinar detalles',
-            'Lista de recomendaciones de mobiliario, decoración e iluminación, con links de compra (2 opciones por ítem) según el presupuesto y estilo del negocio',
-            'PDF de presentación final, con la visión completa del espacio, resumen de sugerencias y propuestas finales',
-            'Selección estratégica de tiendas, marcas y proveedores recomendados, con descuentos de hasta un 20% en algunos de ellos',
-            'Entrega entre 15 y 21 días hábiles después de la reunión inicial'
-          ],
-          includes: [
-            'Es dueño de un negocio, marca o emprendedor',
-            'Busca mejorar la imagen visual y funcionalidad de su local, showroom o tienda',
-            'Desea una asesoría personalizada en sitio, con observaciones reales del espacio, iluminación y flujo de clientes',
-            'Quiere una propuesta integral, práctica y lista para implementar sin complicaciones',
-            'Valora tener múltiples opciones por ítem para elegir según su presupuesto'
-          ]
-        }
-      ];
-      
-      const foundService = [...allServices].find(s => s.id === serviceId);
+      // Usar datos centralizados desde servicesData.js
+      const foundService = getServiceById(serviceId);
       
       if (foundService) {
         setService(foundService);
@@ -431,7 +260,7 @@ const ServiceDetailPage = () => {
             <Col lg={6}>
               <PageTitle>{service.title}</PageTitle>
               <Price isLongPrice={service.price.includes('Contáctanos')}>
-                {service.price} <small>{service.duration}</small>
+                {service.price}
               </Price>
               <ServiceDescription>{service.longDescription}</ServiceDescription>
               <BookButton as={Link} to="/agendar" state={{ selectedService: service }}>
@@ -453,40 +282,133 @@ const ServiceDetailPage = () => {
       
       <ContentSection>
         <Container>
-          <Row className="mb-2">
-            <Col lg={6} className="mb-4 mb-lg-0">
-              <SectionTitle>¿Qué incluye?</SectionTitle>
-              <StyledListGroup variant="flush">
-                {service.features.map((feature, index) => (
-                  <ListGroup.Item key={index}>
-                    <i className="bi bi-check-circle-fill"></i>
-                    {feature}
-                  </ListGroup.Item>
-                ))}
-              </StyledListGroup>
-            </Col>
-            <Col lg={6}>
-              <SectionTitle>Ideal para ti si...</SectionTitle>
-              <StyledListGroup variant="flush">
-                {service.includes.map((item, index) => (
-                  <ListGroup.Item key={index}>
-                    <i className="bi bi-check-circle-fill"></i>
-                    {item}
-                  </ListGroup.Item>
-                ))}
-              </StyledListGroup>
-            </Col>
-          </Row>
-          
-          <Row className="mt-5">
-            <Col className="text-center">
-              <h3 className="mb-4">¿Listo para transformar tu espacio?</h3>
-              <BookButton as={Link} to="/agendar" state={{ selectedService: service }}>
-                <i className="bi bi-calendar-check me-2"></i>
-                Agendar Consulta
-              </BookButton>
-            </Col>
-          </Row>
+          {service.type === 'consulta-rapida' ? (
+            /* ── Layout Consulta Rápida: misma tipografía/estilo, distribución diferente ── */
+            <>
+              <Row className="align-items-start">
+                {/* Columna izquierda: ¿Qué incluye? + Información */}
+                <Col lg={5} className="mb-4 mb-lg-0 pe-lg-4">
+                  <SectionTitle>¿Qué incluye?</SectionTitle>
+                  <StyledListGroup variant="flush" className="mb-4">
+                    {service.features && service.features.map((item, i) => (
+                      <ListGroup.Item key={i}>
+                        <i className="bi bi-check-circle-fill"></i>{item}
+                      </ListGroup.Item>
+                    ))}
+                  </StyledListGroup>
+
+                  <SectionTitle>Información</SectionTitle>
+                  <StyledListGroup variant="flush">
+                    {service.informacion && service.informacion.map((item, i) => (
+                      <ListGroup.Item key={i}>
+                        <i className="bi bi-info-circle-fill"></i>{item}
+                      </ListGroup.Item>
+                    ))}
+                  </StyledListGroup>
+                </Col>
+
+                {/* Columna derecha: Ideal para ti si + ¿Qué podemos revisar? */}
+                <Col lg={7} className="ps-lg-4">
+                  <SectionTitle>Ideal para ti si...</SectionTitle>
+                  <StyledListGroup variant="flush" className="mb-4">
+                    {service.includes && service.includes.map((item, i) => (
+                      <ListGroup.Item key={i}>
+                        <i className="bi bi-check-circle-fill"></i>{item}
+                      </ListGroup.Item>
+                    ))}
+                  </StyledListGroup>
+
+                  <SectionTitle>¿Qué podemos revisar?</SectionTitle>
+                  <Row className="g-3">
+                    {service.extra && service.extra.map((item, i) => (
+                      <Col xs={6} key={i}>
+                        <StyledListGroup variant="flush">
+                          <ListGroup.Item>
+                            <i className="bi bi-dot" style={{ fontSize: '1.4rem' }}></i>{item}
+                          </ListGroup.Item>
+                        </StyledListGroup>
+                      </Col>
+                    ))}
+                  </Row>
+                </Col>
+              </Row>
+
+              <Row className="mt-5">
+                <Col className="text-center">
+                  <h3 className="mb-4">¿Listo para transformar tu espacio?</h3>
+                  <BookButton as={Link} to="/agendar" state={{ selectedService: service }}>
+                    <i className="bi bi-calendar-check me-2"></i>
+                    Agendar Consulta
+                  </BookButton>
+                </Col>
+              </Row>
+            </>
+          ) : (
+            /* ── Layout estándar para el resto de servicios ── */
+            <>
+              <Row className="align-items-start">
+                <Col lg={7} className="mb-4 mb-lg-0 pe-lg-4">
+                  <SectionTitle>¿Qué incluye?</SectionTitle>
+                  <StyledListGroup variant="flush">
+                    {service.features && service.features.map((feature, index) => (
+                      <ListGroup.Item key={index}>
+                        <i className="bi bi-check-circle-fill"></i>
+                        {feature}
+                      </ListGroup.Item>
+                    ))}
+                  </StyledListGroup>
+                </Col>
+                
+                <Col lg={5} className="ps-lg-4">
+                  <div className="mb-4">
+                    <SectionTitle>Ideal para ti si...</SectionTitle>
+                    <StyledListGroup variant="flush">
+                      {service.includes && service.includes.map((item, index) => (
+                        <ListGroup.Item key={index}>
+                          <i className="bi bi-check-circle-fill"></i>
+                          {item}
+                        </ListGroup.Item>
+                      ))}
+                    </StyledListGroup>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <SectionTitle>Extra</SectionTitle>
+                    <StyledListGroup variant="flush">
+                      {service.extra && service.extra.map((item, index) => (
+                        <ListGroup.Item key={index}>
+                          <i className="bi bi-star-fill"></i>
+                          {item}
+                        </ListGroup.Item>
+                      ))}
+                    </StyledListGroup>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <SectionTitle>Información</SectionTitle>
+                    <StyledListGroup variant="flush">
+                      {service.informacion && service.informacion.map((item, index) => (
+                        <ListGroup.Item key={index}>
+                          <i className="bi bi-info-circle-fill"></i>
+                          {item}
+                        </ListGroup.Item>
+                      ))}
+                    </StyledListGroup>
+                  </div>
+                </Col>
+              </Row>
+              
+              <Row className="mt-5">
+                <Col className="text-center">
+                  <h3 className="mb-4">¿Listo para transformar tu espacio?</h3>
+                  <BookButton as={Link} to="/agendar" state={{ selectedService: service }}>
+                    <i className="bi bi-calendar-check me-2"></i>
+                    Agendar Consulta
+                  </BookButton>
+                </Col>
+              </Row>
+            </>
+          )}
         </Container>
       </ContentSection>
     </>

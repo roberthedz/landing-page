@@ -543,9 +543,85 @@ Sistema de Reservas Profesional
   }
 };
 
+// Función para enviar cotización de plantas al admin
+const sendPlantQuoteEmail = async ({ contact, contactType, plants }) => {
+  try {
+    const resend = getResendClientAdmin();
+    const adminEmail = process.env.ADMIN_EMAIL || 'dedecorinfo@gmail.com';
+
+    const plantRows = plants.map((p, i) => `
+      <tr style="border-bottom:1px solid #eee">
+        <td style="padding:10px 8px;color:#333">${i + 1}</td>
+        <td style="padding:10px 8px;color:#333"><strong>${p.tipo}</strong></td>
+        <td style="padding:10px 8px;color:#333">${p.maceta}</td>
+        <td style="padding:10px 8px;color:#333">${p.tamano} pies</td>
+      </tr>`).join('');
+
+    const contactLabel = contactType === 'email' ? 'Email' : 'Teléfono';
+
+    await resend.emails.send({
+      from: `DEdecor <${FROM_EMAIL}>`,
+      to: adminEmail,
+      subject: `🌿 Nueva solicitud de cotización – Plantas Faux`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+        <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;color:#333">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td align="center" style="padding:30px 20px">
+              <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+                <tr>
+                  <td style="background:linear-gradient(135deg,#4a6163,#5d7a7c);padding:28px 30px">
+                    <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700">🌿 Solicitud de cotización</h1>
+                    <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:13px">Plantas Faux – DEdecor</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px 30px">
+                    <h3 style="color:#4a6163;margin:0 0 12px;font-size:15px;text-transform:uppercase;letter-spacing:0.05em">Contacto del cliente</h3>
+                    <table style="background:#f8f9fa;border-radius:8px;border-left:4px solid #4a6163;width:100%">
+                      <tr><td style="padding:14px 18px;font-size:14px">
+                        <strong>${contactLabel}:</strong> ${contact}
+                      </td></tr>
+                    </table>
+
+                    <h3 style="color:#4a6163;margin:24px 0 12px;font-size:15px;text-transform:uppercase;letter-spacing:0.05em">Plantas solicitadas</h3>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-radius:8px;overflow:hidden;border:1px solid #eee">
+                      <thead>
+                        <tr style="background:#4a6163">
+                          <th style="padding:10px 8px;text-align:left;color:#fff;font-size:12px">#</th>
+                          <th style="padding:10px 8px;text-align:left;color:#fff;font-size:12px">Tipo</th>
+                          <th style="padding:10px 8px;text-align:left;color:#fff;font-size:12px">Maceta</th>
+                          <th style="padding:10px 8px;text-align:left;color:#fff;font-size:12px">Tamaño</th>
+                        </tr>
+                      </thead>
+                      <tbody>${plantRows}</tbody>
+                    </table>
+
+                    <p style="margin:24px 0 0;font-size:12px;color:#aaa;text-align:center">Enviado desde dedecorinfo.com</p>
+                  </td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+        </html>
+      `
+    });
+
+    console.log(`✅ Email de cotización de plantas enviado a ${adminEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error enviando email de cotización de plantas:', error.message || error);
+    throw error;
+  }
+};
+
 module.exports = {
   configureEmail,
   sendAdminNotification,
   sendClientConfirmation,
-  sendFinalConfirmation
+  sendFinalConfirmation,
+  sendPlantQuoteEmail
 };

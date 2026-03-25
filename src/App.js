@@ -11,6 +11,7 @@ import ContactPage from './pages/ContactPage';
 import BookingPage from './pages/BookingPage';
 import BookingConfirmation from './pages/BookingConfirmation';
 import SocialMediaPage from './pages/SocialMediaPage';
+import ProductosPage from './pages/ProductosPage';
 import AdminAuth from './components/AdminAuth';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
@@ -50,6 +51,7 @@ function App() {
             <Route path="/agendar" element={<BookingPage />} />
             <Route path="/confirm-booking" element={<BookingConfirmation />} />
             <Route path="/redes-sociales" element={<SocialMediaPage />} />
+            <Route path="/productos" element={<ProductosPage />} />
             <Route path="/admin" element={<AdminAuth />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />

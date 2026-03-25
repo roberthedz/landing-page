@@ -134,7 +134,7 @@ const AdminDashboard = () => {
 
   // Cargar reservas
   useEffect(() => {
-    loadBookings();
+        loadBookings();
   }, []);
 
 

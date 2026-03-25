@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -10,8 +11,12 @@ const {
   configureEmail, 
   sendAdminNotification, 
   sendClientConfirmation, 
-  sendFinalConfirmation 
+  sendFinalConfirmation,
+  sendPlantQuoteEmail
 } = require('./src/config/emailConfig');
+
+// Importar sender Gmail nativo (fallback sin Resend)
+const { sendGmail } = require('./src/config/gmailSender');
 
 // 🔧 FIX: Forzar uso de DNS de Google para resolver MongoDB Atlas
 dns.setServers(['8.8.8.8', '8.8.4.4']);
@@ -975,6 +980,107 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
       success: false,
       error: 'Error actualizando estado de reserva'
     });
+  }
+});
+
+// Endpoint para cotización de plantas faux
+app.post('/api/plant-quote', async (req, res) => {
+  try {
+    const { contact, contactType, plants } = req.body;
+
+    if (!contact || !plants || plants.length === 0) {
+      return res.status(400).json({ success: false, error: 'Faltan datos requeridos' });
+    }
+
+    console.log('🌿 Nueva solicitud de cotización de plantas:', { contact, contactType, plants });
+
+    const plantRows = plants.map((p, i) => `
+      <tr style="border-bottom:1px solid #eee">
+        <td style="padding:10px 8px;color:#333">${i + 1}</td>
+        <td style="padding:10px 8px;color:#333"><strong>${p.tipo}</strong></td>
+        <td style="padding:10px 8px;color:#333">${p.maceta}</td>
+        <td style="padding:10px 8px;color:#333">${p.tamano} pies</td>
+      </tr>`).join('');
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head><meta charset="utf-8"></head>
+      <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;color:#333">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center" style="padding:30px 20px">
+            <table width="580" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;overflow:hidden">
+              <tr>
+                <td style="background:linear-gradient(135deg,#4a6163,#5d7a7c);padding:24px 30px">
+                  <h1 style="margin:0;color:#fff;font-size:20px">🌿 Solicitud de cotización – Plantas Faux</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px 30px">
+                  <h3 style="color:#4a6163;margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:0.05em">Contacto del cliente</h3>
+                  <table style="background:#f8f9fa;border-radius:8px;border-left:4px solid #4a6163;width:100%;margin-bottom:20px">
+                    <tr><td style="padding:12px 16px;font-size:14px">
+                      <strong>${contactType === 'email' ? 'Email' : 'Teléfono'}:</strong> ${contact}
+                    </td></tr>
+                  </table>
+                  <h3 style="color:#4a6163;margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:0.05em">Plantas solicitadas</h3>
+                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #eee;border-radius:8px;overflow:hidden">
+                    <thead>
+                      <tr style="background:#4a6163">
+                        <th style="padding:10px 8px;text-align:left;color:#fff;font-size:12px">#</th>
+                        <th style="padding:10px 8px;text-align:left;color:#fff;font-size:12px">Tipo</th>
+                        <th style="padding:10px 8px;text-align:left;color:#fff;font-size:12px">Maceta</th>
+                        <th style="padding:10px 8px;text-align:left;color:#fff;font-size:12px">Tamaño</th>
+                      </tr>
+                    </thead>
+                    <tbody>${plantRows}</tbody>
+                  </table>
+                  <p style="margin:20px 0 0;font-size:11px;color:#aaa;text-align:center">dedecorinfo.com</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </body>
+      </html>`;
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'dedecorinfo@gmail.com';
+
+    if (emailConfigured) {
+      // Usar Resend (producción)
+      try {
+        await sendPlantQuoteEmail({ contact, contactType, plants });
+        console.log('✅ Email enviado via Resend');
+      } catch (emailErr) {
+        console.error('⚠️ Error Resend, intentando Gmail:', emailErr.message);
+      }
+    } else {
+      // Fallback: Gmail SMTP nativo
+      const gmailUser = process.env.EMAIL_USER;
+      const gmailPass = process.env.GMAIL_APP_PASSWORD;
+      if (gmailUser && gmailPass) {
+        try {
+          await sendGmail({
+            from: `DEdecor <${gmailUser}>`,
+            to: adminEmail,
+            subject: '🌿 Nueva solicitud de cotización – Plantas Faux',
+            html: emailHtml,
+            user: gmailUser,
+            pass: gmailPass
+          });
+          console.log('✅ Email enviado via Gmail SMTP a', adminEmail);
+        } catch (gmailErr) {
+          console.error('❌ Error Gmail SMTP:', gmailErr.message);
+        }
+      } else {
+        console.log('⚠️ Sin credenciales de email – cotización no enviada');
+      }
+    }
+
+    res.json({ success: true, message: 'Solicitud recibida correctamente' });
+  } catch (error) {
+    console.error('❌ Error en plant-quote:', error);
+    res.status(500).json({ success: false, error: 'Error procesando la solicitud' });
   }
 });
 

@@ -6,6 +6,7 @@ import { Container, Row, Col, Form, Button, Card, Alert, Spinner, Badge } from '
 import { Formik, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import apiConfig from '../config/apiConfig';
+import { servicesData } from '../data/servicesData';
 
 const BookingSection = styled.section`
   padding: 5rem 0;
@@ -335,9 +336,10 @@ const TimeSlotContainer = styled.div`
 const TimeSlot = styled.div`
   margin: 0.3rem;
   padding: 0.4rem 0.8rem;
-  background-color: ${props => props.selected ? 'var(--secondary-color)' : 'white'};
-  color: ${props => props.selected ? 'white' : props.disabled ? '#aaa' : 'var(--secondary-color)'};
-  border: 1px solid ${props => props.disabled ? '#ddd' : 'var(--secondary-color)'};
+  background-color: ${props => props.selected ? '#4a6163' : 'white'};
+  background: ${props => props.selected ? '#4a6163' : 'white'};
+  color: ${props => props.selected ? '#ffffff' : props.disabled ? '#aaa' : '#4a6163'};
+  border: 1px solid ${props => props.disabled ? '#ddd' : '#4a6163'};
   border-radius: 50px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
@@ -347,8 +349,9 @@ const TimeSlot = styled.div`
   min-width: 70px;
   
   &:hover {
-    background-color: ${props => props.disabled ? 'white' : 'var(--secondary-color)'};
-    color: ${props => props.disabled ? '#aaa' : 'white'};
+    background-color: ${props => props.disabled ? 'white' : '#4a6163'};
+    background: ${props => props.disabled ? 'white' : '#4a6163'};
+    color: ${props => props.disabled ? '#aaa' : '#ffffff'};
     transform: ${props => props.disabled ? 'none' : 'translateY(-2px)'};
   }
 `;
@@ -390,91 +393,8 @@ const Booking = ({ preloadedData = {} }) => {
   const personalInfoSectionRef = useRef();
   const projectDescriptionSectionRef = useRef();
   
-  const services = [
-    // SERVICIOS ONLINE
-    {
-      id: 'consulta-online-habitacion-cerrada',
-      title: 'Habitación Cerrada 12x12',
-      price: '$150',
-      description: 'Asesoría personalizada de 1 hora en línea para transformar una habitación específica de hasta 12x12 pies. Incluye moodboard digital, recomendaciones de productos y sesión de videollamada.',
-      image: '/images/service1.jpg',
-      tag: 'Online',
-      duration: '60 min',
-      type: 'asesoria-online'
-    },
-    {
-      id: 'consulta-online-open-concept-1-2',
-      title: '1-2 Habitaciones Open Concept',
-      price: '$220',
-      description: 'Ideal para espacios abiertos donde conviven sala, comedor, cocina. Enfoque estratégico para mantener armonía entre zonas. Incluye moodboard y 6 horas de preparación previa.',
-      image: '/images/service2.jpg',
-      tag: 'Open Concept',
-      duration: '60 min',
-      type: 'asesoria-online'
-    },
-    {
-      id: 'consulta-online-open-concept-3-4',
-      title: '3-4 Habitaciones Open Concept',
-      price: '$400',
-      description: 'Para renovar múltiples áreas en espacios abiertos. Transiciones fluidas entre habitaciones con coherencia visual. Incluye 8 horas de preparación previa y sesión extendida.',
-      image: '/images/service3.jpg',
-      tag: 'Completo',
-      duration: '120 min',
-      type: 'asesoria-online'
-    },
-    // SERVICIOS PRESENCIALES
-    {
-      id: 'paquete-esencial',
-      title: 'Paquete Esencial',
-      price: '$500',
-      description: 'Guía profesional para transformar un espacio (12x12) con estilo. Incluye reunión inicial, moodboard, paleta de colores, propuesta de distribución y lista de recomendaciones. Entrega en 10-12 días.',
-      image: '/images/service4.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial',
-      type: 'asesoria-presencial'
-    },
-    {
-      id: 'paquete-intermedio',
-      title: 'Paquete Intermedio',
-      price: '$750',
-      description: 'Transformación con estilo y funcionalidad. Dos moodboards, plano 2D, reunión de revisión, seguimiento por WhatsApp. Incluye descuentos hasta 20% en proveedores. Entrega en 15-18 días.',
-      image: '/images/service5.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial',
-      type: 'asesoria-presencial'
-    },
-    {
-      id: 'paquete-premium',
-      title: 'Paquete Premium',
-      price: '$1,200',
-      description: 'Proyecto exclusivo y detallado con diseño a medida. Incluye render 3D profesional, acompañamiento integral, guía de montaje y seguimiento a 30 días. Entrega en 21-25 días.',
-      image: '/images/service1.jpg',
-      tag: 'Por Habitación',
-      duration: 'Presencial',
-      type: 'asesoria-presencial'
-    },
-    // SERVICIOS COMERCIALES
-    {
-      id: 'paquete-comercial-basico',
-      title: 'Paquete Comercial Básico',
-      price: '$6 por pie cuadrado',
-      description: 'Ideal para dueños de negocios, marcas o emprendedores que buscan mejorar la imagen visual y funcionalidad de su local, showroom o tienda. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 1 moodboard digital, paleta de colores sugerida, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (1 opción por ítem) y selección estratégica de proveedores con descuentos hasta 20%. Entrega en 12-15 días hábiles.',
-      image: '/images/service3.jpg',
-      tag: 'Comercial',
-      duration: 'Presencial',
-      type: 'asesoria-comercial'
-    },
-    {
-      id: 'paquete-comercial-premium',
-      title: 'Paquete Comercial Premium',
-      price: '$9 por pie cuadrado',
-      description: 'Solución completa para negocios que buscan una transformación profesional. Incluye reunión inicial presencial (hasta 90 min), reunión de seguimiento, 2 moodboards digitales, paleta de colores personalizada, propuesta de distribución 2D, ronda de ajuste online (45 min), lista de recomendaciones con links de compra (2 opciones por ítem) y selección estratégica de proveedores con descuentos hasta 20%. PDF de presentación final incluido. Entrega en 15-21 días hábiles.',
-      image: '/images/service4.jpg',
-      tag: 'Comercial',
-      duration: 'Presencial',
-      type: 'asesoria-comercial'
-    }
-  ];
+  // Usar servicios desde fuente centralizada
+  const services = servicesData;
   
   // Horarios disponibles predefinidos (deben coincidir con el backend)
   const morningTimes = ['9:00 AM', '10:00 AM', '11:00 AM'];
@@ -975,9 +895,9 @@ const Booking = ({ preloadedData = {} }) => {
       let backgroundColor, borderColor, textColor;
       
       if (selectedTime === time) {
-        backgroundColor = 'var(--primary-color)';
-        borderColor = 'var(--primary-color)';
-        textColor = 'white';
+        backgroundColor = '#4a6163';
+        borderColor = '#4a6163';
+        textColor = '#ffffff';
       } else if (isBooked) {
         buttonClass += 'btn-danger';
         backgroundColor = '#dc3545';
@@ -1000,11 +920,12 @@ const Booking = ({ preloadedData = {} }) => {
           className={buttonClass}
           style={{ 
             minWidth: '65px',
-            opacity: !values.date ? 0.5 : isDisabled ? 0.7 : 1,
+            opacity: selectedTime === time ? 1 : (!values.date ? 0.5 : isDisabled ? 0.7 : 1),
             cursor: isDisabled ? 'not-allowed' : 'pointer',
             fontSize: '0.85rem',
-            backgroundColor,
-            borderColor,
+            backgroundColor: backgroundColor,
+            background: backgroundColor,
+            borderColor: borderColor,
             color: textColor
           }}
           disabled={isDisabled}
@@ -1062,34 +983,51 @@ const Booking = ({ preloadedData = {} }) => {
         <style>
           {`
             .react-datepicker {
-              border: 1px solid var(--primary-color) !important;
+              border: 1px solid #4a6163 !important;
               border-radius: 8px !important;
             }
             .react-datepicker__header {
-              background-color: var(--primary-color) !important;
-              border-bottom: 1px solid var(--primary-color) !important;
+              background-color: #4a6163 !important;
+              border-bottom: 1px solid #4a6163 !important;
             }
             .react-datepicker__current-month,
             .react-datepicker__day-name {
-              color: white !important;
+              color: #ffffff !important;
             }
-            .react-datepicker__day--selected,
-            .react-datepicker__day--keyboard-selected {
-              background-color: var(--primary-color) !important;
-              color: white !important;
+            .react-datepicker__day--selected {
+              background-color: #4a6163 !important;
+              background: #4a6163 !important;
+              color: #ffffff !important;
+              opacity: 1 !important;
             }
-            .react-datepicker__day:hover {
-              background-color: var(--primary-color) !important;
-              color: white !important;
+            .react-datepicker__day--selected:hover {
+              background-color: #4a6163 !important;
+              background: #4a6163 !important;
+              color: #ffffff !important;
+              opacity: 1 !important;
+            }
+            .react-datepicker__day--keyboard-selected.react-datepicker__day--selected {
+              background-color: #4a6163 !important;
+              background: #4a6163 !important;
+              color: #ffffff !important;
+              opacity: 1 !important;
+            }
+            .react-datepicker__day--keyboard-selected:not(.react-datepicker__day--selected) {
+              background-color: rgba(74, 97, 99, 0.2) !important;
+              color: #4a6163 !important;
+            }
+            .react-datepicker__day:hover:not(.react-datepicker__day--selected):not(.react-datepicker__day--disabled) {
+              background-color: rgba(74, 97, 99, 0.1) !important;
+              color: #000 !important;
             }
             .react-datepicker__navigation {
               border: none !important;
             }
             .react-datepicker__navigation--previous {
-              border-right-color: white !important;
+              border-right-color: #ffffff !important;
             }
             .react-datepicker__navigation--next {
-              border-left-color: white !important;
+              border-left-color: #ffffff !important;
             }
           `}
         </style>
@@ -1158,17 +1096,37 @@ const Booking = ({ preloadedData = {} }) => {
                 {/* PASO 1: Tipo de Cita - SIEMPRE CON COLOR */}
                 <Card className="border-0 shadow-sm mb-4">
                   <Card.Header className="py-3" style={{ 
-                    backgroundColor: 'var(--primary-color)', 
-                    color: 'white' 
+                    backgroundColor: '#4a6163', 
+                    color: '#ffffff' 
                   }}>
                     <div className="d-flex align-items-center">
-                      <i className="bi bi-calendar2-check fs-5 me-3"></i>
-                      <h5 className="m-0 fw-semibold">¿Cómo prefieres tu cita?</h5>
-                      {appointmentType && <i className="bi bi-check-circle-fill ms-auto"></i>}
+                      <i className="bi bi-calendar2-check fs-5 me-3" style={{ color: '#ffffff' }}></i>
+                      <h5 className="m-0 fw-semibold" style={{ color: '#ffffff' }}>¿Cómo prefieres tu cita?</h5>
+                      {appointmentType && <i className="bi bi-check-circle-fill ms-auto" style={{ color: '#ffffff' }}></i>}
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
-                    <Row xs={1} md={3} className="g-4">
+                    <Row xs={1} md={2} xl={4} className="g-4">
+                      <Col className="d-flex">
+                        <Card 
+                          className={`w-100 text-center border ${appointmentType === 'consulta-rapida' ? 'bg-light' : ''}`}
+                          onClick={() => handleAppointmentTypeSelect('consulta-rapida', setFieldValue)}
+                          style={{ 
+                            cursor: 'pointer', 
+                            transition: 'all 0.3s ease',
+                            borderColor: appointmentType === 'consulta-rapida' ? 'var(--primary-color)' : '#dee2e6',
+                            borderWidth: appointmentType === 'consulta-rapida' ? '2px' : '1px'
+                          }}
+                        >
+                          <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
+                            <div className="mb-2" style={{ color: '#4a6163' }}>
+                              <i className="bi bi-lightning-fill fs-1"></i>
+                            </div>
+                            <Card.Title className="h6 fw-bold mb-1" style={{ color: '#4a6163' }}>Consulta Rápida</Card.Title>
+                            <Card.Text className="text-muted small">Sesión de 30 min · $95</Card.Text>
+                          </Card.Body>
+                        </Card>
+                      </Col>
                       <Col className="d-flex">
                         <Card 
                           className={`w-100 text-center border ${appointmentType === 'asesoria-presencial' ? 'bg-light' : ''}`}
@@ -1181,10 +1139,10 @@ const Booking = ({ preloadedData = {} }) => {
                           }}
                         >
                           <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
-                            <div className="mb-2" style={{ color: 'var(--primary-color)' }}>
+                            <div className="mb-2" style={{ color: '#4a6163' }}>
                               <i className="bi bi-star-fill fs-1"></i>
                             </div>
-                            <Card.Title className="h6 fw-bold mb-1">Servicios Presenciales</Card.Title>
+                            <Card.Title className="h6 fw-bold mb-1" style={{ color: '#4a6163' }}>Servicios Presenciales</Card.Title>
                             <Card.Text className="text-muted small">Paquetes integrales con visita presencial</Card.Text>
                           </Card.Body>
                         </Card>
@@ -1201,10 +1159,10 @@ const Booking = ({ preloadedData = {} }) => {
                           }}
                         >
                           <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
-                            <div className="mb-2" style={{ color: 'var(--primary-color)' }}>
+                            <div className="mb-2" style={{ color: '#4a6163' }}>
                               <i className="bi bi-chat-dots fs-1"></i>
                             </div>
-                            <Card.Title className="h6 fw-bold mb-1">Servicios Online</Card.Title>
+                            <Card.Title className="h6 fw-bold mb-1" style={{ color: '#4a6163' }}>Servicios Online</Card.Title>
                             <Card.Text className="text-muted small">Consultas especializadas virtuales</Card.Text>
                           </Card.Body>
                         </Card>
@@ -1221,10 +1179,10 @@ const Booking = ({ preloadedData = {} }) => {
                           }}
                         >
                           <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ minHeight: '120px' }}>
-                            <div className="mb-2" style={{ color: 'var(--primary-color)' }}>
+                            <div className="mb-2" style={{ color: '#4a6163' }}>
                               <i className="bi bi-briefcase-fill fs-1"></i>
                             </div>
-                            <Card.Title className="h6 fw-bold mb-1">Servicios Comerciales</Card.Title>
+                            <Card.Title className="h6 fw-bold mb-1" style={{ color: '#4a6163' }}>Servicios Comerciales</Card.Title>
                             <Card.Text className="text-muted small">Asesoría para negocios y locales comerciales</Card.Text>
                           </Card.Body>
                         </Card>
@@ -1245,18 +1203,19 @@ const Booking = ({ preloadedData = {} }) => {
                   className={`border-0 shadow-sm mb-4 ${!isServiceSectionEnabled ? 'opacity-50' : ''}`}
                 >
                   <Card.Header className="py-3" style={{ 
-                    backgroundColor: appointmentType ? 'var(--primary-color)' : '#e9ecef', 
-                    color: appointmentType ? 'white' : '#6c757d' 
+                    backgroundColor: '#4a6163', 
+                    color: '#ffffff' 
                   }}>
                     <div className="d-flex align-items-center">
-                      <i className="bi bi-grid-3x3-gap fs-5 me-3"></i>
-                      <h5 className="m-0 fw-semibold">
-                        {appointmentType === 'asesoria-online' ? 'Servicios Online' : 
+                      <i className="bi bi-grid-3x3-gap fs-5 me-3" style={{ color: '#ffffff' }}></i>
+                      <h5 className="m-0 fw-semibold" style={{ color: '#ffffff' }}>
+                        {appointmentType === 'consulta-rapida' ? 'Consulta Rápida' :
+                         appointmentType === 'asesoria-online' ? 'Servicios Online' : 
                          appointmentType === 'asesoria-presencial' ? 'Servicios Presenciales' : 
                          appointmentType === 'asesoria-comercial' ? 'Servicios Comerciales' : 
                          'Servicios'}
                       </h5>
-                      {selectedService && <i className="bi bi-check-circle-fill ms-auto"></i>}
+                      {selectedService && <i className="bi bi-check-circle-fill ms-auto" style={{ color: '#ffffff' }}></i>}
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
@@ -1267,116 +1226,99 @@ const Booking = ({ preloadedData = {} }) => {
                       </div>
                     ) : (
                       <>
-                        {appointmentType === 'asesoria-online' ? (
-                          // Layout especial para servicios online (2 arriba, 1 centrado abajo)
-                          <>
-                            <Row xs={1} md={2} className="g-3 justify-content-center mb-3">
-                              {getFilteredServices().slice(0, 2).map(service => (
-                                <Col key={service.id} className="d-flex">
-                                  <Card 
-                                    className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
-                                    onClick={() => handleServiceSelect(service, setFieldValue)}
-                                    style={{ 
-                                      cursor: 'pointer', 
-                                      transition: 'all 0.3s ease',
-                                      borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
-                                      borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                        {appointmentType === 'consulta-rapida' ? (
+                          // Layout para consulta rápida: card única centrada
+                          <Row className="justify-content-center">
+                            {getFilteredServices().map(service => (
+                              <Col key={service.id} md={8} lg={6} className="d-flex">
+                                <Card
+                                  className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
+                                  onClick={() => handleServiceSelect(service, setFieldValue)}
+                                  style={{
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
+                                    borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                                  }}
+                                >
+                                  <Card.Header
+                                    className="text-center py-3"
+                                    style={{
+                                      backgroundColor: '#4a6163',
+                                      color: '#ffffff',
+                                      minHeight: '70px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      flexDirection: 'column'
                                     }}
                                   >
-                                    <Card.Header 
-                                      className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
-                                      style={{ 
-                                        backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#f8f9fa',
-                                        minHeight: '70px', 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        justifyContent: 'center', 
-                                        flexDirection: 'column' 
-                                      }}
-                                    >
-                                      <h6 className="m-0">{service.title}</h6>
-                                      {service.duration && (
-                                        <small className="mt-1 opacity-75">({service.duration})</small>
-                                      )}
-                                    </Card.Header>
-                                    <Card.Body className="text-center p-3">
-                                      <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
-                                      <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
-                                      {service.tag && (
-                                        <span 
-                                          className="badge mt-2"
-                                          style={{ 
-                                            fontSize: '0.7rem', 
-                                            backgroundColor: 'var(--primary-color)', 
-                                            color: 'white',
-                                            padding: '0.25rem 0.5rem'
-                                          }}
-                                        >
-                                          {service.tag}
-                                        </span>
-                                      )}
-                                    </Card.Body>
-                                  </Card>
-                                </Col>
-                              ))}
-                            </Row>
-                            {/* Tercer servicio centrado */}
-                            {getFilteredServices().length > 2 && (
-                              <Row className="justify-content-center">
-                                <Col md={6} lg={4} className="d-flex">
-                                  {(() => {
-                                    const service = getFilteredServices()[2];
-                                    return (
-                                      <Card 
-                                        className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
-                                        onClick={() => handleServiceSelect(service, setFieldValue)}
+                                    <h6 className="m-0" style={{ color: '#ffffff' }}>{service.title}</h6>
+                                    {service.duration && (
+                                      <small className="mt-1" style={{ color: 'rgba(255,255,255,0.85)' }}>({service.duration})</small>
+                                    )}
+                                  </Card.Header>
+                                  <Card.Body className="text-center p-3">
+                                    <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
+                                    <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
+                                  </Card.Body>
+                                </Card>
+                              </Col>
+                            ))}
+                          </Row>
+                        ) : appointmentType === 'asesoria-online' ? (
+                          // Layout para servicios online: 2x2
+                          <Row xs={1} md={2} className="g-3">
+                            {getFilteredServices().map(service => (
+                              <Col key={service.id} className="d-flex">
+                                <Card 
+                                  className={`w-100 border ${selectedService && selectedService.id === service.id ? 'bg-light' : ''}`}
+                                  onClick={() => handleServiceSelect(service, setFieldValue)}
+                                  style={{ 
+                                    cursor: 'pointer', 
+                                    transition: 'all 0.3s ease',
+                                    borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
+                                    borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                                  }}
+                                >
+                                  <Card.Header 
+                                    className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
+                                    style={{ 
+                                      backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#4a6163',
+                                      color: '#ffffff',
+                                      minHeight: '70px', 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      justifyContent: 'center', 
+                                      flexDirection: 'column' 
+                                    }}
+                                  >
+                                    <h6 className="m-0" style={{ color: '#ffffff' }}>{service.title}</h6>
+                                    {service.duration && (
+                                      <small className="mt-1" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>({service.duration})</small>
+                                    )}
+                                  </Card.Header>
+                                  <Card.Body className="text-center p-3">
+                                    <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
+                                    <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
+                                    {service.tag && (
+                                      <span 
+                                        className="badge mt-2"
                                         style={{ 
-                                          cursor: 'pointer', 
-                                          transition: 'all 0.3s ease',
-                                          borderColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#dee2e6',
-                                          borderWidth: selectedService && selectedService.id === service.id ? '2px' : '1px'
+                                          fontSize: '0.7rem', 
+                                          backgroundColor: 'var(--primary-color)', 
+                                          color: 'white',
+                                          padding: '0.25rem 0.5rem'
                                         }}
                                       >
-                                        <Card.Header 
-                                          className={`text-center py-3 ${selectedService && selectedService.id === service.id ? 'text-white' : ''}`}
-                                          style={{ 
-                                            backgroundColor: selectedService && selectedService.id === service.id ? 'var(--primary-color)' : '#f8f9fa',
-                                            minHeight: '70px', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center', 
-                                            flexDirection: 'column' 
-                                          }}
-                                        >
-                                          <h6 className="m-0">{service.title}</h6>
-                                          {service.duration && (
-                                            <small className="mt-1 opacity-75">({service.duration})</small>
-                                          )}
-                                        </Card.Header>
-                                        <Card.Body className="text-center p-3">
-                                          <h5 className="fw-bold mb-2" style={{ color: 'var(--primary-color)' }}>{service.price}</h5>
-                                          <Card.Text className="text-muted small" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</Card.Text>
-                                          {service.tag && (
-                                            <span 
-                                              className="badge mt-2"
-                                              style={{ 
-                                                fontSize: '0.7rem', 
-                                                backgroundColor: 'var(--primary-color)', 
-                                                color: 'white',
-                                                padding: '0.25rem 0.5rem'
-                                              }}
-                                            >
-                                              {service.tag}
-                                            </span>
-                                          )}
-                                        </Card.Body>
-                                      </Card>
-                                    );
-                                  })()}
-                                </Col>
-                              </Row>
-                            )}
-                          </>
+                                        {service.tag}
+                                      </span>
+                                    )}
+                                  </Card.Body>
+                                </Card>
+                              </Col>
+                            ))}
+                          </Row>
                         ) : appointmentType === 'asesoria-comercial' ? (
                           // Layout para servicios comerciales (2 en fila)
                           <Row xs={1} md={2} className="g-3 justify-content-center">
@@ -1499,13 +1441,13 @@ const Booking = ({ preloadedData = {} }) => {
                   className={`border-0 shadow-sm mb-4 ${!isDateTimeSectionEnabled ? 'opacity-50' : ''}`}
                 >
                   <Card.Header className="py-3" style={{ 
-                    backgroundColor: selectedService ? 'var(--primary-color)' : '#e9ecef', 
-                    color: selectedService ? 'white' : '#6c757d' 
+                    backgroundColor: '#4a6163', 
+                    color: '#ffffff' 
                   }}>
                     <div className="d-flex align-items-center">
-                      <i className="bi bi-calendar-date fs-5 me-3"></i>
-                      <h5 className="m-0 fw-semibold">Fecha y Hora</h5>
-                      {(selectedDate && selectedTime) && <i className="bi bi-check-circle-fill ms-auto"></i>}
+                      <i className="bi bi-calendar-date fs-5 me-3" style={{ color: '#ffffff' }}></i>
+                      <h5 className="m-0 fw-semibold" style={{ color: '#ffffff' }}>Fecha y Hora</h5>
+                      {(selectedDate && selectedTime) && <i className="bi bi-check-circle-fill ms-auto" style={{ color: '#ffffff' }}></i>}
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
@@ -1670,12 +1612,12 @@ const Booking = ({ preloadedData = {} }) => {
                   className={`border-0 shadow-sm mb-4 ${!isPersonalInfoSectionEnabled ? 'opacity-50' : ''}`}
                 >
                   <Card.Header className="py-3" style={{ 
-                    backgroundColor: (selectedDate && selectedTime) ? 'var(--primary-color)' : '#e9ecef', 
-                    color: (selectedDate && selectedTime) ? 'white' : '#6c757d' 
+                    backgroundColor: '#4a6163', 
+                    color: '#ffffff' 
                   }}>
                     <div className="d-flex align-items-center">
-                      <i className="bi bi-person fs-5 me-3"></i>
-                      <h5 className="m-0 fw-semibold">Información Personal</h5>
+                      <i className="bi bi-person fs-5 me-3" style={{ color: '#ffffff' }}></i>
+                      <h5 className="m-0 fw-semibold" style={{ color: '#ffffff' }}>Información Personal</h5>
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
@@ -1777,13 +1719,13 @@ const Booking = ({ preloadedData = {} }) => {
                   className={`border-0 shadow-sm mb-4 ${!isProjectDescriptionSectionEnabled ? 'opacity-50' : ''}`}
                 >
                   <Card.Header className="py-3" style={{ 
-                    backgroundColor: (values.name && values.email && values.phone) ? 'var(--primary-color)' : '#e9ecef', 
-                    color: (values.name && values.email && values.phone) ? 'white' : '#6c757d' 
+                    backgroundColor: '#4a6163', 
+                    color: '#ffffff' 
                   }}>
                     <div className="d-flex align-items-center">
-                      <i className="bi bi-chat-text fs-5 me-3"></i>
-                      <h5 className="m-0 fw-semibold">Descripción del Proyecto</h5>
-                      <small className="ms-2 opacity-75">(Opcional)</small>
+                      <i className="bi bi-chat-text fs-5 me-3" style={{ color: '#ffffff' }}></i>
+                      <h5 className="m-0 fw-semibold" style={{ color: '#ffffff' }}>Descripción del Proyecto</h5>
+                      <small className="ms-2" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>(Opcional)</small>
                     </div>
                   </Card.Header>
                   <Card.Body className="p-4">
@@ -1822,32 +1764,52 @@ const Booking = ({ preloadedData = {} }) => {
                     type="submit"
                     className="rounded-pill px-4 py-2 fw-semibold"
                     style={{ 
-                      backgroundColor: 'var(--primary-color)', 
-                      borderColor: 'var(--primary-color)',
-                      color: 'white'
+                      backgroundColor: '#4a6163', 
+                      borderColor: '#4a6163',
+                      color: '#ffffff'
                     }}
                     disabled={isSubmitting || isLoading}
+                    onMouseEnter={(e) => {
+                      if (!e.currentTarget.disabled) {
+                        e.currentTarget.style.backgroundColor = '#5d7a7c';
+                        e.currentTarget.style.borderColor = '#5d7a7c';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#4a6163';
+                      e.currentTarget.style.borderColor = '#4a6163';
+                    }}
                   >
                     {isLoading || isSubmitting ? (
                       <>
-                        <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                        <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" style={{ borderColor: 'rgba(255, 255, 255, 0.3)', borderRightColor: '#ffffff' }} />
                         <span>Procesando...</span>
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-calendar-check me-2"></i>
+                        <i className="bi bi-calendar-check me-2" style={{ color: '#ffffff' }}></i>
                         Confirmar Reserva
                       </>
                     )}
                   </Button>
                   
-                    <div className="mt-2">
-                      <small className="text-muted">
-                        <i className="bi bi-info-circle me-1"></i>
-                      {isSubmitEnabled 
-                        ? 'Haz clic en "Confirmar Reserva" para proceder'
-                        : 'Completa los campos requeridos y luego confirma tu reserva'
-                      }
+                    <div className="mt-3 text-center">
+                      <small className="text-muted d-flex align-items-center justify-content-center">
+                        <i className="bi bi-info-circle me-1" style={{ 
+                          color: '#4a6163', 
+                          backgroundColor: 'rgba(74, 97, 99, 0.1)', 
+                          width: '20px', 
+                          height: '20px', 
+                          borderRadius: '50%', 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          fontSize: '0.75rem'
+                        }}></i>
+                        {isSubmitEnabled 
+                          ? 'Haz clic en "Confirmar Reserva" para proceder'
+                          : 'Completa los campos requeridos y luego confirma tu reserva'
+                        }
                       </small>
                     </div>
                 </div>

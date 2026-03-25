@@ -119,7 +119,7 @@ const AdminAuth = () => {
         localStorage.setItem('adminUser', credentials.username);
         navigate('/admin/dashboard');
       } else {
-        setError('Credenciales incorrectas. Usuario: admin, Contraseña: DEdecorAdmin');
+        setError('Credenciales incorrectas. Usuario: admin, Contraseña: ');
       }
       setLoading(false);
     }, 1000);

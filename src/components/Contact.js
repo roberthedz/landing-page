@@ -22,21 +22,25 @@ const ContactInfoItem = styled.div`
 const ContactInfoIcon = styled.div`
   width: 45px;
   height: 45px;
-  background-color: var(--secondary-color);
+  background-color: #4a6163;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 1rem;
-  color: var(--white);
+  color: #ffffff;
   font-size: 1.3rem;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  
+  i {
+    color: #ffffff;
+  }
 `;
 
 const ContactInfoContent = styled.div`
   h4 {
     margin-bottom: 0.2rem;
-    color: var(--primary-color);
+    color: #4a6163;
     font-weight: 600;
     font-size: 1.1rem;
   }
@@ -61,11 +65,11 @@ const StyledForm = styled(Form)`
 `;
 
 const SubmitButton = styled(Button)`
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
+  background-color: #4a6163 !important;
+  border-color: #4a6163 !important;
   border-radius: 50px;
   padding: 0.8rem 2.5rem;
-  color: var(--white);
+  color: #ffffff !important;
   font-weight: 600;
   font-size: 1.1rem;
   margin-top: 1.5rem;
@@ -76,12 +80,29 @@ const SubmitButton = styled(Button)`
   margin-right: auto;
   transition: all 0.3s ease;
   
+  &, &:focus, &:active, &:hover {
+    background-color: #4a6163 !important;
+    border-color: #4a6163 !important;
+    color: #ffffff !important;
+  }
+  
   &:hover {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-    color: var(--white);
+    background-color: #5d7a7c !important;
+    border-color: #5d7a7c !important;
+    color: #ffffff !important;
     transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 15px rgba(74, 97, 99, 0.3);
+  }
+  
+  i, span {
+    color: #ffffff !important;
+  }
+  
+  &:disabled {
+    background-color: #4a6163 !important;
+    border-color: #4a6163 !important;
+    color: #ffffff !important;
+    opacity: 0.7;
   }
 `;
 
@@ -90,7 +111,7 @@ const FormGroup = styled(Form.Group)`
   
   .form-label {
     font-weight: 600;
-    color: var(--primary-color);
+    color: #4a6163;
     margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
@@ -103,7 +124,7 @@ const FormGroup = styled(Form.Group)`
     transition: all 0.3s ease;
     
     &:focus {
-      border-color: var(--secondary-color);
+      border-color: #4a6163;
       box-shadow: 0 0 0 0.25rem rgba(74, 97, 99, 0.25);
     }
   }
@@ -114,9 +135,38 @@ const FormGroup = styled(Form.Group)`
 `;
 
 const FormLabelIcon = styled.i`
-  font-size: 1.2rem;
-  color: var(--secondary-color);
+  font-size: 1rem;
+  color: #ffffff;
   margin-right: 0.5rem;
+  background-color: #4a6163;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+
+const SocialMediaLink = styled.a`
+  color: #ffffff !important;
+  background-color: #4a6163;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  text-decoration: none !important;
+  margin-right: 0.75rem;
+  
+  &:hover {
+    background-color: #5d7a7c;
+    transform: translateY(-3px);
+    color: #ffffff !important;
+  }
 `;
 
 const Contact = () => {
@@ -214,9 +264,9 @@ const Contact = () => {
     <ContactSection id="contacto">
       <Container>
         <div className="text-center mb-5">
-          <h2 className="display-5 fw-bold position-relative d-inline-block" style={{ color: '#000' }}>
+          <h2 className="display-5 fw-bold position-relative d-inline-block" style={{ color: '#4a6163' }}>
             Contáctanos
-            <div className="position-absolute start-50 translate-middle-x" style={{ width: '80px', height: '3px', backgroundColor: 'var(--secondary-color)', borderRadius: '2px', bottom: '-10px' }}></div>
+            <div className="position-absolute start-50 translate-middle-x" style={{ width: '80px', height: '3px', backgroundColor: '#4a6163', borderRadius: '2px', bottom: '-10px' }}></div>
           </h2>
           <p className="lead text-muted mt-4 col-md-8 mx-auto">
             Estamos aquí para ayudarte con cualquier pregunta sobre nuestros servicios de diseño de interiores. Ponte en contacto con nosotros y te responderemos lo antes posible.
@@ -237,8 +287,22 @@ const Contact = () => {
             <Row className="justify-content-center">
               <Col lg={4} md={5} className="mb-4 mb-lg-0">
                 <div className="bg-white p-4 rounded-3 shadow-sm h-100">
-                  <h4 className="mb-4 fw-semibold" style={{ color: '#000' }}>
-                    <i className="bi bi-info-circle me-2"></i>
+                  <h4 className="mb-4 fw-semibold d-flex align-items-center" style={{ color: '#000' }}>
+                    <div style={{ 
+                      color: '#ffffff', 
+                      backgroundColor: '#4a6163', 
+                      width: '28px', 
+                      height: '28px', 
+                      borderRadius: '50%', 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                      marginRight: '0.5rem',
+                      flexShrink: 0
+                    }}>
+                      <i className="bi bi-info-circle" style={{ color: '#ffffff', fontSize: '1rem' }}></i>
+                    </div>
                     Información de Contacto
                   </h4>
                   
@@ -284,16 +348,15 @@ const Contact = () => {
                   <div className="mt-4 pt-3 border-top">
                     <h5 className="mb-3 fw-semibold" style={{ color: '#000' }}>Síguenos</h5>
                     <div className="d-flex">
-                      <a href="https://www.instagram.com/dedecorshow?igsh=OGVjN2o2NzRzNmNk" className="me-3 text-secondary fs-4">
+                      <SocialMediaLink href="https://www.instagram.com/dedecorshow?igsh=OGVjN2o2NzRzNmNk" target="_blank" rel="noopener noreferrer">
                         <i className="bi bi-instagram"></i>
-                      </a>
-                      <a href="https://m.youtube.com/@dedecorshow" className="me-3 text-secondary fs-4">
+                      </SocialMediaLink>
+                      <SocialMediaLink href="https://m.youtube.com/@dedecorshow" target="_blank" rel="noopener noreferrer">
                         <i className="bi bi-youtube"></i>
-                      </a>
-                      <a href="#" className="me-3 text-secondary fs-4">
+                      </SocialMediaLink>
+                      <SocialMediaLink href="#" target="_blank" rel="noopener noreferrer">
                         <i className="bi bi-tiktok"></i>
-                      </a>
-                    
+                      </SocialMediaLink>
                     </div>
                   </div>
                 </div>
@@ -301,8 +364,22 @@ const Contact = () => {
               
               <Col lg={8} md={7}>
                 <StyledForm onSubmit={handleSubmit}>
-                  <h4 className="mb-4 fw-semibold" style={{ color: '#000' }}>
-                    <i className="bi bi-send me-2"></i>
+                  <h4 className="mb-4 fw-semibold d-flex align-items-center" style={{ color: '#000' }}>
+                    <div style={{ 
+                      color: '#ffffff', 
+                      backgroundColor: '#4a6163', 
+                      width: '28px', 
+                      height: '28px', 
+                      borderRadius: '50%', 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                      marginRight: '0.5rem',
+                      flexShrink: 0
+                    }}>
+                      <i className="bi bi-send" style={{ color: '#ffffff', fontSize: '1rem' }}></i>
+                    </div>
                     Envíanos un Mensaje
                   </h4>
                   
@@ -381,12 +458,12 @@ const Contact = () => {
                   <SubmitButton type="submit" disabled={isLoading}>
                     {isLoading ? (
                       <>
-                        <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                        <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" style={{ borderColor: 'rgba(255, 255, 255, 0.3)', borderRightColor: '#ffffff' }} />
                         <span>Enviando...</span>
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-send me-2"></i>
+                        <i className="bi bi-send me-2" style={{ color: '#ffffff' }}></i>
                         Enviar Mensaje
                       </>
                     )}
@@ -400,8 +477,8 @@ const Contact = () => {
         <div className="text-center mt-5 pt-3">
           <p className="text-muted mb-4">¿Quieres conocer nuestros servicios?</p>
           <Link to="/servicios" className="btn rounded-pill px-4 py-2" style={{ 
-            color: 'var(--primary-color)',
-            borderColor: 'var(--primary-color)',
+            color: '#4a6163',
+            borderColor: '#4a6163',
             backgroundColor: 'transparent'
           }}>
             <i className="bi bi-arrow-right me-2"></i>

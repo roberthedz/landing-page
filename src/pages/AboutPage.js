@@ -73,7 +73,7 @@ const TeamMemberName = styled(Card.Title)`
 
 const TeamMemberRole = styled.p`
   font-style: italic;
-  color: var(--secondary-color);
+  color: #4a6163;
   margin-bottom: 1rem;
   font-weight: 500;
 `;
@@ -132,15 +132,24 @@ const AboutPage = () => {
           <Row className="mb-5 align-items-center g-5">
             <Col lg={6} className="mb-4 mb-lg-0">
               <AboutText>
-                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#000', textAlign: 'left' }}>Nuestro Proyecto</h3>
+                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#4a6163', textAlign: 'left', position: 'relative', paddingBottom: '0.5rem' }}>
+                  Nuestro Proyecto
+                  <span style={{ position: 'absolute', bottom: 0, left: 0, width: '50px', height: '2px', backgroundColor: '#4a6163', borderRadius: '2px' }}></span>
+                </h3>
                 <p style={{ textAlign: 'justify', marginBottom: '2rem' }}>
                   <strong>DeDecor</strong>, fundada por <strong>Dayana Gafas</strong> y <strong>Eli Fernández</strong>, nace de la pasión por la decoración y la narrativa visual. Combinamos creatividad, técnica y sensibilidad estética para transformar espacios con estilo, autenticidad y propósito. Desde asesorías puntuales hasta proyectos integrales, convertimos ideas en experiencias que inspiran y reflejan la esencia de quienes los habitan.
                 </p>
-                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#000', textAlign: 'left' }}>Misión</h3>
+                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#4a6163', textAlign: 'left', position: 'relative', paddingBottom: '0.5rem' }}>
+                  Misión
+                  <span style={{ position: 'absolute', bottom: 0, left: 0, width: '50px', height: '2px', backgroundColor: '#4a6163', borderRadius: '2px' }}></span>
+                </h3>
                 <p style={{ textAlign: 'justify', marginBottom: '2rem' }}>
                   En <strong>DeDecor</strong> fusionamos diseño y narrativa visual para crear espacios auténticos. Acompañamos con creatividad y atención al detalle, ofreciendo soluciones que reflejan la esencia de cada cliente.
                 </p>
-                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#000', textAlign: 'left' }}>Visión</h3>
+                <h3 style={{ marginBottom: '1rem', fontWeight: '600', color: '#4a6163', textAlign: 'left', position: 'relative', paddingBottom: '0.5rem' }}>
+                  Visión
+                  <span style={{ position: 'absolute', bottom: 0, left: 0, width: '50px', height: '2px', backgroundColor: '#4a6163', borderRadius: '2px' }}></span>
+                </h3>
                 <p style={{ textAlign: 'justify', marginBottom: '1rem' }}>
                   Ser una referencia en decoración de interiores y creación de contenido en habla hispana, inspirando espacios con identidad, funcionalidad y propósito.                   Creemos que un buen diseño no solo embellece: transforma la forma en que vivimos y sentimos cada lugar.
 
