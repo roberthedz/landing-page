@@ -544,7 +544,7 @@ Sistema de Reservas Profesional
 };
 
 // Función para enviar cotización de plantas al admin
-const sendPlantQuoteEmail = async ({ contact, contactType, plants }) => {
+const sendPlantQuoteEmail = async ({ contact, contactType, zip, plants, photo }) => {
   try {
     const resend = getResendClientAdmin();
     const adminEmail = process.env.ADMIN_EMAIL || 'dedecorinfo@gmail.com';
@@ -559,10 +559,21 @@ const sendPlantQuoteEmail = async ({ contact, contactType, plants }) => {
 
     const contactLabel = contactType === 'email' ? 'Email' : 'Teléfono';
 
+    // Preparar adjunto si hay foto
+    const attachments = [];
+    if (photo && photo.data) {
+      const base64Data = photo.data.replace(/^data:image\/\w+;base64,/, '');
+      attachments.push({
+        filename: photo.name || 'foto-espacio.jpg',
+        content: base64Data,
+      });
+    }
+
     await resend.emails.send({
       from: `DEdecor <${FROM_EMAIL}>`,
       to: adminEmail,
       subject: `🌿 Nueva solicitud de cotización – Plantas Faux`,
+      attachments,
       html: `
         <!DOCTYPE html>
         <html lang="es">
@@ -582,7 +593,8 @@ const sendPlantQuoteEmail = async ({ contact, contactType, plants }) => {
                     <h3 style="color:#4a6163;margin:0 0 12px;font-size:15px;text-transform:uppercase;letter-spacing:0.05em">Contacto del cliente</h3>
                     <table style="background:#f8f9fa;border-radius:8px;border-left:4px solid #4a6163;width:100%">
                       <tr><td style="padding:14px 18px;font-size:14px">
-                        <strong>${contactLabel}:</strong> ${contact}
+                        <strong>${contactLabel}:</strong> ${contact}<br>
+                        ${zip ? `<strong>Código postal:</strong> ${zip}` : ''}
                       </td></tr>
                     </table>
 
@@ -599,6 +611,10 @@ const sendPlantQuoteEmail = async ({ contact, contactType, plants }) => {
                       <tbody>${plantRows}</tbody>
                     </table>
 
+                    ${attachments.length > 0 ? `
+                    <div style="margin-top:16px;padding:10px 14px;background:#f0f4f4;border-radius:8px;font-size:13px;color:#4a6163">
+                      <i>📎 Se adjunta foto del espacio: <strong>${photo.name}</strong></i>
+                    </div>` : ''}
                     <p style="margin:24px 0 0;font-size:12px;color:#aaa;text-align:center">Enviado desde dedecorinfo.com</p>
                   </td>
                 </tr>

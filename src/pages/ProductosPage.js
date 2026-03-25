@@ -328,11 +328,11 @@ const SuccessWrap = styled.div`
 // ─── Datos ───────────────────────────────────────────────────────────────────
 
 const PLANT_TYPES = [
-  { id: 'bonsai',      label: 'Bonsai',      icon: 'bi-tree',      min: 4 },
-  { id: 'platanera',   label: 'Platanera',   icon: 'bi-tree-fill', min: 6 },
-  { id: 'ficus',       label: 'Ficus',       icon: 'bi-tree',      min: 6 },
-  { id: 'olivo',       label: 'Olivo',       icon: 'bi-tree-fill', min: 6 },
-  { id: 'black-olivo', label: 'Black Olivo', icon: 'bi-tree',      min: 6 },
+  { id: 'bonsai',      label: 'Bonsai',      icon: 'bi-tree',      min: 4, max: 6 },
+  { id: 'platanera',   label: 'Platanera',   icon: 'bi-tree-fill', min: 6, max: 10 },
+  { id: 'ficus',       label: 'Ficus',       icon: 'bi-tree',      min: 6, max: 10 },
+  { id: 'olivo',       label: 'Olivo',       icon: 'bi-tree-fill', min: 6, max: 10 },
+  { id: 'black-olivo', label: 'Black Olivo', icon: 'bi-tree',      min: 6, max: 10 },
 ];
 
 const MACETAS = [
@@ -343,7 +343,7 @@ const MACETAS = [
   { id: 'natural-beige', label: 'Natural Beige', c: '#D4B896' },
 ];
 
-const STEPS = ['Contacto', 'Planta', 'Maceta', 'Tamaño'];
+const STEPS = ['Contacto', 'Planta', 'Maceta', 'Tamaño', 'Foto'];
 
 const getApi = () => {
   const { hostname, port } = window.location;
@@ -359,27 +359,45 @@ const ProductosPage = () => {
   const [cType, setCType]             = useState('email');
   const [cValue, setCValue]           = useState('');
   const [cErr, setCErr]               = useState('');
+  const [zip, setZip]                 = useState('');
+  const [zipErr, setZipErr]           = useState('');
   const [tipo, setTipo]               = useState('');
   const [maceta, setMaceta]           = useState('');
   const [tamano, setTamano]           = useState(6);
   const [list, setList]               = useState([]);
+  const [photo, setPhoto]             = useState(null); // { data, name, type }
   const [loading, setLoading]         = useState(false);
   const [done, setDone]               = useState(false);
 
   const pt   = PLANT_TYPES.find(p => p.id === tipo);
   const mac  = MACETAS.find(m => m.id === maceta);
   const minS = pt ? pt.min : 6;
+  const maxS = pt ? pt.max : 10;
 
   const pickTipo = id => {
     setTipo(id);
     const p = PLANT_TYPES.find(x => x.id === id);
     if (tamano < p.min) setTamano(p.min);
+    if (tamano > p.max) setTamano(p.max);
   };
 
   const validateContact = () => {
-    if (!cValue.trim()) { setCErr('Campo obligatorio'); return false; }
-    if (cType === 'email' && !/\S+@\S+\.\S+/.test(cValue)) { setCErr('Email inválido'); return false; }
-    setCErr(''); return true;
+    let valid = true;
+    if (!cValue.trim()) { setCErr('Campo obligatorio'); valid = false; }
+    else if (cType === 'email' && !/\S+@\S+\.\S+/.test(cValue)) { setCErr('Email inválido'); valid = false; }
+    else setCErr('');
+    if (!zip.trim()) { setZipErr('Campo obligatorio'); valid = false; }
+    else if (!/^\d{4,10}$/.test(zip.trim())) { setZipErr('Código postal inválido'); valid = false; }
+    else setZipErr('');
+    return valid;
+  };
+
+  const handlePhoto = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhoto({ data: ev.target.result, name: file.name, type: file.type });
+    reader.readAsDataURL(file);
   };
 
   const next = () => {
@@ -393,17 +411,32 @@ const ProductosPage = () => {
     setStep(1);
   };
 
+  const goToPhoto = () => {
+    setList(prev => [...prev, { tipo: pt.label, maceta: mac.label, tamano }]);
+    setStep(4);
+  };
+
   const submit = async () => {
-    const plants = [...list, { tipo: pt.label, maceta: mac.label, tamano }];
     setLoading(true);
-    try { await axios.post(`${getApi()}/plant-quote`, { contact: cValue, contactType: cType, plants }); }
+    try {
+      const payload = {
+        contact: cValue,
+        contactType: cType,
+        zip,
+        plants: list,
+        ...(photo && { photo: { data: photo.data, name: photo.name, type: photo.type } })
+      };
+      await axios.post(`${getApi()}/plant-quote`, payload);
+    }
     catch (e) { console.error(e); }
     finally { setLoading(false); setDone(true); }
   };
 
   const reset = () => {
     setStep(0); setCType('email'); setCValue(''); setCErr('');
-    setTipo(''); setMaceta(''); setTamano(6); setList([]); setDone(false);
+    setZip(''); setZipErr('');
+    setTipo(''); setMaceta(''); setTamano(6);
+    setList([]); setPhoto(null); setDone(false);
   };
 
   return (
@@ -431,7 +464,7 @@ const ProductosPage = () => {
           <FormCol>
             <FormHeader>
               <FormHeading>Personaliza tu pedido</FormHeading>
-              <FormSubheading>Configura tu planta en 4 pasos y solicita precio</FormSubheading>
+              <FormSubheading>Configura tu planta en 5 pasos y solicita precio</FormSubheading>
 
               {!done && (
                 <>
@@ -522,6 +555,22 @@ const ProductosPage = () => {
                       />
                       {cErr && <ErrMsg>{cErr}</ErrMsg>}
 
+                      <div style={{ marginTop: '1rem' }}>
+                        <label style={{ fontSize: '0.82rem', fontWeight: '600', color: '#555', marginBottom: '0.4rem', display: 'block' }}>
+                          Código postal <span style={{ color: '#4a6163' }}>*</span>
+                        </label>
+                        <TextInput
+                          err={!!zipErr}
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Ej: 33101"
+                          value={zip}
+                          onChange={e => { setZip(e.target.value.replace(/\D/g, '')); setZipErr(''); }}
+                          maxLength={10}
+                        />
+                        {zipErr && <ErrMsg>{zipErr}</ErrMsg>}
+                      </div>
+
                       <div style={{ marginTop: '1.5rem', padding: '1rem 1.25rem', background: 'rgba(74,97,99,0.05)', borderRadius: '10px', borderLeft: '3px solid #4a6163' }}>
                         <p style={{ margin: '0 0 0.5rem', fontSize: '0.82rem', fontWeight: '700', color: '#4a6163', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                           ¿Cómo funciona?
@@ -579,14 +628,14 @@ const ProductosPage = () => {
                     <>
                       <StepQuestion>
                         ¿Qué altura necesitas?
-                        {pt?.id === 'bonsai' && <span style={{ color: '#aaa', fontSize: '0.8rem' }}> (mín. 4 pies)</span>}
+                        {pt?.id === 'bonsai' && <span style={{ color: '#aaa', fontSize: '0.8rem' }}> (Bonsai: 4 – 6 pies)</span>}
                       </StepQuestion>
                       <SizeNum>
                         <div className="n">{tamano}</div>
                         <div className="u">pies de altura</div>
                       </SizeNum>
-                      <RangeInput type="range" min={minS} max={10} value={tamano} onChange={e => setTamano(+e.target.value)} />
-                      <RangeLabels><span>{minS} pies</span><span>10 pies</span></RangeLabels>
+                      <RangeInput type="range" min={minS} max={maxS} value={tamano} onChange={e => setTamano(+e.target.value)} />
+                      <RangeLabels><span>{minS} pies</span><span>{maxS} pies</span></RangeLabels>
 
                       <div style={{ background: 'rgba(74,97,99,0.06)', borderRadius: '8px', padding: '0.85rem 1rem', marginTop: '1rem', fontSize: '0.86rem', color: '#444' }}>
                         <strong>{pt?.label}</strong> · Maceta {mac?.label} · {tamano} pies
@@ -594,6 +643,69 @@ const ProductosPage = () => {
 
                       <div style={{ marginTop: '0.85rem', padding: '0.9rem 1.1rem', background: 'rgba(74,97,99,0.05)', borderRadius: '8px', borderLeft: '3px solid #4a6163', fontSize: '0.82rem', color: '#666', lineHeight: '1.65' }}>
                         Puedes <strong>agregar otra planta</strong> al pedido o <strong>solicitar precio</strong> directamente. Te responderemos por el canal que indicaste.
+                      </div>
+                    </>
+                  )}
+
+                  {/* Step 4 — Foto opcional */}
+                  {step === 4 && (
+                    <>
+                      <StepQuestion>
+                        ¿Quieres adjuntar una foto del espacio?
+                        <span style={{ color: '#aaa', fontSize: '0.8rem' }}> (opcional)</span>
+                      </StepQuestion>
+
+                      <label
+                        htmlFor="photo-upload"
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center',
+                          justifyContent: 'center', gap: '0.6rem',
+                          border: `2px dashed ${photo ? '#4a6163' : 'rgba(74,97,99,0.25)'}`,
+                          borderRadius: '12px', padding: '1.5rem 1rem',
+                          cursor: 'pointer', transition: 'all 0.2s',
+                          background: photo ? 'rgba(74,97,99,0.05)' : '#fff',
+                          textAlign: 'center'
+                        }}
+                      >
+                        {photo ? (
+                          <>
+                            <img
+                              src={photo.data}
+                              alt="preview"
+                              style={{ maxHeight: '160px', maxWidth: '100%', borderRadius: '8px', objectFit: 'cover' }}
+                            />
+                            <span style={{ fontSize: '0.8rem', color: '#4a6163', fontWeight: '600' }}>
+                              <i className="bi bi-check-circle-fill me-1"></i>{photo.name}
+                            </span>
+                            <span style={{ fontSize: '0.75rem', color: '#aaa' }}>Clic para cambiar</span>
+                          </>
+                        ) : (
+                          <>
+                            <i className="bi bi-camera" style={{ fontSize: '2rem', color: 'rgba(74,97,99,0.4)' }}></i>
+                            <span style={{ fontSize: '0.88rem', color: '#666' }}>Clic para seleccionar foto</span>
+                            <span style={{ fontSize: '0.75rem', color: '#aaa' }}>JPG, PNG o HEIC · máx. 5MB</span>
+                          </>
+                        )}
+                        <input
+                          id="photo-upload"
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={handlePhoto}
+                        />
+                      </label>
+
+                      {photo && (
+                        <button
+                          onClick={() => setPhoto(null)}
+                          style={{ background: 'none', border: 'none', color: '#aaa', fontSize: '0.8rem', marginTop: '0.5rem', cursor: 'pointer', padding: 0 }}
+                        >
+                          <i className="bi bi-x-circle me-1"></i>Quitar foto
+                        </button>
+                      )}
+
+                      <div style={{ marginTop: '1rem', padding: '0.9rem 1.1rem', background: 'rgba(74,97,99,0.05)', borderRadius: '8px', borderLeft: '3px solid #4a6163', fontSize: '0.82rem', color: '#666', lineHeight: '1.65' }}>
+                        Una foto del espacio nos ayuda a recomendarte el tamaño y estilo ideal. Puedes omitir este paso si lo prefieres.
                       </div>
                     </>
                   )}
@@ -619,12 +731,17 @@ const ProductosPage = () => {
                           <BtnOutline onClick={addPlant}>
                             <i className="bi bi-plus-circle"></i> Agregar otra
                           </BtnOutline>
-                          <BtnPrimary onClick={submit} disabled={loading}>
-                            {loading
-                              ? <><span className="spinner-border spinner-border-sm"></span> Enviando...</>
-                              : <><i className="bi bi-send-fill"></i> Solicitar precio</>}
+                          <BtnPrimary onClick={goToPhoto}>
+                            Continuar <i className="bi bi-arrow-right"></i>
                           </BtnPrimary>
                         </>
+                      )}
+                      {step === 4 && (
+                        <BtnPrimary onClick={submit} disabled={loading}>
+                          {loading
+                            ? <><span className="spinner-border spinner-border-sm"></span> Enviando...</>
+                            : <><i className="bi bi-send-fill"></i> Solicitar precio</>}
+                        </BtnPrimary>
                       )}
                     </div>
                   </NavRow>

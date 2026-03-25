@@ -986,13 +986,13 @@ app.put('/api/admin/bookings/:id/status', async (req, res) => {
 // Endpoint para cotización de plantas faux
 app.post('/api/plant-quote', async (req, res) => {
   try {
-    const { contact, contactType, plants } = req.body;
+    const { contact, contactType, zip, plants, photo } = req.body;
 
     if (!contact || !plants || plants.length === 0) {
       return res.status(400).json({ success: false, error: 'Faltan datos requeridos' });
     }
 
-    console.log('🌿 Nueva solicitud de cotización de plantas:', { contact, contactType, plants });
+    console.log('🌿 Nueva solicitud de cotización de plantas:', { contact, contactType, zip, plants: plants.length, hasPhoto: !!photo });
 
     const plantRows = plants.map((p, i) => `
       <tr style="border-bottom:1px solid #eee">
@@ -1049,10 +1049,10 @@ app.post('/api/plant-quote', async (req, res) => {
     if (emailConfigured) {
       // Usar Resend (producción)
       try {
-        await sendPlantQuoteEmail({ contact, contactType, plants });
+        await sendPlantQuoteEmail({ contact, contactType, zip, plants, photo });
         console.log('✅ Email enviado via Resend');
       } catch (emailErr) {
-        console.error('⚠️ Error Resend, intentando Gmail:', emailErr.message);
+        console.error('⚠️ Error Resend:', emailErr.message);
       }
     } else {
       // Fallback: Gmail SMTP nativo
