@@ -345,12 +345,7 @@ const MACETAS = [
 
 const STEPS = ['Contacto', 'Planta', 'Maceta', 'Tamaño', 'Foto'];
 
-const getApi = () => {
-  const { hostname, port } = window.location;
-  if (hostname === 'localhost' || port === '3000' || port === '3001')
-    return 'http://localhost:3000/api';
-  return 'https://landing-page-1-77xa.onrender.com/api';
-};
+const getApi = () => 'https://landing-page-1-77xa.onrender.com/api';
 
 // ─── Página ──────────────────────────────────────────────────────────────────
 
