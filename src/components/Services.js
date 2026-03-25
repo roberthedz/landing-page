@@ -351,6 +351,36 @@ const Services = () => {
           <p>Descubre nuestra selección de servicios especializados para transformar tu espacio</p>
         </SectionTitle>
         
+        {consultaRapidaServices.map(service => (
+          <ConsultaRapidaSection key={service.id}>
+            <ConsultaRapidaLabel>
+              <span><i className="bi bi-lightning-fill"></i>Consulta Rápida</span>
+            </ConsultaRapidaLabel>
+            <ConsultaRapidaCard>
+              <ConsultaRapidaImage>
+                <img src={service.image} alt={service.title} />
+              </ConsultaRapidaImage>
+              <ConsultaRapidaContent>
+                <h3>{service.title}</h3>
+                <div className="price-line">
+                  {service.price} <span>· por videollamada</span>
+                </div>
+                <p>{service.description}</p>
+                <div className="buttons">
+                  <BtnWhite as={Link} to={`/servicios/${service.id}`}>
+                    <i className="bi bi-eye me-2"></i>Ver Detalles
+                  </BtnWhite>
+                  <BtnOutlineWhite as={Link} to="/agendar" state={{ selectedService: service }}>
+                    <i className="bi bi-calendar-check me-2"></i>Agendar
+                  </BtnOutlineWhite>
+                </div>
+              </ConsultaRapidaContent>
+            </ConsultaRapidaCard>
+          </ConsultaRapidaSection>
+        ))}
+
+        <SectionDivider><span>Asesorías de Diseño</span></SectionDivider>
+
         <CategoryContainer>
           <div className="d-flex justify-content-center mb-3">
             <CategoryTitle>Servicios de Asesoría Online</CategoryTitle>
@@ -377,36 +407,6 @@ const Services = () => {
             {asesoriaComercialServices.map(renderServiceCard)}
           </Row>
         </CategoryContainer>
-
-        <SectionDivider><span>¿Solo tienes una duda puntual?</span></SectionDivider>
-
-        {consultaRapidaServices.map(service => (
-          <ConsultaRapidaSection key={service.id}>
-            <ConsultaRapidaLabel>
-              <span><i className="bi bi-lightning-fill"></i>Consulta Rápida</span>
-            </ConsultaRapidaLabel>
-            <ConsultaRapidaCard>
-              <ConsultaRapidaImage>
-                <img src={service.image} alt={service.title} />
-              </ConsultaRapidaImage>
-              <ConsultaRapidaContent>
-                <h3>{service.title}</h3>
-                <div className="price-line">
-                  {service.price} <span>· {service.duration} por videollamada</span>
-                </div>
-                <p>{service.description}</p>
-                <div className="buttons">
-                  <BtnWhite as={Link} to={`/servicios/${service.id}`}>
-                    <i className="bi bi-eye me-2"></i>Ver Detalles
-                  </BtnWhite>
-                  <BtnOutlineWhite as={Link} to="/agendar" state={{ selectedService: service }}>
-                    <i className="bi bi-calendar-check me-2"></i>Agendar
-                  </BtnOutlineWhite>
-                </div>
-              </ConsultaRapidaContent>
-            </ConsultaRapidaCard>
-          </ConsultaRapidaSection>
-        ))}
       </Container>
     </ServicesSection>
   );
