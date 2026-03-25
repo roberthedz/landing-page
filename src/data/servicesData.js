@@ -257,7 +257,7 @@ export const servicesData = [
     duration: 'Por Habitación',
     description: 'Proyecto exclusivo y detallado con diseño a medida. Incluye render 3D profesional, acompañamiento integral, guía de montaje y seguimiento a 30 días. Entrega en 21-25 días.',
     longDescription: 'Diseñado para quienes buscan un proyecto exclusivo, detallado y sin preocupaciones, con un diseño completamente a medida y acompañamiento integral en cada etapa del proceso. Entrega en 21 a 25 días hábiles.',
-    image: '/images/service1.jpg',
+    image: '/images/service6.jpg',
     tag: 'Por Habitación',
     type: 'asesoria-presencial',
     category: 'asesoria-presencial',
