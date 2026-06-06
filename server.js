@@ -59,8 +59,8 @@ const bookingSchema = new mongoose.Schema({
   clientEmail: { type: String, required: true },
   clientPhone: { type: String, required: true },
   service: { type: String, required: true },
-  serviceDuration: { type: String, required: true },
-  servicePrice: { type: String, required: true },
+  serviceDuration: { type: String, default: '' },
+  servicePrice: { type: String, default: '' },
   date: { type: String, required: true },
   time: { type: String, required: true },
   type: { type: String, required: true },
@@ -339,13 +339,13 @@ app.post('/api/bookings', async (req, res) => {
       clientEmail,
       clientPhone,
       service,
-        serviceDuration,
-        servicePrice,
+      serviceDuration: (serviceDuration && String(serviceDuration).trim()) || (type === 'consulta-rapida' ? '30 minutos' : 'No especificada'),
+      servicePrice: (servicePrice && String(servicePrice).trim()) || '',
       date,
       time,
       type,
-        notes,
-        status: 'pending'
+      notes,
+      status: 'pending'
     });
     
     await booking.save();

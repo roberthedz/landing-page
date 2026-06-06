@@ -31,7 +31,7 @@ echo "🔨 Ejecutando build de producción..."
 echo "⏳ Esto puede tardar 2-5 minutos..."
 echo ""
 
-GENERATE_SOURCEMAP=false npm run build
+CI=true npm run build
 
 echo ""
 echo "✅ Build completado exitosamente!"
