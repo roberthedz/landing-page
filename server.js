@@ -94,6 +94,84 @@ const Booking = mongoose.model('Booking', bookingSchema);
 const BookedSlot = mongoose.model('BookedSlot', bookedSlotSchema);
 const ContactMessage = mongoose.model('ContactMessage', contactMessageSchema);
 
+// Horarios disponibles (deben coincidir con Booking.js y AdminDashboard)
+const ALL_TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+
+const parseUSDate = (dateStr) => {
+  const [month, day, year] = dateStr.split('/').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatUSDate = (date) => {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${month}/${day}/${date.getFullYear()}`;
+};
+
+const getDatesInRange = (startDate, endDate) => {
+  const start = parseUSDate(startDate);
+  const end = parseUSDate(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+    return null;
+  }
+  const dates = [];
+  const current = new Date(start);
+  while (current <= end) {
+    dates.push(formatUSDate(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+};
+
+const blockSingleSlot = async (date, time) => {
+  const existingSlot = await BookedSlot.findOne({ date, time });
+
+  if (existingSlot) {
+    if (existingSlot.bookingId && existingSlot.bookingId !== null) {
+      return {
+        success: false,
+        skipped: true,
+        error: `El horario ${time} del ${date} está ocupado por una reserva confirmada`
+      };
+    }
+
+    if (existingSlot.isBlocked && existingSlot.reason === 'admin-blocked') {
+      existingSlot.blockedAt = new Date();
+      await existingSlot.save();
+      return { success: true, updated: true };
+    }
+
+    existingSlot.isBlocked = true;
+    existingSlot.reason = 'admin-blocked';
+    existingSlot.blockedAt = new Date();
+    existingSlot.bookingId = null;
+    await existingSlot.save();
+    return { success: true, updated: true };
+  }
+
+  const blockedSlot = new BookedSlot({
+    date,
+    time,
+    isBlocked: true,
+    reason: 'admin-blocked',
+    blockedAt: new Date(),
+    bookingId: null
+  });
+  await blockedSlot.save();
+  return { success: true, created: true };
+};
+
+const unblockSingleSlot = async (date, time) => {
+  const result = await BookedSlot.deleteOne({
+    date,
+    time,
+    isBlocked: true,
+    reason: 'admin-blocked'
+  });
+
+  return result.deletedCount > 0;
+};
+
 // Función para obtener la URL base del request
 const getBaseUrl = (req) => {
   const protocol = req.get('x-forwarded-proto') || req.protocol;
@@ -466,6 +544,23 @@ app.get('/confirm-booking', async (req, res) => {
   }
 });
 
+// Endpoint para obtener todas las reservas (admin) — debe ir ANTES de /:id
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      bookings: bookings
+    });
+  } catch (error) {
+    console.error('Error obteniendo reservas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error obteniendo reservas'
+    });
+  }
+});
+
 // Endpoint para obtener datos de una reserva específica
 app.get('/api/bookings/:id', async (req, res) => {
   const { id } = req.params;
@@ -661,28 +756,11 @@ app.post('/api/contact', async (req, res) => {
 
 // ==================== ENDPOINTS DE ADMINISTRACIÓN ====================
 
-// Endpoint para obtener todas las reservas (admin)
-app.get('/api/bookings', async (req, res) => {
-  try {
-    const bookings = await Booking.find().sort({ createdAt: -1 });
-    res.json({
-      success: true,
-      bookings: bookings
-    });
-  } catch (error) {
-    console.error('Error obteniendo reservas:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error obteniendo reservas'
-    });
-  }
-});
-
 // Endpoint para bloquear un horario específico
 app.post('/api/admin/block-slot', async (req, res) => {
   try {
     const { date, time } = req.body;
-    
+
     if (!date || !time) {
       return res.status(400).json({
         success: false,
@@ -690,51 +768,21 @@ app.post('/api/admin/block-slot', async (req, res) => {
       });
     }
 
-    // Verificar si ya existe y está bloqueado
-    const existingSlot = await BookedSlot.findOne({ date, time });
-    
-    if (existingSlot) {
-      // Verificar si está ocupado por una reserva confirmada
-      if (existingSlot.bookingId && existingSlot.bookingId !== null) {
-        return res.status(400).json({
-          success: false,
-          error: `El horario ${time} del ${date} está ocupado por una reserva confirmada`
-        });
-      }
-      
-      // Si ya está bloqueado administrativamente, actualizar la fecha de bloqueo
-      if (existingSlot.isBlocked && existingSlot.reason === 'admin-blocked') {
-        console.log(`🔄 Re-bloqueando horario ${date} ${time}`);
-        existingSlot.blockedAt = new Date();
-        await existingSlot.save();
-      } else {
-        // Actualizar slot existente como bloqueado
-        existingSlot.isBlocked = true;
-        existingSlot.reason = 'admin-blocked';
-        existingSlot.blockedAt = new Date();
-        existingSlot.bookingId = null;
-        await existingSlot.save();
-      }
-    } else {
-      // Crear nuevo slot bloqueado
-      const blockedSlot = new BookedSlot({
-        date: date,
-        time: time,
-        isBlocked: true,
-        reason: 'admin-blocked',
-        blockedAt: new Date(),
-        bookingId: null // Explícitamente null para bloqueos administrativos
+    const result = await blockSingleSlot(date, time);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
       });
-      await blockedSlot.save();
     }
 
     console.log(`✅ Horario ${date} ${time} bloqueado por admin`);
-    
+
     res.json({
       success: true,
       message: `Horario ${time} del ${date} bloqueado`
     });
-    
   } catch (error) {
     console.error('Error bloqueando horario:', error);
     res.status(500).json({
@@ -748,7 +796,7 @@ app.post('/api/admin/block-slot', async (req, res) => {
 app.post('/api/admin/unblock-slot', async (req, res) => {
   try {
     const { date, time } = req.body;
-    
+
     if (!date || !time) {
       return res.status(400).json({
         success: false,
@@ -756,14 +804,9 @@ app.post('/api/admin/unblock-slot', async (req, res) => {
       });
     }
 
-    // Eliminar slot bloqueado
-    const result = await BookedSlot.deleteOne({ 
-      date, 
-      time, 
-      isBlocked: true 
-    });
+    const unblocked = await unblockSingleSlot(date, time);
 
-    if (result.deletedCount === 0) {
+    if (!unblocked) {
       return res.status(400).json({
         success: false,
         error: `El horario ${time} del ${date} no está bloqueado administrativamente`
@@ -771,18 +814,166 @@ app.post('/api/admin/unblock-slot', async (req, res) => {
     }
 
     console.log(`✅ Horario ${date} ${time} desbloqueado por admin`);
-    
+
     res.json({
       success: true,
       message: `Horario ${time} del ${date} desbloqueado`
     });
-    
   } catch (error) {
     console.error('Error desbloqueando horario:', error);
     res.status(500).json({
       success: false,
       error: 'Error desbloqueando horario'
     });
+  }
+});
+
+const handleBlockRange = async (startDate, endDate, res) => {
+  if (!startDate || !endDate) {
+    return res.status(400).json({
+      success: false,
+      error: 'startDate y endDate son requeridos (formato MM/DD/YYYY)'
+    });
+  }
+
+  const dates = getDatesInRange(startDate, endDate);
+  if (!dates) {
+    return res.status(400).json({
+      success: false,
+      error: 'Rango de fechas inválido. La fecha inicial debe ser menor o igual a la final.'
+    });
+  }
+
+  if (dates.length > 60) {
+    return res.status(400).json({
+      success: false,
+      error: 'El rango máximo permitido es de 60 días'
+    });
+  }
+
+  let blocked = 0;
+  let skipped = 0;
+  const skippedDetails = [];
+
+  for (const date of dates) {
+    for (const time of ALL_TIME_SLOTS) {
+      const result = await blockSingleSlot(date, time);
+      if (result.success) {
+        blocked += 1;
+      } else if (result.skipped) {
+        skipped += 1;
+        skippedDetails.push(result.error);
+      }
+    }
+  }
+
+  console.log(`✅ Rango bloqueado ${startDate} → ${endDate}: ${blocked} horarios, ${skipped} omitidos`);
+
+  return res.json({
+    success: true,
+    message: `Rango bloqueado: ${dates.length} día(s), ${blocked} horario(s) bloqueado(s)`,
+    startDate,
+    endDate,
+    days: dates.length,
+    blocked,
+    skipped,
+    skippedDetails: skippedDetails.slice(0, 10)
+  });
+};
+
+const handleUnblockRange = async (startDate, endDate, res) => {
+  if (!startDate || !endDate) {
+    return res.status(400).json({
+      success: false,
+      error: 'startDate y endDate son requeridos (formato MM/DD/YYYY)'
+    });
+  }
+
+  const dates = getDatesInRange(startDate, endDate);
+  if (!dates) {
+    return res.status(400).json({
+      success: false,
+      error: 'Rango de fechas inválido. La fecha inicial debe ser menor o igual a la final.'
+    });
+  }
+
+  if (dates.length > 60) {
+    return res.status(400).json({
+      success: false,
+      error: 'El rango máximo permitido es de 60 días'
+    });
+  }
+
+  let unblocked = 0;
+
+  for (const date of dates) {
+    for (const time of ALL_TIME_SLOTS) {
+      const wasUnblocked = await unblockSingleSlot(date, time);
+      if (wasUnblocked) {
+        unblocked += 1;
+      }
+    }
+  }
+
+  console.log(`✅ Rango desbloqueado ${startDate} → ${endDate}: ${unblocked} horarios`);
+
+  return res.json({
+    success: true,
+    message: `Rango desbloqueado: ${dates.length} día(s), ${unblocked} horario(s) liberado(s)`,
+    startDate,
+    endDate,
+    days: dates.length,
+    unblocked
+  });
+};
+
+// Bloquear todos los horarios de un rango de fechas (inclusive)
+app.post('/api/admin/block-range', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+    await handleBlockRange(startDate, endDate, res);
+  } catch (error) {
+    console.error('Error bloqueando rango:', error);
+    res.status(500).json({ success: false, error: 'Error bloqueando rango de fechas' });
+  }
+});
+
+// Desbloquear todos los horarios administrativos de un rango de fechas
+app.post('/api/admin/unblock-range', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+    await handleUnblockRange(startDate, endDate, res);
+  } catch (error) {
+    console.error('Error desbloqueando rango:', error);
+    res.status(500).json({ success: false, error: 'Error desbloqueando rango de fechas' });
+  }
+});
+
+// Bloquear un día completo (todos los horarios)
+app.post('/api/admin/block-day', async (req, res) => {
+  try {
+    const { date } = req.body;
+    if (!date) {
+      return res.status(400).json({ success: false, error: 'Fecha requerida' });
+    }
+    await handleBlockRange(date, date, res);
+  } catch (error) {
+    console.error('Error bloqueando día:', error);
+    res.status(500).json({ success: false, error: 'Error bloqueando día' });
+  }
+});
+
+// Desbloquear un día completo
+app.post('/api/admin/unblock-day', async (req, res) => {
+  try {
+    const { date } = req.body;
+    if (!date) {
+      return res.status(400).json({ success: false, error: 'Fecha requerida' });
+    }
+    await handleUnblockRange(date, date, res);
+  } catch (error) {
+    console.error('Error desbloqueando día:', error);
+    res.status(500).json({ success: false, error: 'Error desbloqueando día' });
   }
 });
 

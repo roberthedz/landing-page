@@ -22,7 +22,7 @@ echo ""
 
 # ── 2. Build de producción ───────────────────────────────────────────────────
 echo "🔨 Generando build de producción..."
-CI=false npm run build
+CI=true npm run build
 echo "✅ Build listo"
 echo ""
 

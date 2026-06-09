@@ -82,7 +82,13 @@ const BookingConfirmation = () => {
       } catch (err) {
         console.error('Error al procesar la reserva:', err);
         setStatus('error');
-        setError('Hubo un problema al procesar la reserva. Por favor, inténtalo de nuevo o contacta con soporte.');
+        if (err.response?.status === 404) {
+          setError(
+            'No se encontró esta reserva en la base de datos. Es posible que no se haya guardado correctamente al crearse. Pide al cliente que envíe una nueva solicitud o créala manualmente desde el panel de admin.'
+          );
+        } else {
+          setError('Hubo un problema al procesar la reserva. Por favor, inténtalo de nuevo o contacta con soporte.');
+        }
       } finally {
         setLoading(false);
       }

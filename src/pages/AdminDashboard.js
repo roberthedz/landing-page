@@ -11,6 +11,7 @@ const DashboardSection = styled.section`
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 2rem 0;
+  padding-top: calc(70px + 2rem);
 `;
 
 const DashboardHeader = styled.div`
@@ -119,7 +120,11 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showUnblockModal, setShowUnblockModal] = useState(false);
+  const [showBlockRangeModal, setShowBlockRangeModal] = useState(false);
+  const [showUnblockRangeModal, setShowUnblockRangeModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [rangeStartDate, setRangeStartDate] = useState(new Date());
+  const [rangeEndDate, setRangeEndDate] = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const navigate = useNavigate();
@@ -132,16 +137,18 @@ const AdminDashboard = () => {
     }
   }, [navigate]);
 
-  // Cargar reservas
+  // Cargar reservas solo si hay sesión admin
   useEffect(() => {
-        loadBookings();
+    if (localStorage.getItem('adminAuth')) {
+      loadBookings();
+    }
   }, []);
-
 
   const loadBookings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(apiConfig.endpoints.adminBookings);
+      setError('');
+      const response = await apiConfig.makeRequest(apiConfig.endpoints.adminBookings);
       
       if (response.data.success) {
         setBookings(response.data.bookings || []);
@@ -150,7 +157,11 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error cargando reservas:', error);
-      setError('Error al conectar con el servidor');
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        setError('El servidor tardó en responder (cold start de Render). Espera unos segundos y recarga la página.');
+      } else {
+        setError('Error al conectar con el servidor. Verifica que Render esté activo.');
+      }
     } finally {
       setLoading(false);
     }
@@ -163,7 +174,11 @@ const AdminDashboard = () => {
     navigate('/admin');
   };
 
-
+  const formatDateUS = (date) => date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
 
   const handleBlockSlot = async () => {
     if (!selectedSlot) {
@@ -174,14 +189,8 @@ const AdminDashboard = () => {
     try {
       setActionLoading(true);
       
-      const formattedDate = selectedDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
-      
       const requestData = {
-        date: formattedDate,
+        date: formatDateUS(selectedDate),
         time: selectedSlot
       };
       
@@ -215,14 +224,8 @@ const AdminDashboard = () => {
     try {
       setActionLoading(true);
       
-      const formattedDate = selectedDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
-      
       const requestData = {
-        date: formattedDate,
+        date: formatDateUS(selectedDate),
         time: selectedSlot
       };
       
@@ -247,6 +250,78 @@ const AdminDashboard = () => {
       } else {
         alert('Error al desbloquear el horario');
       }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBlockRange = async () => {
+    if (rangeStartDate > rangeEndDate) {
+      alert('La fecha inicial debe ser anterior o igual a la fecha final');
+      return;
+    }
+
+    const start = formatDateUS(rangeStartDate);
+    const end = formatDateUS(rangeEndDate);
+    const days = Math.ceil((rangeEndDate - rangeStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (!window.confirm(`¿Bloquear TODOS los horarios del ${start} al ${end} (${days} día(s))?`)) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const response = await axios.post(apiConfig.endpoints.adminBlockRange, {
+        startDate: start,
+        endDate: end
+      });
+
+      if (response.data.success) {
+        const { blocked, skipped, days: totalDays } = response.data;
+        alert(`Rango bloqueado: ${totalDays} día(s), ${blocked} horario(s) bloqueado(s)${skipped ? `, ${skipped} omitido(s) por reservas confirmadas` : ''}`);
+        setShowBlockRangeModal(false);
+        loadBookings();
+      } else {
+        alert(response.data.error || 'Error al bloquear el rango');
+      }
+    } catch (error) {
+      alert(error.response?.data?.error || 'Error al bloquear el rango de fechas');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnblockRange = async () => {
+    if (rangeStartDate > rangeEndDate) {
+      alert('La fecha inicial debe ser anterior o igual a la fecha final');
+      return;
+    }
+
+    const start = formatDateUS(rangeStartDate);
+    const end = formatDateUS(rangeEndDate);
+    const days = Math.ceil((rangeEndDate - rangeStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (!window.confirm(`¿Desbloquear TODOS los horarios administrativos del ${start} al ${end} (${days} día(s))?`)) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const response = await axios.post(apiConfig.endpoints.adminUnblockRange, {
+        startDate: start,
+        endDate: end
+      });
+
+      if (response.data.success) {
+        const { unblocked, days: totalDays } = response.data;
+        alert(`Rango desbloqueado: ${totalDays} día(s), ${unblocked} horario(s) liberado(s)`);
+        setShowUnblockRangeModal(false);
+        loadBookings();
+      } else {
+        alert(response.data.error || 'Error al desbloquear el rango');
+      }
+    } catch (error) {
+      alert(error.response?.data?.error || 'Error al desbloquear el rango de fechas');
     } finally {
       setActionLoading(false);
     }
@@ -419,30 +494,45 @@ const AdminDashboard = () => {
                 <i className="bi bi-gear me-2"></i>
                 Gestión de Horarios
               </h5>
-              <div className="d-flex flex-wrap justify-content-center">
+              <div className="d-flex flex-wrap justify-content-center gap-2">
                 <ActionButton 
                   variant="warning" 
                   size="lg"
-                  onClick={() => setShowBlockModal(true)}
-                  className="me-3 mb-2"
+                  onClick={() => setShowBlockRangeModal(true)}
                 >
-                  <i className="bi bi-clock-fill me-2"></i>
-                  Bloquear Horario
+                  <i className="bi bi-calendar-x me-2"></i>
+                  Bloquear Rango de Fechas
                 </ActionButton>
                 <ActionButton 
                   variant="success" 
                   size="lg"
+                  onClick={() => setShowUnblockRangeModal(true)}
+                >
+                  <i className="bi bi-calendar-check me-2"></i>
+                  Desbloquear Rango
+                </ActionButton>
+                <ActionButton 
+                  variant="outline-warning" 
+                  size="lg"
+                  onClick={() => setShowBlockModal(true)}
+                >
+                  <i className="bi bi-clock-fill me-2"></i>
+                  Bloquear 1 Horario
+                </ActionButton>
+                <ActionButton 
+                  variant="outline-success" 
+                  size="lg"
                   onClick={() => setShowUnblockModal(true)}
-                  className="mb-2"
                 >
                   <i className="bi bi-clock me-2"></i>
-                  Desbloquear Horario
+                  Desbloquear 1 Horario
                 </ActionButton>
               </div>
               <div className="text-center mt-3">
                 <small className="text-muted">
                   <i className="bi bi-info-circle me-1"></i>
-                  Selecciona una fecha y un horario específico para bloquear/desbloquear
+                  Usa <strong>Bloquear Rango</strong> para cerrar una semana completa de un solo clic (todos los horarios de cada día).
+                  Los horarios con reservas confirmadas se omiten automáticamente.
                 </small>
               </div>
             </Card>
@@ -487,8 +577,8 @@ const AdminDashboard = () => {
                           <Button 
                             size="sm" 
                             variant="outline-primary"
-                            onClick={() => window.open(`/booking-confirmation/${booking._id}`, '_blank')}
-                            title="Ver detalles"
+                            onClick={() => window.open(`/confirm-booking?id=${booking.id}&action=confirm`, '_blank')}
+                            title="Abrir enlace de confirmación"
                           >
                             <i className="bi bi-eye"></i>
                           </Button>
@@ -543,6 +633,96 @@ const AdminDashboard = () => {
             </Card>
           </Col>
         </Row>
+
+        {/* Modal para Bloquear Rango de Fechas */}
+        <Modal show={showBlockRangeModal} onHide={() => setShowBlockRangeModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              <i className="bi bi-calendar-x me-2"></i>
+              Bloquear Rango de Fechas
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Fecha inicial</Form.Label>
+                <DatePicker
+                  selected={rangeStartDate}
+                  onChange={(date) => setRangeStartDate(date)}
+                  dateFormat="MM/dd/yyyy"
+                  className="form-control"
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Fecha final</Form.Label>
+                <DatePicker
+                  selected={rangeEndDate}
+                  onChange={(date) => setRangeEndDate(date)}
+                  minDate={rangeStartDate}
+                  dateFormat="MM/dd/yyyy"
+                  className="form-control"
+                />
+              </Form.Group>
+              <Alert variant="warning" className="mb-0">
+                Se bloquearán los 7 horarios de cada día en el rango
+                (9:00 AM – 5:00 PM). Máximo 60 días.
+              </Alert>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowBlockRangeModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="warning" onClick={handleBlockRange} disabled={actionLoading}>
+              {actionLoading ? 'Procesando...' : 'Bloquear Rango'}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Modal para Desbloquear Rango de Fechas */}
+        <Modal show={showUnblockRangeModal} onHide={() => setShowUnblockRangeModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              <i className="bi bi-calendar-check me-2"></i>
+              Desbloquear Rango de Fechas
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Fecha inicial</Form.Label>
+                <DatePicker
+                  selected={rangeStartDate}
+                  onChange={(date) => setRangeStartDate(date)}
+                  dateFormat="MM/dd/yyyy"
+                  className="form-control"
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Fecha final</Form.Label>
+                <DatePicker
+                  selected={rangeEndDate}
+                  onChange={(date) => setRangeEndDate(date)}
+                  minDate={rangeStartDate}
+                  dateFormat="MM/dd/yyyy"
+                  className="form-control"
+                />
+              </Form.Group>
+              <Alert variant="info" className="mb-0">
+                Solo se desbloquean horarios bloqueados administrativamente.
+                Las reservas confirmadas no se modifican.
+              </Alert>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowUnblockRangeModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="success" onClick={handleUnblockRange} disabled={actionLoading}>
+              {actionLoading ? 'Procesando...' : 'Desbloquear Rango'}
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
         {/* Modal para Bloquear Horario */}
         <Modal show={showBlockModal} onHide={() => setShowBlockModal(false)}>

@@ -166,6 +166,8 @@ export default {
   adminDateStatus: `${API_BASE_URL}/admin/date-status`,
   adminBlockDay: `${API_BASE_URL}/admin/block-day`,
   adminUnblockDay: `${API_BASE_URL}/admin/unblock-day`,
+  adminBlockRange: `${API_BASE_URL}/admin/block-range`,
+  adminUnblockRange: `${API_BASE_URL}/admin/unblock-range`,
   adminBlockSlot: `${API_BASE_URL}/admin/block-slot`,
   adminUnblockSlot: `${API_BASE_URL}/admin/unblock-slot`,
   adminDeleteBooking: (id) => `${API_BASE_URL}/admin/bookings/${id}`,
